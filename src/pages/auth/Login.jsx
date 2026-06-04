@@ -45,6 +45,9 @@ const Login = () => {
     setTimeout(() => {
       toast.success(`Logged in successfully as ${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}!`);
       setSubmitting(false);
+      if (selectedRole === 'admin') {
+        navigate('/admin/dashboard');
+      }
     }, 1000);
   };
 
