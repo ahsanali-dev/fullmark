@@ -1,16 +1,38 @@
 import React, { useState } from 'react';
-import { useField } from 'formik';
+import { useField, useFormikContext } from 'formik';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const Input = ({ label, icon: Icon, showPasswordToggle, roleColor, ...props }) => {
-  const [field, meta] = useField(props);
+  const formikContext = useFormikContext();
+  const isFormik = !!formikContext;
+
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const hasValue = field.value !== undefined && field.value !== '';
+  let field = {};
+  let meta = {};
+  let isError = false;
+  let hasValue = false;
+
+  if (isFormik) {
+    const [formikField, formikMeta] = useField(props);
+    field = formikField;
+    meta = formikMeta;
+    isError = meta.touched && meta.error;
+    hasValue = field.value !== undefined && field.value !== '';
+  } else {
+    field = {
+      name: props.name,
+      value: props.value,
+      onChange: props.onChange,
+      onBlur: props.onBlur,
+    };
+    isError = props.error && props.touched;
+    hasValue = props.value !== undefined && props.value !== '';
+  }
+
   const isFloating = isFocused || hasValue;
-  const isError = meta.touched && meta.error;
 
   // Class mapping for input styles
   const getInput3DClass = () => {
@@ -84,7 +106,9 @@ const Input = ({ label, icon: Icon, showPasswordToggle, roleColor, ...props }) =
             }}
             onBlur={(e) => {
               setIsFocused(false);
-              field.onBlur(e);
+              if (isFormik && field.onBlur) {
+                field.onBlur(e);
+              }
               if (props.onBlur) props.onBlur(e);
             }}
             className="w-full h-full bg-transparent border-none text-white text-sm md:text-base font-semibold px-3 outline-none focus:ring-0 focus:outline-none z-0"
@@ -114,7 +138,7 @@ const Input = ({ label, icon: Icon, showPasswordToggle, roleColor, ...props }) =
               className="text-red-400 text-xs font-bold flex items-center absolute"
             >
               <span className="inline-block w-1 h-1 rounded-full bg-red-400 mr-1.5 animate-pulse"></span>
-              {meta.error}
+              {isFormik ? meta.error : props.error}
             </motion.p>
           )}
         </AnimatePresence>

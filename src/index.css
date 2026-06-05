@@ -17,14 +17,17 @@
   background: linear-gradient(to bottom, #111b22 0%, rgba(12, 13, 25, 0.8) 100%);
   border: 1px solid rgba(16, 185, 129, 0.15);
 }
+
 .stat-card-teacher {
   background: linear-gradient(to bottom, #11152d 0%, rgba(12, 13, 25, 0.8) 100%);
   border: 1px solid rgba(59, 130, 246, 0.15);
 }
+
 .stat-card-exam {
   background: linear-gradient(to bottom, #211119 0%, rgba(12, 13, 25, 0.8) 100%);
   border: 1px solid rgba(239, 68, 68, 0.15);
 }
+
 .stat-card-question {
   background: linear-gradient(to bottom, #211b11 0%, rgba(12, 13, 25, 0.8) 100%);
   border: 1px solid rgba(234, 179, 8, 0.15);
@@ -35,6 +38,7 @@
   background: linear-gradient(to bottom, #111c27 0%, #0a0f18 100%);
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
+
 .action-btn-teacher:hover {
   background: linear-gradient(to bottom, #111c27 0%, #0e1724 100%);
   border-color: rgba(59, 130, 246, 0.4);
@@ -44,6 +48,7 @@
   background: linear-gradient(to bottom, #11241a 0%, #0a1811 100%);
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
+
 .action-btn-student:hover {
   background: linear-gradient(to bottom, #11241a 0%, #0e241b 100%);
   border-color: rgba(16, 185, 129, 0.4);
@@ -53,6 +58,7 @@
   background: linear-gradient(to bottom, #18112d 0%, #0e0a1b 100%);
   border: 1px solid rgba(99, 102, 241, 0.2);
 }
+
 .action-btn-subject:hover {
   background: linear-gradient(to bottom, #18112d 0%, #170e2d 100%);
   border-color: rgba(99, 102, 241, 0.4);
@@ -160,8 +166,8 @@
 .btn-3d-student {
   background: linear-gradient(135deg, #04523c 0%, #10b981 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 0 20px rgba(16, 185, 129, 0.5), 
+  box-shadow:
+    0 0 20px rgba(16, 185, 129, 0.5),
     0 10px 30px rgba(16, 185, 129, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
@@ -169,8 +175,8 @@
 .btn-3d-teacher {
   background: linear-gradient(135deg, #112a90 0%, #3b82f6 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 0 20px rgba(59, 130, 246, 0.5), 
+  box-shadow:
+    0 0 20px rgba(59, 130, 246, 0.5),
     0 10px 30px rgba(59, 130, 246, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
@@ -178,8 +184,8 @@
 .btn-3d-admin {
   background: linear-gradient(135deg, #7f1212 0%, #ef4444 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 0 20px rgba(239, 68, 68, 0.5), 
+  box-shadow:
+    0 0 20px rgba(239, 68, 68, 0.5),
     0 10px 30px rgba(239, 68, 68, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
@@ -187,8 +193,8 @@
 .btn-3d-parent {
   background: linear-gradient(135deg, #4c1187 0%, #a855f7 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 0 20px rgba(168, 85, 247, 0.5), 
+  box-shadow:
+    0 0 20px rgba(168, 85, 247, 0.5),
     0 10px 30px rgba(168, 85, 247, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
@@ -196,37 +202,37 @@
 .btn-3d-auth-gradient {
   background: linear-gradient(135deg, #2b26a6 0%, #6366f1 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
-    0 0 20px rgba(99, 102, 241, 0.5), 
+  box-shadow:
+    0 0 20px rgba(99, 102, 241, 0.5),
     0 10px 30px rgba(99, 102, 241, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 /* Button Hover State Interactions (Smooth micro-floating and bright-up) */
-.btn-3d-student, 
-.btn-3d-teacher, 
-.btn-3d-admin, 
-.btn-3d-parent, 
+.btn-3d-student,
+.btn-3d-teacher,
+.btn-3d-admin,
+.btn-3d-parent,
 .btn-3d-auth-gradient {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.btn-3d-student:hover, 
-.btn-3d-teacher:hover, 
-.btn-3d-admin:hover, 
-.btn-3d-parent:hover, 
+.btn-3d-student:hover,
+.btn-3d-teacher:hover,
+.btn-3d-admin:hover,
+.btn-3d-parent:hover,
 .btn-3d-auth-gradient:hover {
   transform: translateY(-2px);
   filter: brightness(1.1);
-  box-shadow: 
+  box-shadow:
     0 0 25px rgba(255, 255, 255, 0.1),
     0 12px 35px rgba(0, 0, 0, 0.3);
 }
 
-.btn-3d-student:active, 
-.btn-3d-teacher:active, 
-.btn-3d-admin:active, 
-.btn-3d-parent:active, 
+.btn-3d-student:active,
+.btn-3d-teacher:active,
+.btn-3d-admin:active,
+.btn-3d-parent:active,
 .btn-3d-auth-gradient:active {
   transform: translateY(1px);
   filter: brightness(0.95);
@@ -265,8 +271,8 @@
 
 /* Chrome/Safari Autofill Styles override to keep dark theme styling */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: #ffffff !important;
@@ -279,6 +285,7 @@ input:-webkit-autofill:active {
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -293,6 +300,7 @@ input:-webkit-autofill:active {
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }
@@ -426,7 +434,9 @@ input:-webkit-autofill:active {
 .light h6.text-white,
 .light p.text-white,
 .light span.text-white,
-.light input.text-white {
+.light input.text-white,
+.light textarea.text-white,
+.light textarea {
   color: #0f172a !important;
 }
 
@@ -548,14 +558,17 @@ input:-webkit-autofill:active {
   background: linear-gradient(to bottom, #e8f5e9 0%, rgba(255, 255, 255, 0.98) 100%) !important;
   border-color: rgba(16, 185, 129, 0.25) !important;
 }
+
 .light .stat-card-teacher {
   background: linear-gradient(to bottom, #e3f2fd 0%, rgba(255, 255, 255, 0.98) 100%) !important;
   border-color: rgba(59, 130, 246, 0.25) !important;
 }
+
 .light .stat-card-exam {
   background: linear-gradient(to bottom, #ffebee 0%, rgba(255, 255, 255, 0.98) 100%) !important;
   border-color: rgba(239, 68, 68, 0.25) !important;
 }
+
 .light .stat-card-question {
   background: linear-gradient(to bottom, #fffde7 0%, rgba(255, 255, 255, 0.98) 100%) !important;
   border-color: rgba(234, 179, 8, 0.25) !important;
@@ -566,6 +579,7 @@ input:-webkit-autofill:active {
   background: linear-gradient(to bottom, #e3f2fd 0%, #ffffff 100%) !important;
   border-color: rgba(59, 130, 246, 0.35) !important;
 }
+
 .light .action-btn-teacher:hover {
   background: linear-gradient(to bottom, #bbdefb 0%, #ffffff 100%) !important;
 }
@@ -574,6 +588,7 @@ input:-webkit-autofill:active {
   background: linear-gradient(to bottom, #e8f5e9 0%, #ffffff 100%) !important;
   border-color: rgba(16, 185, 129, 0.35) !important;
 }
+
 .light .action-btn-student:hover {
   background: linear-gradient(to bottom, #c8e6c9 0%, #ffffff 100%) !important;
 }
@@ -582,6 +597,7 @@ input:-webkit-autofill:active {
   background: linear-gradient(to bottom, #e0f2fe 0%, #ffffff 100%) !important;
   border-color: rgba(99, 102, 241, 0.35) !important;
 }
+
 .light .action-btn-subject:hover {
   background: linear-gradient(to bottom, #e0e7ff 0%, #ffffff 100%) !important;
 }
@@ -591,6 +607,7 @@ input:-webkit-autofill:active {
   background-color: rgba(240, 253, 244, 0.7) !important;
   border-color: rgba(16, 185, 129, 0.4) !important;
 }
+
 .light .input-3d-student:focus-within {
   border-color: rgba(16, 185, 129, 0.8) !important;
   box-shadow: 0 0 15px rgba(16, 185, 129, 0.25) !important;
@@ -600,6 +617,7 @@ input:-webkit-autofill:active {
   background-color: rgba(239, 246, 255, 0.7) !important;
   border-color: rgba(59, 130, 246, 0.4) !important;
 }
+
 .light .input-3d-teacher:focus-within {
   border-color: rgba(59, 130, 246, 0.8) !important;
   box-shadow: 0 0 15px rgba(59, 130, 246, 0.25) !important;
@@ -609,6 +627,7 @@ input:-webkit-autofill:active {
   background-color: rgba(254, 242, 242, 0.7) !important;
   border-color: rgba(239, 68, 68, 0.4) !important;
 }
+
 .light .input-3d-admin:focus-within {
   border-color: rgba(239, 68, 68, 0.8) !important;
   box-shadow: 0 0 15px rgba(239, 68, 68, 0.25) !important;
@@ -618,6 +637,7 @@ input:-webkit-autofill:active {
   background-color: rgba(250, 245, 255, 0.7) !important;
   border-color: rgba(168, 85, 247, 0.4) !important;
 }
+
 .light .input-3d-parent:focus-within {
   border-color: rgba(168, 85, 247, 0.8) !important;
   box-shadow: 0 0 15px rgba(168, 85, 247, 0.25) !important;
@@ -627,7 +647,352 @@ input:-webkit-autofill:active {
   background-color: rgba(245, 243, 255, 0.7) !important;
   border-color: rgba(99, 102, 241, 0.4) !important;
 }
+
 .light .input-3d-auth:focus-within {
   border-color: rgba(99, 102, 241, 0.8) !important;
   box-shadow: 0 0 15px rgba(99, 102, 241, 0.25) !important;
+}
+
+/* ==========================================================================
+   LIGHT MODE – EXTENDED OVERRIDES (Teacher pages: Questions, Exams, Subjects)
+   ========================================================================== */
+
+/* Card backgrounds with opacity variants */
+.light .bg-\[\#0e101a\]\/95 {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+}
+
+.light .bg-\[\#0e101a\]\/50 {
+  background-color: rgba(248, 250, 252, 0.8) !important;
+}
+
+.light .bg-\[\#0e101a\]\/30 {
+  background-color: rgba(248, 250, 252, 0.5) !important;
+}
+
+.light .bg-\[\#0c0d19\]\/50 {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.light .bg-\[\#0c0d19\]\/30 {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.light .bg-\[\#0c0d19\]\/70 {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+}
+
+/* Hover states for dark cards */
+.light .hover\:bg-\[\#121424\]:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.light .hover\:bg-\[\#0e101a\]:hover {
+  background-color: #f8fafc !important;
+}
+
+.light .hover\:bg-\[\#0c0d19\]:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* White / white-opacity backgrounds (ghost buttons, back buttons) */
+.light .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.07) !important;
+}
+
+.light .bg-white\/5 {
+  background-color: rgba(15, 23, 42, 0.04) !important;
+}
+
+.light .bg-white\/15 {
+  background-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+.light .bg-white\/20 {
+  background-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+.light .hover\:bg-white\/5:hover {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+.light .hover\:bg-white\/10:hover {
+  background-color: rgba(15, 23, 42, 0.07) !important;
+}
+
+.light .hover\:bg-white\/15:hover {
+  background-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+.light .hover\:bg-white\/20:hover {
+  background-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+/* text-white on all elements in light mode */
+.light .text-white {
+  color: #0f172a !important;
+}
+
+/* Gray-900 backgrounds used in action/icon buttons */
+.light .bg-gray-900 {
+  background-color: #f1f5f9 !important;
+}
+
+/* Stat mini-cards used in Questions/Exams pages */
+.light .bg-blue-500\/\[0\.02\] {
+  background-color: rgba(59, 130, 246, 0.06) !important;
+}
+
+.light .bg-emerald-500\/\[0\.02\] {
+  background-color: rgba(16, 185, 129, 0.06) !important;
+}
+
+.light .bg-amber-500\/\[0\.02\] {
+  background-color: rgba(245, 158, 11, 0.06) !important;
+}
+
+.light .bg-red-500\/\[0\.02\] {
+  background-color: rgba(239, 68, 68, 0.06) !important;
+}
+
+.light .bg-indigo-500\/\[0\.02\] {
+  background-color: rgba(99, 102, 241, 0.06) !important;
+}
+
+/* Score stat cards inside exam cards */
+.light .bg-amber-500\/\[0\.05\] {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+.light .bg-emerald-500\/\[0\.05\] {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.light .bg-red-500\/\[0\.05\] {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.light .bg-blue-500\/\[0\.05\] {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* select/input backgrounds inside forms */
+.light select {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Textarea color fix */
+.light textarea {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* placeholder text */
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* View Results button (blue ghost) */
+.light .bg-blue-600\/20 {
+  background-color: rgba(37, 99, 235, 0.12) !important;
+}
+
+.light .hover\:bg-blue-600\/30:hover {
+  background-color: rgba(37, 99, 235, 0.2) !important;
+}
+
+.light .border-blue-600\/20 {
+  border-color: rgba(37, 99, 235, 0.25) !important;
+}
+
+/* red-500 ghost backgrounds (delete buttons) */
+.light .bg-red-500\/10 {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.light .hover\:bg-red-500\/20:hover {
+  background-color: rgba(239, 68, 68, 0.18) !important;
+}
+
+.light .border-red-500\/20 {
+  border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+/* blue-500 ghost backgrounds (icon boxes, badges) */
+.light .bg-blue-500\/10 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+.light .hover\:bg-blue-500\/20:hover {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.light .border-blue-500\/20 {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.light .border-blue-500\/15 {
+  border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+/* emerald ghost borders */
+.light .border-emerald-500\/15 {
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+.light .border-emerald-500\/20 {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.light .border-emerald-500\/30 {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* amber ghost */
+.light .border-amber-500\/15 {
+  border-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+.light .border-amber-500\/10 {
+  border-color: rgba(245, 158, 11, 0.18) !important;
+}
+
+.light .bg-amber-500\/10 {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+.light .text-amber-400 {
+  color: #b45309 !important;
+}
+
+/* indigo ghost */
+.light .border-indigo-500\/15 {
+  border-color: rgba(99, 102, 241, 0.2) !important;
+}
+
+.light .border-indigo-500\/10 {
+  border-color: rgba(99, 102, 241, 0.18) !important;
+}
+
+.light .bg-indigo-500\/10 {
+  background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+.light .text-indigo-400 {
+  color: #4338ca !important;
+}
+
+/* Specific gray text overrides */
+.light .text-gray-600 {
+  color: #64748b !important;
+}
+
+.light .text-gray-650 {
+  color: #475569 !important;
+}
+
+/* Modal overlay (backdrop in light mode) */
+.light .bg-\[\#020205\]\/70 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* ==========================================================================
+   RESTORE WHITE TEXT ON COLORED BACKGROUNDS IN LIGHT MODE
+   (Prevents the global .text-white override from breaking colored buttons/icons)
+   ========================================================================== */
+
+/* Blue buttons & backgrounds */
+.light .bg-blue-600 .text-white,
+.light .bg-blue-500 .text-white,
+.light .bg-blue-600,
+.light .bg-blue-500 {
+  color: #ffffff !important;
+}
+
+/* Specifically target blue buttons (bg-blue-600 / bg-blue-500) */
+.light button.bg-blue-600,
+.light button.bg-blue-500,
+.light a.bg-blue-600,
+.light a.bg-blue-500 {
+  color: #ffffff !important;
+}
+
+.light button.bg-blue-600 *,
+.light button.bg-blue-500 *,
+.light a.bg-blue-600 *,
+.light a.bg-blue-500 * {
+  color: #ffffff !important;
+}
+
+/* btn-3d classes (gradient buttons used in auth/dashboard) */
+.light .btn-3d-teacher,
+.light .btn-3d-student,
+.light .btn-3d-admin,
+.light .btn-3d-parent,
+.light .btn-3d-auth-gradient {
+  color: #ffffff !important;
+}
+
+.light .btn-3d-teacher *,
+.light .btn-3d-student *,
+.light .btn-3d-admin *,
+.light .btn-3d-parent *,
+.light .btn-3d-auth-gradient * {
+  color: #ffffff !important;
+}
+
+/* Blue icon boxes (w-11 h-11 bg-blue-600 etc.) */
+.light .bg-blue-600 {
+  color: #ffffff !important;
+}
+
+/* Emerald / Green buttons */
+.light button.bg-emerald-500,
+.light button.bg-emerald-600 {
+  color: #ffffff !important;
+}
+
+.light button.bg-emerald-500 *,
+.light button.bg-emerald-600 * {
+  color: #ffffff !important;
+}
+
+/* Red / danger buttons */
+.light button.bg-red-500,
+.light button.bg-red-600 {
+  color: #ffffff !important;
+}
+
+/* Gradient buttons (create exam, schedule, etc.) */
+.light [class*="from-blue-6"][class*="to-indigo"] {
+  color: #ffffff !important;
+}
+
+.light [class*="from-blue-6"][class*="to-indigo"] * {
+  color: #ffffff !important;
+}
+
+/* Fix for the "Create Exam" / "Add Question" primary blue buttons */
+.light .shadow-\[0_4px_15px_rgba\(37\,99\,235\,0\.3\)\] {
+  color: #ffffff !important;
+}
+
+.light .shadow-\[0_4px_15px_rgba\(37\,99\,235\,0\.3\)\] * {
+  color: #ffffff !important;
+}
+
+.light .shadow-\[0_4px_20px_rgba\(37\,99\,235\,0\.25\)\] {
+  color: #ffffff !important;
+}
+
+.light .shadow-\[0_4px_20px_rgba\(37\,99\,235\,0\.25\)\] * {
+  color: #ffffff !important;
 }

@@ -47,6 +47,8 @@ const Login = () => {
       setSubmitting(false);
       if (selectedRole === 'admin') {
         navigate('/admin/dashboard');
+      } else if (selectedRole === 'teacher') {
+        navigate('/teacher/dashboard');
       }
     }, 1000);
   };

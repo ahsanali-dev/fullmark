@@ -17,64 +17,15 @@ import {
   FiCalendar,
   FiFileText,
   FiUser,
-  FiShield
+  FiShield,
+  FiHelpCircle,
+  FiHome,
+  FiClipboard
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', setActiveTab, title, subtitle, disableScroll, isModalOpen = false, showBackButton = false, onBackClick, headerActions }) => {
   const navigate = useNavigate();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'dark';
-  });
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: 'New Student registered: Ahmad', time: '5m ago', read: false, type: 'student' },
-    { id: 2, text: 'System update completed successfully.', time: '2h ago', read: false, type: 'system' },
-    { id: 3, text: 'New subject added to curriculum', time: '1d ago', read: true, type: 'content' }
-  ]);
-  const userMenuRef = useRef(null);
-  const notificationsRef = useRef(null);
-
-  useEffect(() => {
-    if (theme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-    localStorage.setItem('theme', theme);
-    window.dispatchEvent(new Event('themeChange'));
-  }, [theme]);
-
-  useEffect(() => {
-    const handleThemeChange = () => {
-      const storedTheme = localStorage.getItem('theme') || 'dark';
-      if (storedTheme !== theme) {
-        setTheme(storedTheme);
-      }
-    };
-    window.addEventListener('themeChange', handleThemeChange);
-    return () => window.removeEventListener('themeChange', handleThemeChange);
-  }, [theme]);
-
-  // Close dropdowns if clicked outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setShowUserMenu(false);
-      }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
-        setShowNotifications(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleLogout = () => {
-    toast.success('Logged out successfully!');
-    navigate('/login');
-  };
 
   // Get color theme based on role
   const getRoleConfig = () => {
@@ -106,11 +57,11 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
           dotClass: 'bg-blue-500',
           activeMenuClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]',
           menus: [
-            { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
-            { id: 'classes', label: 'My Classes', icon: FiUsers },
-            { id: 'exams', label: 'Manage Exams', icon: FiFileText },
-            { id: 'reports', label: 'Reports', icon: FiBarChart2 },
-            { id: 'settings', label: 'Settings', icon: FiSettings }
+            { id: 'dashboard', label: 'Home', icon: FiHome },
+            { id: 'subjects', label: 'Subjects', icon: FiBookOpen },
+            { id: 'questions', label: 'Questions', icon: FiHelpCircle },
+            { id: 'exams', label: 'Exams', icon: FiClipboard },
+            { id: 'settings', label: 'Profile', icon: FiUser }
           ]
         };
       case 'parent':
@@ -152,6 +103,99 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
   };
 
   const config = getRoleConfig();
+
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'dark';
+  });
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: 'New Student registered: Ahmad', time: '5m ago', read: false, type: 'student' },
+    { id: 2, text: 'System update completed successfully.', time: '2h ago', read: false, type: 'system' },
+    { id: 3, text: 'New subject added to curriculum', time: '1d ago', read: true, type: 'content' }
+  ]);
+  const userMenuRef = useRef(null);
+  const notificationsRef = useRef(null);
+
+  const [profileName, setProfileName] = useState('User');
+  const [profileAvatar, setProfileAvatar] = useState('TR');
+
+  useEffect(() => {
+    const loadProfile = () => {
+      if (role === 'teacher') {
+        const stored = localStorage.getItem('teacher_profile');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            setProfileName(parsed.name || 'Ahsan Ali');
+            if (parsed.name) {
+              setProfileAvatar(parsed.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2));
+            } else {
+              setProfileAvatar('AA');
+            }
+          } catch (e) {
+            setProfileName('Ahsan Ali');
+            setProfileAvatar('AA');
+          }
+        } else {
+          setProfileName('Ahsan Ali');
+          setProfileAvatar('AA');
+        }
+      } else {
+        setProfileName(role === 'admin' ? 'Admin Panel' : 'User');
+        setProfileAvatar(config.avatarText);
+      }
+    };
+    loadProfile();
+    window.addEventListener('storage', loadProfile);
+    window.addEventListener('profileUpdate', loadProfile);
+    return () => {
+      window.removeEventListener('storage', loadProfile);
+      window.removeEventListener('profileUpdate', loadProfile);
+    };
+  }, [role, config.avatarText]);
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+    localStorage.setItem('theme', theme);
+    window.dispatchEvent(new Event('themeChange'));
+  }, [theme]);
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const storedTheme = localStorage.getItem('theme') || 'dark';
+      if (storedTheme !== theme) {
+        setTheme(storedTheme);
+      }
+    };
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, [theme]);
+
+  // Close dropdowns if clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    toast.success('Logged out successfully!');
+    navigate('/login');
+  };
+
+
 
   const getHeaderTitle = () => {
     if (title) return title;
@@ -217,9 +261,21 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
         <div className="relative" ref={userMenuRef}>
           {showUserMenu && (
             <div className="absolute bottom-full left-0 w-full mb-3 bg-[#111222] border border-gray-800 rounded-2xl p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-fade-in">
+              {role === 'teacher' && (
+                <button
+                  onClick={() => {
+                    navigate('/teacher/settings');
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-300 hover:bg-gray-800/40 rounded-xl transition-all duration-200 cursor-pointer mb-1 text-left"
+                >
+                  <FiUser className="text-base" />
+                  My Profile
+                </button>
+              )}
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200 cursor-pointer"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200 cursor-pointer text-left"
               >
                 <FiLogOut className="text-base" />
                 Log Out
@@ -232,10 +288,10 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
           >
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm bg-gradient-to-r ${config.gradientClass}`}>
-                {config.avatarText}
+                {profileAvatar}
               </div>
               <div className="text-left">
-                <p className="text-sm font-bold text-white leading-tight">Admin Panel</p>
+                <p className="text-sm font-bold text-white leading-tight">{profileName}</p>
                 <p className="text-xs text-gray-500">{config.roleName}</p>
               </div>
             </div>
@@ -352,17 +408,29 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center font-bold text-white text-xs sm:text-sm transition-transform active:scale-95 cursor-pointer bg-gradient-to-r ${config.gradientClass}`}
               >
-                {config.avatarText}
+                {profileAvatar}
               </button>
               {showUserMenu && (
                 <div className="absolute right-0 mt-3 w-48 bg-[#111222] border border-gray-800 rounded-2xl p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl z-50">
                   <div className="px-3.5 py-2.5 border-b border-gray-800/50 mb-1">
-                    <p className="text-xs font-bold text-white leading-tight">Admin Panel</p>
-                    <p className="text-[10px] text-gray-500">{config.roleName}</p>
+                    <p className="text-xs font-bold text-white leading-tight text-left">{profileName}</p>
+                    <p className="text-[10px] text-gray-500 text-left">{config.roleName}</p>
                   </div>
+                  {role === 'teacher' && (
+                    <button
+                      onClick={() => {
+                        navigate('/teacher/settings');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3.5 py-2 text-sm font-bold text-gray-300 hover:bg-gray-800/40 rounded-xl transition-all duration-200 cursor-pointer text-left mb-1"
+                    >
+                      <FiUser className="text-sm" />
+                      My Profile
+                    </button>
+                  )}
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200 cursor-pointer"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200 cursor-pointer text-left"
                   >
                     <FiLogOut className="text-sm" />
                     Log Out
