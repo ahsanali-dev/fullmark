@@ -17,12 +17,13 @@ import {
   FiInfo
 } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
-import * as Yup from 'yup';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
+import ModalWrapper from '../../components/shared/ModalWrapper';
+import { QuestionSchema } from '../../schemas/questionSchema';
 
 import {
   getStoredSubjects,
@@ -30,15 +31,7 @@ import {
   setStoredQuestions
 } from './store';
 
-const QuestionSchema = Yup.object().shape({
-  subjectId: Yup.string().required('Please select a subject'),
-  text: Yup.string().min(5, 'Question must be at least 5 characters').required('Question text is required'),
-  optionA: Yup.string().required('Option A is required'),
-  optionB: Yup.string().required('Option B is required'),
-  optionC: Yup.string().required('Option C is required'),
-  optionD: Yup.string().required('Option D is required'),
-  correctOption: Yup.string().oneOf(['A', 'B', 'C', 'D'], 'Invalid correct option').required('Correct option is required')
-});
+// QuestionSchema imported from src/schemas/questionSchema.js
 
 const TeacherQuestions = () => {
   const navigate = useNavigate();

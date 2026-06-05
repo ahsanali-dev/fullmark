@@ -241,7 +241,7 @@ const SubjectDetails = () => {
                           </div>
                         </div>
 
-                        {/* <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <span className="text-[10px] font-black uppercase bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full">
                             Published
                           </span>
@@ -252,7 +252,7 @@ const SubjectDetails = () => {
                           >
                             <FiTrash2 size={13} />
                           </button>
-                        </div> */}
+                        </div>
                       </div>
 
                       {/* Divider */}

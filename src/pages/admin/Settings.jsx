@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   FiChevronLeft,
   FiEdit2,
   FiCamera,
@@ -23,23 +23,12 @@ import {
 import { MdPalette } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { Formik, Form } from 'formik';
-import * as Yup from 'yup';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
+import ModalWrapper from '../../components/shared/ModalWrapper';
+import { EditProfileSchema, ChangePasswordSchema } from '../../schemas/authSchemas';
 
-const EditProfileSchema = Yup.object().shape({
-  name: Yup.string().required('Full Name is required'),
-  email: Yup.string().email('Invalid email address').required('Email is required'),
-  phone: Yup.string().required('Phone number is required'),
-});
-
-const ChangePasswordSchema = Yup.object().shape({
-  currentPassword: Yup.string().required('Current password is required'),
-  newPassword: Yup.string().min(6, 'Password must be at least 6 characters').required('New password is required'),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref('newPassword'), null], 'Passwords must match')
-    .required('Confirm password is required'),
-});
+// Schemas imported from src/schemas/authSchemas.js
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -113,19 +102,19 @@ const Settings = () => {
   const isModalOpen = isEditProfileOpen || isChangePasswordOpen;
 
   return (
-    <DashboardLayout 
-      role="admin" 
-      activeTab="settings" 
-      title="System Settings" 
+    <DashboardLayout
+      role="admin"
+      activeTab="settings"
+      title="System Settings"
       subtitle="Configure Platform Options"
       disableScroll={true}
       isModalOpen={isModalOpen}
     >
       <div className="h-full flex flex-col px-4 md:px-8 py-4 overflow-hidden gap-5 animate-fade-in relative transition-all duration-300">
-        
+
         {/* Scrollable Settings Panel */}
         <div className="flex-1 overflow-y-auto pr-1 pb-36 flex flex-col gap-6">
-          
+
           {/* 1. Profile Banner Hero */}
           <div className="w-full bg-gradient-to-br from-red-700/90 to-rose-600/90 text-white rounded-3xl p-6 relative overflow-hidden flex flex-col gap-6 shadow-[0_15px_30px_rgba(239,68,68,0.2)] shrink-0">
             {/* Banner Background decorative elements */}
@@ -134,17 +123,17 @@ const Settings = () => {
 
             {/* Header controls inside banner */}
             <div className="flex items-center justify-between z-10">
-              <button 
-                onClick={() => navigate(-1)} 
+              <button
+                onClick={() => navigate(-1)}
                 className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/10"
               >
                 <FiChevronLeft size={20} />
               </button>
               <span className="text-sm font-black tracking-wide uppercase text-white/90">My Profile</span>
-              <button 
+              <button
                 onClick={() => {
                   setIsEditProfileOpen(true);
-                }} 
+                }}
                 className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/10"
               >
                 <FiEdit2 size={16} />
@@ -157,7 +146,7 @@ const Settings = () => {
                 <div className="w-24 h-24 rounded-[2rem] bg-white/15 border border-white/25 flex items-center justify-center text-white text-3xl font-black shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
                   {profileData.name.substring(0, 2).toUpperCase()}
                 </div>
-                <button 
+                <button
                   onClick={() => setIsEditProfileOpen(true)}
                   className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-yellow-500 text-gray-900 border-2 border-red-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg"
                 >
@@ -223,9 +212,9 @@ const Settings = () => {
             </div>
 
             <div className="flex flex-col gap-2.5">
-              
+
               {/* Edit Profile Row */}
-              <button 
+              <button
                 onClick={() => {
                   setIsEditProfileOpen(true);
                 }}
@@ -244,7 +233,7 @@ const Settings = () => {
               </button>
 
               {/* Change Password Row */}
-              <button 
+              <button
                 onClick={() => setIsChangePasswordOpen(true)}
                 className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
               >
@@ -261,7 +250,7 @@ const Settings = () => {
               </button>
 
               {/* Phone Number Row */}
-              <button 
+              <button
                 onClick={() => {
                   setIsEditProfileOpen(true);
                 }}
@@ -306,16 +295,14 @@ const Settings = () => {
               </div>
 
               {/* Slider Toggle */}
-              <button 
+              <button
                 onClick={toggleTheme}
-                className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-300 ease-in-out focus:outline-none shadow-md ${
-                  isDarkMode ? 'bg-[#ca8a04]' : 'bg-black border border-gray-400'
-                }`}
+                className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-300 ease-in-out focus:outline-none shadow-md ${isDarkMode ? 'bg-[#ca8a04]' : 'bg-black border border-gray-400'
+                  }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-lg transition duration-300 ease-in-out ${
-                    isDarkMode ? 'translate-x-5.5' : 'translate-x-0'
-                  }`}
+                  className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-lg transition duration-300 ease-in-out ${isDarkMode ? 'translate-x-5.5' : 'translate-x-0'
+                    }`}
                 />
               </button>
             </div>
@@ -331,9 +318,9 @@ const Settings = () => {
             </div>
 
             <div className="flex flex-col gap-2.5">
-              
+
               {/* User Management */}
-              <button 
+              <button
                 onClick={() => navigate('/admin/users')}
                 className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-emerald-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
               >
@@ -350,7 +337,7 @@ const Settings = () => {
               </button>
 
               {/* Subject Management */}
-              <button 
+              <button
                 onClick={() => navigate('/admin/content')}
                 className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
               >
@@ -367,7 +354,7 @@ const Settings = () => {
               </button>
 
               {/* Platform Reports */}
-              <button 
+              <button
                 onClick={() => navigate('/admin/reports')}
                 className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-cyan-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
               >
@@ -387,7 +374,7 @@ const Settings = () => {
           </div>
 
           {/* 6. Sign Out Button */}
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full py-4 border border-red-500/30 hover:border-red-500/60 bg-red-500/5 hover:bg-red-500/10 rounded-2xl font-black text-red-500 flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer mt-4"
           >
@@ -401,16 +388,16 @@ const Settings = () => {
 
       {/* MODAL 1: EDIT PROFILE BOTTOM SHEET */}
       {isEditProfileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center transition-all duration-300 animate-fade-in"
           onClick={() => setIsEditProfileOpen(false)}
         >
-          <div 
+          <div
             className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden transition-transform duration-300 animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
-            
+
             <h3 className="text-xl sm:text-2xl font-black text-white mb-6 text-left">
               Edit Profile
             </h3>
@@ -467,16 +454,16 @@ const Settings = () => {
 
       {/* MODAL 2: CHANGE PASSWORD BOTTOM SHEET */}
       {isChangePasswordOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center transition-all duration-300 animate-fade-in"
           onClick={() => setIsChangePasswordOpen(false)}
         >
-          <div 
+          <div
             className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden transition-transform duration-300 animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
-            
+
             <h3 className="text-xl sm:text-2xl font-black text-white mb-6 text-left">
               Change Password
             </h3>

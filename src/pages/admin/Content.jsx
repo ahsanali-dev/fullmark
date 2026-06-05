@@ -13,22 +13,15 @@ import {
   FiChevronDown
 } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
-import * as Yup from 'yup';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
+import ModalWrapper from '../../components/shared/ModalWrapper';
+import { SubjectSchema } from '../../schemas/adminSchemas';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const SubjectSchema = Yup.object().shape({
-  title: Yup.string()
-    .min(2, 'Title must be at least 2 characters')
-    .required('Subject Title is required'),
-  description: Yup.string()
-    .min(5, 'Description must be at least 5 characters')
-    .required('Description is required'),
-  teacher: Yup.string().required('Assigning a teacher is required'),
-});
+// SubjectSchema imported from src/schemas/adminSchemas.js
 
 const Content = () => {
   const navigate = useNavigate();

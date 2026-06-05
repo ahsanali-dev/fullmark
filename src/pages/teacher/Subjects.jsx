@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FiBookOpen, 
-  FiHelpCircle, 
-  FiUsers, 
-  FiChevronRight, 
-  FiSearch 
+import {
+  FiBookOpen,
+  FiHelpCircle,
+  FiUsers,
+  FiChevronRight,
+  FiSearch
 } from 'react-icons/fi';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { getStoredSubjects, getStoredQuestions, getStoredExams } from './store';
@@ -41,8 +41,8 @@ const TeacherSubjects = () => {
   }));
 
   const filteredSubjects = subjectsWithCounts.filter(
-    s => s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-         s.description.toLowerCase().includes(searchQuery.toLowerCase())
+    s => s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -53,16 +53,6 @@ const TeacherSubjects = () => {
       subtitle={`${subjects.length} subjects assigned`}
     >
       <div className="w-full max-w-full p-6 md:p-8 pb-32 text-left flex flex-col gap-6 animate-fade-in">
-        
-        {/* Header block without back and add button */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <div>
-              <h2 className="text-xl md:text-2xl font-black text-white">My Subjects</h2>
-              <p className="text-xs text-gray-500 font-semibold mt-1">{subjects.length} subjects assigned</p>
-            </div>
-          </div>
-        </div>
 
         {/* Search bar */}
         <div className="relative w-full">
@@ -104,7 +94,7 @@ const TeacherSubjects = () => {
                   <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)] shrink-0">
                     <FiBookOpen size={24} />
                   </div>
-                  
+
                   <div className="flex items-center gap-1.5 z-10">
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
@@ -112,7 +102,7 @@ const TeacherSubjects = () => {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="text-left mt-1">
                   <div className="text-xl font-extrabold text-white leading-tight capitalize">{sub.title}</div>
                   <p className="text-xs text-gray-500 font-semibold mt-1 leading-normal line-clamp-1">{sub.description}</p>
@@ -129,7 +119,7 @@ const TeacherSubjects = () => {
                       {sub.studentsCount} Students
                     </span>
                   </div>
-                  
+
                   <button
                     onClick={() => {
                       navigate(`/teacher/subjects/${sub.id}`);

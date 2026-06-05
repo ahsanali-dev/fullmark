@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FiUser, 
-  FiLock, 
-  FiPhone, 
-  FiMail, 
-  FiCheck, 
-  FiX, 
-  FiChevronRight, 
+import {
+  FiUser,
+  FiLock,
+  FiPhone,
+  FiMail,
+  FiCheck,
+  FiX,
+  FiChevronRight,
   FiCamera,
   FiChevronLeft,
   FiMoon,
@@ -17,32 +17,20 @@ import {
   FiEdit3
 } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
-import * as Yup from 'yup';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
+import ModalWrapper from '../../components/shared/ModalWrapper';
+import { TeacherProfileSchema, ChangePasswordSchema } from '../../schemas/authSchemas';
 
 import {
   getStoredProfile,
   setStoredProfile
 } from './store';
 
-// Validation Schemas
-const ProfileSchema = Yup.object().shape({
-  name: Yup.string().required('Full Name is required'),
-  phone: Yup.string().nullable(),
-  bio: Yup.string().max(200, 'Bio must be less than 200 characters').nullable()
-});
-
-const ChangePasswordSchema = Yup.object().shape({
-  currentPassword: Yup.string().required('Current password is required'),
-  newPassword: Yup.string().min(6, 'Password must be at least 6 characters').required('New password is required'),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref('newPassword'), null], 'Passwords must match')
-    .required('Confirm password is required'),
-});
+// Schemas imported from src/schemas/authSchemas.js
 
 const TeacherSettings = () => {
   const navigate = useNavigate();
@@ -124,11 +112,11 @@ const TeacherSettings = () => {
       isModalOpen={isModalActive}
     >
       <div className="w-full max-w-full p-6 md:p-8 pb-32 text-left flex flex-col gap-6 animate-fade-in">
-        
+
         {/* A. Hero Profile Banner */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2.5rem] p-6 text-center relative overflow-hidden shadow-2xl">
           <div className="absolute top-6 left-6 flex items-center justify-center">
-            <button 
+            <button
               onClick={() => navigate('/teacher/dashboard')}
               className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
             >
@@ -136,7 +124,7 @@ const TeacherSettings = () => {
             </button>
           </div>
           <div className="absolute top-6 right-6 flex items-center justify-center">
-            <button 
+            <button
               onClick={() => setIsEditProfileOpen(true)}
               className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer"
             >
@@ -152,7 +140,7 @@ const TeacherSettings = () => {
             <span className="text-3xl font-black text-white tracking-wide">
               {profileData.avatarText}
             </span>
-            <button 
+            <button
               onClick={() => setIsEditProfileOpen(true)}
               className="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-yellow-500 text-gray-950 flex items-center justify-center border-4 border-indigo-600 hover:scale-105 active:scale-95 transition-transform cursor-pointer shadow-md"
             >
@@ -181,7 +169,7 @@ const TeacherSettings = () => {
               </div>
               <h4 className="text-base font-extrabold text-white">About Me</h4>
             </div>
-            <button 
+            <button
               onClick={() => setIsEditProfileOpen(true)}
               className="text-xs font-extrabold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
             >
@@ -216,7 +204,7 @@ const TeacherSettings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Edit Profile Row */}
-            <div 
+            <div
               onClick={() => setIsEditProfileOpen(true)}
               className="flex items-center justify-between p-4 bg-[#0e101a] hover:bg-[#121424] border border-gray-800/80 rounded-2xl transition-all cursor-pointer group"
             >
@@ -233,7 +221,7 @@ const TeacherSettings = () => {
             </div>
 
             {/* Change Password Row */}
-            <div 
+            <div
               onClick={() => setIsChangePasswordOpen(true)}
               className="flex items-center justify-between p-4 bg-[#0e101a] hover:bg-[#121424] border border-gray-800/80 rounded-2xl transition-all cursor-pointer group"
             >
@@ -250,7 +238,7 @@ const TeacherSettings = () => {
             </div>
 
             {/* Phone Number Row */}
-            <div 
+            <div
               onClick={() => setIsEditProfileOpen(true)}
               className="flex items-center justify-between p-4 bg-[#0e101a] hover:bg-[#121424] border border-gray-800/80 rounded-2xl transition-all cursor-pointer group"
             >
@@ -292,14 +280,13 @@ const TeacherSettings = () => {
             </div>
 
             {/* Toggle Switch */}
-            <button 
+            <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none flex items-center ${
-                theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-800 justify-start'
-              }`}
+              className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-800 justify-start'
+                }`}
             >
-              <motion.div 
-                layout 
+              <motion.div
+                layout
                 className="w-6 h-6 rounded-full bg-white shadow-md"
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
               />
@@ -308,7 +295,7 @@ const TeacherSettings = () => {
         </div>
 
         {/* E. Sign Out Button */}
-        <button 
+        <button
           onClick={handleLogout}
           className="w-full py-4 mt-6 border border-red-500/40 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all duration-300 active:scale-95 cursor-pointer shadow-sm"
         >
@@ -321,11 +308,11 @@ const TeacherSettings = () => {
       {/* MODAL: EDIT PROFILE */}
       <AnimatePresence>
         {isEditProfileOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
             onClick={() => setIsEditProfileOpen(false)}
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
@@ -333,8 +320,8 @@ const TeacherSettings = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
-              
-              <button 
+
+              <button
                 onClick={() => setIsEditProfileOpen(false)}
                 className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
               >
@@ -351,7 +338,7 @@ const TeacherSettings = () => {
                   phone: profileData.phone,
                   bio: profileData.bio
                 }}
-                validationSchema={ProfileSchema}
+                validationSchema={TeacherProfileSchema}
                 onSubmit={handleProfileSave}
                 enableReinitialize
               >
@@ -365,7 +352,7 @@ const TeacherSettings = () => {
                       icon={FiUser}
                       roleColor="teacher"
                     />
-                    
+
                     <Input
                       name="phone"
                       type="text"
@@ -411,11 +398,11 @@ const TeacherSettings = () => {
       {/* MODAL: CHANGE PASSWORD */}
       <AnimatePresence>
         {isChangePasswordOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
             onClick={() => setIsChangePasswordOpen(false)}
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
@@ -423,8 +410,8 @@ const TeacherSettings = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
-              
-              <button 
+
+              <button
                 onClick={() => setIsChangePasswordOpen(false)}
                 className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
               >

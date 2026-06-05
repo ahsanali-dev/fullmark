@@ -15,13 +15,16 @@ import {
   FiCheck
 } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
-import * as Yup from 'yup';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import StatCard from '../../components/shared/StatCard';
+import ModalWrapper from '../../components/shared/ModalWrapper';
+import { QuestionSchema } from '../../schemas/questionSchema';
+import { ExamSchema } from '../../schemas/examSchema';
 
 import {
   getStoredSubjects,
@@ -31,24 +34,7 @@ import {
   setStoredExams
 } from './store';
 
-// Validation Schemas
-const QuestionSchema = Yup.object().shape({
-  subjectId: Yup.string().required('Please select a subject'),
-  text: Yup.string().min(5, 'Question must be at least 5 characters').required('Question text is required'),
-  optionA: Yup.string().required('Option A is required'),
-  optionB: Yup.string().required('Option B is required'),
-  optionC: Yup.string().required('Option C is required'),
-  optionD: Yup.string().required('Option D is required'),
-  correctOption: Yup.string().oneOf(['A', 'B', 'C', 'D'], 'Invalid correct option').required('Correct option is required')
-});
-
-const ExamSchema = Yup.object().shape({
-  title: Yup.string().min(3, 'Title must be at least 3 characters').required('Exam title is required'),
-  subjectId: Yup.string().required('Please select a subject'),
-  duration: Yup.number().positive('Duration must be positive').required('Duration in minutes is required'),
-  date: Yup.string().required('Exam date is required'),
-  questionsCount: Yup.number().min(1, 'Select at least 1 question').required('Number of questions is required')
-});
+// Schemas imported from src/schemas/
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();

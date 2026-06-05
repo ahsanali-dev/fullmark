@@ -19,36 +19,14 @@ import {
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Formik, Form, useFormik, FormikProvider } from 'formik';
-import * as Yup from 'yup';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
+import StatCard from '../../components/shared/StatCard';
+import ModalWrapper from '../../components/shared/ModalWrapper';
+import { UserSchema, SubjectSchema } from '../../schemas/adminSchemas';
 
-const UserSchema = Yup.object().shape({
-  name: Yup.string()
-    .min(3, 'Name must be at least 3 characters')
-    .required('Full Name is required'),
-  email: Yup.string()
-    .email('Invalid email address')
-    .required('Email Address is required'),
-  password: Yup.string()
-    .min(6, 'Password must be at least 6 characters')
-    .required('Password is required'),
-  role: Yup.string()
-    .oneOf(['Student', 'Teacher', 'Parent'], 'Invalid role')
-    .required('Role selection is required')
-});
-
-const SubjectSchema = Yup.object().shape({
-  title: Yup.string()
-    .min(2, 'Title must be at least 2 characters')
-    .required('Subject Title is required'),
-  description: Yup.string()
-    .min(5, 'Description must be at least 5 characters')
-    .required('Description is required'),
-  teacher: Yup.string()
-    .required('Teacher selection is required')
-});
+// Schemas imported from src/schemas/adminSchemas.js
 
 const Dashboard = () => {
   const navigate = useNavigate();
