@@ -1,5 +1,6 @@
 import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import Landing from '../pages/Landing';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import ForgotPassword from '../pages/auth/ForgotPassword';
@@ -20,6 +21,10 @@ import TeacherEditQuestion from '../pages/teacher/EditQuestion';
 import TeacherCreateExam from '../pages/teacher/CreateExam';
 
 const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Landing />,
+  },
   {
     path: '/login',
     element: <Login />,
@@ -100,10 +105,10 @@ const router = createBrowserRouter([
     path: '/admin',
     element: <Navigate to="/admin/dashboard" replace />,
   },
-  {
-    path: '/',
-    element: <Navigate to="/login" replace />,
-  },
+  // {
+  //   path: '/',
+  //   element: <Navigate to="/login" replace />,
+  // },
   {
     path: '*',
     element: <Navigate to="/login" replace />,
