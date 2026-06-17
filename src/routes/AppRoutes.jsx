@@ -20,6 +20,17 @@ import TeacherSubjectDetails from '../pages/teacher/SubjectDetails';
 import TeacherEditQuestion from '../pages/teacher/EditQuestion';
 import TeacherCreateExam from '../pages/teacher/CreateExam';
 
+import StudentDashboard from '../pages/student/StudentDashboard';
+import StudentCourses from '../pages/student/Courses';
+import StudentCourseDetails from '../pages/student/CourseDetails';
+import StudentCourseLessons from '../pages/student/CourseLessons';
+import StudentLessonPlayer from '../pages/student/LessonPlayer';
+import StudentExams from '../pages/student/Exams';
+import StudentTakeExam from '../pages/student/TakeExam';
+import StudentResults from '../pages/student/Results';
+import StudentResultDetails from '../pages/student/ResultDetails';
+import StudentProfile from '../pages/student/Profile';
+
 const router = createBrowserRouter([
   {
     path: '/',
@@ -98,6 +109,50 @@ const router = createBrowserRouter([
     element: <TeacherSettings />,
   },
   {
+    path: '/student/dashboard',
+    element: <StudentDashboard />,
+  },
+  {
+    path: '/student/courses',
+    element: <StudentCourses />,
+  },
+  {
+    path: '/student/courses/:courseId',
+    element: <StudentCourseDetails />,
+  },
+  {
+    path: '/student/courses/:courseId/lessons',
+    element: <StudentCourseLessons />,
+  },
+  {
+    path: '/student/courses/:courseId/lessons/:lessonId',
+    element: <StudentLessonPlayer />,
+  },
+  {
+    path: '/student/exams',
+    element: <StudentExams />,
+  },
+  {
+    path: '/student/exams/:examId',
+    element: <StudentTakeExam />,
+  },
+  {
+    path: '/student/results',
+    element: <StudentResults />,
+  },
+  {
+    path: '/student/results/:attemptId',
+    element: <StudentResultDetails />,
+  },
+  {
+    path: '/student/profile',
+    element: <StudentProfile />,
+  },
+  {
+    path: '/student',
+    element: <Navigate to="/student/dashboard" replace />,
+  },
+  {
     path: '/teacher',
     element: <Navigate to="/teacher/dashboard" replace />,
   },
@@ -105,10 +160,6 @@ const router = createBrowserRouter([
     path: '/admin',
     element: <Navigate to="/admin/dashboard" replace />,
   },
-  // {
-  //   path: '/',
-  //   element: <Navigate to="/login" replace />,
-  // },
   {
     path: '*',
     element: <Navigate to="/login" replace />,

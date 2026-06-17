@@ -119,7 +119,7 @@ const TeacherQuestions = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/teacher/subjects/select/add-question')}
-              className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all flex items-center gap-1.5 cursor-pointer text-sm"
+              className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all flex items-center gap-1.5 cursor-pointer text-base"
             >
               <FiPlus size={16} />
               <span>Add Question</span>
@@ -128,7 +128,7 @@ const TeacherQuestions = () => {
               onClick={() => {
                 toast.success('Downloading Question Bank PDF...');
               }}
-              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black transition-all flex items-center gap-1.5 cursor-pointer text-sm"
+              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black transition-all flex items-center gap-1.5 cursor-pointer text-base"
             >
               <FiFileText size={16} />
               <span>PDF</span>
@@ -144,7 +144,7 @@ const TeacherQuestions = () => {
               placeholder="Search questions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-650"
+              className="w-full pl-12 pr-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-655"
             />
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" size={18} />
           </div>
@@ -153,7 +153,7 @@ const TeacherQuestions = () => {
             <select
               value={selectedSubjectFilter}
               onChange={(e) => setSelectedSubjectFilter(e.target.value)}
-              className="w-full pl-11 pr-10 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0"
+              className="w-full pl-11 pr-10 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0"
             >
               <option value="all">All Subjects</option>
               {subjects.map(s => (
@@ -168,24 +168,24 @@ const TeacherQuestions = () => {
         <div className="grid grid-cols-4 gap-2.5 md:gap-4">
           <div className="p-3.5 bg-blue-500/[0.02] border border-blue-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-blue-400 block">{totalCount}</span>
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1 block">Total</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Total</span>
           </div>
           <div className="p-3.5 bg-emerald-500/[0.02] border border-emerald-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-emerald-400 block">{easyCount}</span>
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1 block">Easy</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Easy</span>
           </div>
           <div className="p-3.5 bg-amber-500/[0.02] border border-amber-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-amber-400 block">{mediumCount}</span>
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1 block">Medium</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Medium</span>
           </div>
           <div className="p-3.5 bg-red-500/[0.02] border border-red-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-red-400 block">{hardCount}</span>
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1 block">Hard</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Hard</span>
           </div>
         </div>
 
         {/* Results Counter & Sort */}
-        <div className="flex justify-between items-center text-xs font-bold text-gray-400 px-1">
+        <div className="flex justify-between items-center text-sm font-bold text-gray-400 px-1">
           <span>{filteredQuestions.length} results</span>
           <div className="flex items-center gap-1.5 text-blue-450 hover:text-blue-400 cursor-pointer">
             <FiSliders size={13} />
@@ -197,8 +197,8 @@ const TeacherQuestions = () => {
         {filteredQuestions.length === 0 ? (
           <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] flex flex-col items-center justify-center">
             <FiHelpCircle className="text-gray-650 mb-3" size={40} />
-            <span className="text-sm font-extrabold text-gray-500">No questions found</span>
-            <p className="text-xs text-gray-600 font-semibold mt-1">Try searching a different wording or check filters</p>
+            <span className="text-lg font-extrabold text-gray-500">No questions found</span>
+            <p className="text-base text-gray-600 font-semibold mt-1">Try searching a different wording or check filters</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -224,10 +224,10 @@ const TeacherQuestions = () => {
                         <FiHelpCircle size={18} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-extrabold text-white leading-tight capitalize max-w-[140px] md:max-w-[280px] truncate">
+                        <h4 className="text-lg font-extrabold text-white leading-tight capitalize max-w-[140px] md:max-w-[280px] truncate">
                           {q.text}
                         </h4>
-                        <span className="text-[10px] text-gray-500 font-bold mt-1 block uppercase">
+                        <span className="text-sm text-gray-500 font-bold mt-1 block uppercase">
                           {subObj ? subObj.title : 'Unassigned'}
                         </span>
                       </div>
@@ -246,7 +246,7 @@ const TeacherQuestions = () => {
 
                       {/* Dropdown Menu */}
                       {activeMenuId === q.id && (
-                        <div className="absolute right-0 top-10 bg-[#0c0d19] border border-gray-800 rounded-2xl shadow-xl p-1.5 z-20 flex flex-col gap-0.5 w-28 text-xs font-bold">
+                        <div className="absolute right-0 top-10 bg-[#0c0d19] border border-gray-800 rounded-2xl shadow-xl p-1.5 z-20 flex flex-col gap-0.5 w-28 text-sm font-bold">
                           <button
                             onClick={() => {
                               navigate(`/teacher/subjects/${q.subjectId}/edit-question/${q.id}`);
@@ -279,12 +279,12 @@ const TeacherQuestions = () => {
                       return (
                         <div
                           key={opt.key}
-                          className={`text-xs font-semibold px-4 py-3 rounded-2xl border flex items-center gap-2.5 transition-all ${isCorrect
+                          className={`text-base font-semibold px-4 py-3 rounded-2xl border flex items-center gap-2.5 transition-all ${isCorrect
                             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold'
                             : 'bg-gray-950/20 border-gray-800 text-gray-400'
                             }`}
                         >
-                          <span className={`text-xs font-black mr-0.5 ${isCorrect ? 'text-emerald-400' : 'text-gray-500'
+                          <span className={`text-base font-black mr-0.5 ${isCorrect ? 'text-emerald-400' : 'text-gray-500'
                             }`}>
                             {opt.key}.
                           </span>
@@ -298,7 +298,7 @@ const TeacherQuestions = () => {
                   <div className="border-t border-gray-800/40 my-1" />
 
                   {/* Badges & Actions bottom row */}
-                  <div className="flex justify-between items-center text-[10px] font-black uppercase text-gray-500 tracking-wider pt-1">
+                  <div className="flex justify-between items-center text-sm font-black uppercase text-gray-500 tracking-wider pt-1">
                     <div className="flex items-center gap-2">
                       <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
                         MCQ

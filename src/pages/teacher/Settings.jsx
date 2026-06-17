@@ -132,7 +132,7 @@ const TeacherSettings = () => {
             </button>
           </div>
 
-          <span className="text-[10px] font-black tracking-widest text-blue-200 uppercase block mt-2">
+          <span className="text-xs font-black tracking-widest text-blue-200 uppercase block mt-2">
             My Profile
           </span>
 
@@ -151,11 +151,11 @@ const TeacherSettings = () => {
           <h3 className="text-xl md:text-2xl font-black text-white capitalize leading-tight">
             {profileData.name}
           </h3>
-          <p className="text-xs text-blue-100 font-semibold mt-1">
+          <p className="text-sm text-blue-100 font-semibold mt-1">
             {profileData.email}
           </p>
 
-          <span className="inline-flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-xs font-black bg-white/10 border border-white/20 text-white mt-4 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 px-4.5 py-1.5 rounded-full text-sm font-black bg-white/10 border border-white/20 text-white mt-4 shadow-sm">
             🎓 Teacher
           </span>
         </div>
@@ -171,17 +171,17 @@ const TeacherSettings = () => {
             </div>
             <button
               onClick={() => setIsEditProfileOpen(true)}
-              className="text-xs font-extrabold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+              className="text-sm font-extrabold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
             >
               Edit
             </button>
           </div>
 
-          <p className="text-sm font-semibold text-gray-400 italic">
+          <p className="text-base font-semibold text-gray-400 italic">
             {profileData.bio || 'No bio yet. Tap Edit to add one.'}
           </p>
 
-          <div className="flex flex-col gap-2.5 mt-2 text-xs font-semibold text-gray-400">
+          <div className="flex flex-col gap-2.5 mt-2 text-sm font-semibold text-gray-400">
             <div className="flex items-center gap-3">
               <FiMail className="text-gray-500 text-sm shrink-0" />
               <span>{profileData.email}</span>
@@ -213,8 +213,8 @@ const TeacherSettings = () => {
                   <FiUser size={18} />
                 </div>
                 <div>
-                  <h5 className="text-sm font-bold text-white leading-none">Edit Profile</h5>
-                  <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Name, bio, photo</span>
+                  <h5 className="text-base font-bold text-white leading-none">Edit Profile</h5>
+                  <span className="text-xs text-gray-500 font-semibold mt-1 block">Name, bio, photo</span>
                 </div>
               </div>
               <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />
@@ -230,8 +230,8 @@ const TeacherSettings = () => {
                   <FiLock size={18} />
                 </div>
                 <div>
-                  <h5 className="text-sm font-bold text-white leading-none">Change Password</h5>
-                  <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Update your password</span>
+                  <h5 className="text-base font-bold text-white leading-none">Change Password</h5>
+                  <span className="text-xs text-gray-500 font-semibold mt-1 block">Update your password</span>
                 </div>
               </div>
               <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />
@@ -247,8 +247,8 @@ const TeacherSettings = () => {
                   <FiPhone size={18} />
                 </div>
                 <div>
-                  <h5 className="text-sm font-bold text-white leading-none">Phone Number</h5>
-                  <span className="text-[10px] text-gray-500 font-semibold mt-1 block">
+                  <h5 className="text-base font-bold text-white leading-none">Phone Number</h5>
+                  <span className="text-xs text-gray-500 font-semibold mt-1 block">
                     {profileData.phone || 'Not provided'}
                   </span>
                 </div>
@@ -274,8 +274,8 @@ const TeacherSettings = () => {
                 {theme === 'dark' ? <FiMoon size={18} /> : <FiSun size={18} />}
               </div>
               <div>
-                <h5 className="text-sm font-bold text-white leading-none">Dark Mode</h5>
-                <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Switch app appearance</span>
+                <h5 className="text-base font-bold text-white leading-none">Dark Mode</h5>
+                <span className="text-xs text-gray-500 font-semibold mt-1 block">Switch app appearance</span>
               </div>
             </div>
 

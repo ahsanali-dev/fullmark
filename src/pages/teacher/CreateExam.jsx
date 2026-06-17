@@ -121,8 +121,8 @@ const CreateExam = () => {
               <FiChevronLeft size={20} />
             </button>
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-white">Create Exam</h2>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Step {step} of 3</p>
+              <h2 className="text-2xl md:text-3xl font-black text-white">Create Exam</h2>
+              <p className="text-sm text-gray-500 font-semibold mt-1">Step {step} of 3</p>
             </div>
           </div>
 
@@ -131,7 +131,7 @@ const CreateExam = () => {
               toast.success('Draft saved successfully!');
               navigate(`/teacher/subjects/${subjectId}`);
             }}
-            className="px-4 py-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-400 hover:text-white transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-400 hover:text-white transition-all text-sm font-bold flex items-center gap-1.5 cursor-pointer"
           >
             <FiFileText size={14} />
             <span>Save Draft</span>
@@ -142,13 +142,13 @@ const CreateExam = () => {
         <div className="flex items-center justify-between max-w-md mx-auto w-full my-4 px-4">
           {/* Step 1: Basic Info */}
           <div className="flex flex-col items-center gap-1.5">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
               step === 1 ? 'bg-blue-600 text-white ring-4 ring-blue-500/20' :
               step > 1 ? 'bg-emerald-500 text-white' : 'bg-gray-800 text-gray-500'
             }`}>
               {step > 1 ? <FiCheck size={14} /> : '1'}
             </div>
-            <span className={`text-[10px] font-black uppercase tracking-wider ${
+            <span className={`text-xs font-black uppercase tracking-wider ${
               step === 1 ? 'text-blue-500' :
               step > 1 ? 'text-emerald-400' : 'text-gray-500'
             }`}>Basic Info</span>
@@ -161,13 +161,13 @@ const CreateExam = () => {
 
           {/* Step 2: Questions */}
           <div className="flex flex-col items-center gap-1.5">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
               step === 2 ? 'bg-blue-600 text-white ring-4 ring-blue-500/20' :
               step > 2 ? 'bg-emerald-500 text-white' : 'bg-gray-800 text-gray-500'
             }`}>
               {step > 2 ? <FiCheck size={14} /> : '2'}
             </div>
-            <span className={`text-[10px] font-black uppercase tracking-wider ${
+            <span className={`text-xs font-black uppercase tracking-wider ${
               step === 2 ? 'text-blue-500' :
               step > 2 ? 'text-emerald-400' : 'text-gray-500'
             }`}>Questions</span>
@@ -180,12 +180,12 @@ const CreateExam = () => {
 
           {/* Step 3: Settings */}
           <div className="flex flex-col items-center gap-1.5">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
               step === 3 ? 'bg-blue-600 text-white ring-4 ring-blue-500/20' : 'bg-gray-800 text-gray-500'
             }`}>
               3
             </div>
-            <span className={`text-[10px] font-black uppercase tracking-wider ${
+            <span className={`text-xs font-black uppercase tracking-wider ${
               step === 3 ? 'text-blue-500' : 'text-gray-500'
             }`}>Settings</span>
           </div>
@@ -212,7 +212,7 @@ const CreateExam = () => {
 
               {/* Subject Selectors */}
               <div className="flex flex-col gap-3">
-                <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
+                <span className="text-sm font-black tracking-widest text-gray-500 uppercase px-1">
                   Subject
                 </span>
                 <div className="flex flex-wrap gap-2.5">
@@ -222,7 +222,7 @@ const CreateExam = () => {
                       <button
                         key={sub.id}
                         onClick={() => setSelectedSubjectId(sub.id)}
-                        className={`px-5 py-3 rounded-2xl font-bold text-sm border transition-all cursor-pointer ${
+                        className={`px-5 py-3 rounded-2xl font-bold text-base border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/10'
                             : 'bg-[#0e101a] border-gray-800 text-gray-400 hover:border-gray-700'
@@ -237,7 +237,7 @@ const CreateExam = () => {
 
               {/* Difficulty Mix Selectors */}
               <div className="flex flex-col gap-3">
-                <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
+                <span className="text-sm font-black tracking-widest text-gray-500 uppercase px-1">
                   Difficulty Mix
                 </span>
                 <div className="flex flex-wrap gap-2.5">
@@ -247,7 +247,7 @@ const CreateExam = () => {
                       <button
                         key={mix}
                         onClick={() => setDifficultyMix(mix)}
-                        className={`px-5 py-3 rounded-2xl font-bold text-sm border transition-all cursor-pointer ${
+                        className={`px-5 py-3 rounded-2xl font-bold text-base border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/10'
                             : 'bg-[#0e101a] border-gray-800 text-gray-400 hover:border-gray-700'
@@ -262,7 +262,7 @@ const CreateExam = () => {
 
               {/* Question Count Incrementer */}
               <div className="flex flex-col gap-3">
-                <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
+                <span className="text-sm font-black tracking-widest text-gray-500 uppercase px-1">
                   Number of Questions
                 </span>
                 <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl max-w-sm">
@@ -274,7 +274,7 @@ const CreateExam = () => {
                   </button>
                   <div className="text-center select-none">
                     <span className="text-2xl font-black text-white">{questionCount}</span>
-                    <p className="text-[10px] text-gray-500 font-bold mt-0.5">min: 5 • max: 100</p>
+                    <p className="text-xs text-gray-500 font-bold mt-0.5">min: 5 • max: 100</p>
                   </div>
                   <button
                     onClick={() => setQuestionCount(Math.min(100, questionCount + 1))}
@@ -295,7 +295,7 @@ const CreateExam = () => {
                     }
                     setStep(2);
                   }}
-                  className="px-8 py-3.5 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer text-sm"
+                  className="px-8 py-3.5 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer text-base"
                 >
                   <span>Continue</span>
                   <FiArrowRight size={16} />
@@ -310,17 +310,17 @@ const CreateExam = () => {
             <div className="flex flex-col gap-6 animate-fade-in">
               
               {/* Information Banner */}
-              <div className="flex items-center gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-400 text-xs font-semibold">
+              <div className="flex items-center gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-400 text-sm font-semibold">
                 <FiInfo size={18} className="shrink-0" />
                 <span>Select specific questions to include in this exam</span>
               </div>
 
               {/* Question list controls */}
               <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-gray-400">
+                <span className="text-sm font-bold text-gray-400">
                   {selectedQuestionIds.length} of {filteredQuestions.length} selected
                 </span>
-                <div className="flex gap-3 text-xs font-black">
+                <div className="flex gap-3 text-sm font-black">
                   <button 
                     onClick={handleSelectAll}
                     className="text-blue-500 hover:text-blue-400 cursor-pointer"
@@ -340,9 +340,9 @@ const CreateExam = () => {
               {/* Questions checkboxes grid */}
               {filteredQuestions.length === 0 ? (
                 <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] flex flex-col items-center justify-center">
-                  <FiHelpCircle className="text-gray-650 mb-3" size={40} />
-                  <span className="text-sm font-extrabold text-gray-500">No questions available</span>
-                  <p className="text-xs text-gray-600 font-semibold mt-1">Please add questions to this subject first</p>
+                  <FiHelpCircle className="text-gray-655 mb-3" size={40} />
+                  <span className="text-base font-extrabold text-gray-500">No questions available</span>
+                  <p className="text-sm text-gray-655 font-semibold mt-1">Please add questions to this subject first</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -367,12 +367,12 @@ const CreateExam = () => {
 
                         {/* Question title & badges */}
                         <div className="flex-1 min-w-0 text-left">
-                          <p className="text-sm font-bold text-white truncate capitalize">{q.text}</p>
+                          <p className="text-base font-bold text-white truncate capitalize">{q.text}</p>
                           <div className="flex items-center gap-1.5 mt-1.5">
-                            <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[9px] font-black uppercase">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase">
                               MCQ
                             </span>
-                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase border ${
+                            <span className={`px-1.5 py-0.5 rounded text-xs font-black uppercase border ${
                               q.difficulty === 'Easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                               q.difficulty === 'Medium' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
                               'bg-red-500/10 border-red-500/20 text-red-400'
@@ -391,7 +391,7 @@ const CreateExam = () => {
               <div className="flex justify-between items-center mt-6">
                 <button
                   onClick={() => setStep(1)}
-                  className="w-14 h-14 bg-gray-900 hover:bg-gray-850 text-white rounded-2xl flex items-center justify-center border border-gray-800/80 active:scale-95 transition-all cursor-pointer shrink-0"
+                  className="w-14 h-14 bg-gray-900 hover:bg-gray-855 text-white rounded-2xl flex items-center justify-center border border-gray-800/80 active:scale-95 transition-all cursor-pointer shrink-0"
                 >
                   <FiArrowLeft size={18} />
                 </button>
@@ -403,7 +403,7 @@ const CreateExam = () => {
                     }
                     setStep(3);
                   }}
-                  className="px-8 py-3.5 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer text-sm"
+                  className="px-8 py-3.5 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer text-base"
                 >
                   <span>Continue</span>
                   <FiArrowRight size={16} />
@@ -419,7 +419,7 @@ const CreateExam = () => {
               
               {/* Section 1: Timer Settings */}
               <div className="flex flex-col gap-3">
-                <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
+                <span className="text-sm font-black tracking-widest text-gray-500 uppercase px-1">
                   Timer Settings
                 </span>
                 <div className="p-4 bg-[#0e101a] border border-gray-800 rounded-2xl flex items-center justify-between">
@@ -428,8 +428,8 @@ const CreateExam = () => {
                       <FiClock size={18} />
                     </div>
                     <div>
-                      <span className="text-sm font-black text-white block">Enable Timer</span>
-                      <span className="text-[10px] text-gray-500 font-semibold block mt-0.5">Set a time limit for the exam</span>
+                      <span className="text-base font-black text-white block">Enable Timer</span>
+                      <span className="text-xs text-gray-500 font-semibold block mt-0.5">Set a time limit for the exam</span>
                     </div>
                   </div>
 
@@ -451,23 +451,23 @@ const CreateExam = () => {
               {/* Section 2: Duration Selector */}
               {enableTimer && (
                 <div className="flex flex-col gap-3 animate-fade-in">
-                  <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
+                  <span className="text-sm font-black tracking-widest text-gray-500 uppercase px-1">
                     Duration (minutes)
                   </span>
                   <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl max-w-sm">
                     <button
                       onClick={() => setDuration(Math.max(10, duration - 5))}
-                      className="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-white hover:border-gray-750 active:scale-95 transition-all cursor-pointer font-bold"
+                      className="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-white hover:border-gray-755 active:scale-95 transition-all cursor-pointer font-bold"
                     >
                       -
                     </button>
                     <div className="text-center select-none">
                       <span className="text-2xl font-black text-white">{duration}</span>
-                      <p className="text-[10px] text-gray-500 font-bold mt-0.5">min: 10 • max: 180</p>
+                      <p className="text-xs text-gray-500 font-bold mt-0.5">min: 10 • max: 180</p>
                     </div>
                     <button
                       onClick={() => setDuration(Math.min(180, duration + 5))}
-                      className="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-white hover:border-gray-750 active:scale-95 transition-all cursor-pointer font-bold"
+                      className="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-white hover:border-gray-755 active:scale-95 transition-all cursor-pointer font-bold"
                     >
                       +
                     </button>
@@ -514,8 +514,8 @@ const CreateExam = () => {
                       <FiSettings size={18} />
                     </div>
                     <div>
-                      <span className="text-sm font-black text-white block">Allow Retake</span>
-                      <span className="text-[10px] text-gray-500 font-semibold block mt-0.5">Students can retake this exam</span>
+                      <span className="text-base font-black text-white block">Allow Retake</span>
+                      <span className="text-xs text-gray-500 font-semibold block mt-0.5">Students can retake this exam</span>
                     </div>
                   </div>
 
@@ -541,10 +541,10 @@ const CreateExam = () => {
                     <FiFileText size={22} />
                   </div>
                   <div>
-                    <h4 className="text-base font-extrabold text-white leading-tight capitalize">
+                    <h4 className="text-lg font-extrabold text-white leading-tight capitalize">
                       {examTitle || 'Untitled Exam'}
                     </h4>
-                    <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider mt-0.5 block">
+                    <span className="text-xs text-blue-400 font-bold uppercase tracking-wider mt-0.5 block">
                       {currentSubjectObj.title}
                     </span>
                   </div>
@@ -552,17 +552,17 @@ const CreateExam = () => {
 
                 {/* Summary Metadata Pills */}
                 <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-800/40">
-                  <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-[10px] font-black uppercase">
+                  <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-xs font-black uppercase">
                     {selectedQuestionIds.length} Selected
                   </span>
-                  <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-[10px] font-black uppercase">
+                  <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-xs font-black uppercase">
                     {enableTimer ? `${duration} minutes` : 'No Timer'}
                   </span>
-                  <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-[10px] font-black uppercase">
+                  <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-xs font-black uppercase">
                     {difficultyMix}
                   </span>
                   {showExplanations && (
-                    <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-[10px] font-black uppercase">
+                    <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-xs font-black uppercase">
                       Explanations
                     </span>
                   )}
@@ -579,7 +579,7 @@ const CreateExam = () => {
                 </button>
                 <button
                   onClick={handlePublishExam}
-                  className="px-8 py-3.5 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer text-sm"
+                  className="px-8 py-3.5 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer text-base"
                 >
                   <span>Publish Exam</span>
                   <FiCheck size={16} />

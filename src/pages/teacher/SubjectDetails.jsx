@@ -85,7 +85,7 @@ const SubjectDetails = () => {
             </div>
             <div>
               <h2 className="text-2xl md:text-3xl font-black tracking-tight">{subject.title}</h2>
-              <p className="text-sm text-white/80 font-medium mt-1">{subject.description}</p>
+              <p className="text-base text-white/80 font-medium mt-1">{subject.description}</p>
             </div>
           </div>
 
@@ -94,17 +94,17 @@ const SubjectDetails = () => {
             <div className="flex flex-col items-center text-center">
               <FiHelpCircle size={18} className="text-white/70" />
               <span className="text-xl font-black mt-1">{subjectQuestions.length}</span>
-              <span className="text-[10px] font-black tracking-wider uppercase text-white/60 mt-0.5">Questions</span>
+              <span className="text-sm font-black tracking-wider uppercase text-white/60 mt-0.5">Questions</span>
             </div>
             <div className="flex flex-col items-center text-center border-x border-white/10">
               <FiUsers size={18} className="text-white/70" />
               <span className="text-xl font-black mt-1">0</span>
-              <span className="text-[10px] font-black tracking-wider uppercase text-white/60 mt-0.5">Students</span>
+              <span className="text-sm font-black tracking-wider uppercase text-white/60 mt-0.5">Students</span>
             </div>
             <div className="flex flex-col items-center text-center">
               <FiFileText size={18} className="text-white/70" />
               <span className="text-xl font-black mt-1">{subjectExams.length}</span>
-              <span className="text-[10px] font-black tracking-wider uppercase text-white/60 mt-0.5">Exams</span>
+              <span className="text-sm font-black tracking-wider uppercase text-white/60 mt-0.5">Exams</span>
             </div>
           </div>
         </div>
@@ -113,7 +113,7 @@ const SubjectDetails = () => {
         <div className="flex p-1.5 bg-[#0e101a] border border-gray-800 rounded-2xl w-full">
           <button
             onClick={() => setActiveTab('questions')}
-            className={`flex-1 py-3 text-center font-extrabold text-sm rounded-xl transition-all cursor-pointer ${activeTab === 'questions'
+            className={`flex-1 py-3 text-center font-extrabold text-base md:text-lg rounded-xl transition-all cursor-pointer ${activeTab === 'questions'
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
               : 'text-gray-500 hover:text-gray-400'
               }`}
@@ -122,7 +122,7 @@ const SubjectDetails = () => {
           </button>
           <button
             onClick={() => setActiveTab('exams')}
-            className={`flex-1 py-3 text-center font-extrabold text-sm rounded-xl transition-all cursor-pointer ${activeTab === 'exams'
+            className={`flex-1 py-3 text-center font-extrabold text-base md:text-lg rounded-xl transition-all cursor-pointer ${activeTab === 'exams'
               ? 'bg-blue-600 text-white shadow-md shadow-blue-500/10'
               : 'text-gray-500 hover:text-gray-400'
               }`}
@@ -140,7 +140,7 @@ const SubjectDetails = () => {
               <div className="flex justify-end">
                 <button
                   onClick={() => navigate(`/teacher/subjects/${subjectId}/add-question`)}
-                  className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-[0_4px_15px_rgba(37,99,235,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer text-sm"
+                  className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black shadow-[0_4px_15px_rgba(37,99,235,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer text-sm md:text-base"
                 >
                   <FiPlus size={16} />
                   <span>Add Question</span>
@@ -151,8 +151,8 @@ const SubjectDetails = () => {
               {subjectQuestions.length === 0 ? (
                 <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] flex flex-col items-center justify-center">
                   <FiHelpCircle className="text-gray-650 mb-3" size={40} />
-                  <span className="text-sm font-extrabold text-gray-500">No questions added yet</span>
-                  <p className="text-xs text-gray-600 font-semibold mt-1">Create your first evaluation question for this subject</p>
+                  <span className="text-base font-extrabold text-gray-500">No questions added yet</span>
+                  <p className="text-sm text-gray-600 font-semibold mt-1">Create your first evaluation question for this subject</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -168,14 +168,14 @@ const SubjectDetails = () => {
 
                       {/* Info & Tags */}
                       <div className="flex-1 min-w-0 pr-8">
-                        <div className="text-sm font-extrabold text-white truncate leading-tight capitalize">
+                        <div className="text-base md:text-lg font-extrabold text-white truncate leading-tight capitalize">
                           {q.text}
                         </div>
                         <div className="flex items-center gap-1.5 mt-2">
-                          <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase">
+                          <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-black uppercase">
                             MCQ
                           </span>
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase border ${q.difficulty === 'Easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                          <span className={`px-2 py-0.5 rounded-md text-sm font-black uppercase border ${q.difficulty === 'Easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                             q.difficulty === 'Medium' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
                               'bg-red-500/10 border-red-500/20 text-red-400'
                             }`}>
@@ -204,7 +204,7 @@ const SubjectDetails = () => {
               <div className="flex justify-end">
                 <button
                   onClick={() => navigate(`/teacher/subjects/${subjectId}/create-exam`)}
-                  className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 text-white rounded-xl font-black shadow-[0_4px_15px_rgba(37,99,235,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer text-sm"
+                  className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 text-white rounded-xl font-black shadow-[0_4px_15px_rgba(37,99,235,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer text-sm md:text-base"
                 >
                   <FiPlus size={16} />
                   <span>Schedule Exam</span>
@@ -215,8 +215,8 @@ const SubjectDetails = () => {
               {subjectExams.length === 0 ? (
                 <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] flex flex-col items-center justify-center">
                   <FiFileText className="text-gray-650 mb-3" size={40} />
-                  <span className="text-sm font-extrabold text-gray-500">No exams scheduled</span>
-                  <p className="text-xs text-gray-600 font-semibold mt-1">Schedule evaluation tests and assessment parameters</p>
+                  <span className="text-base font-extrabold text-gray-500">No exams scheduled</span>
+                  <p className="text-sm text-gray-600 font-semibold mt-1">Schedule evaluation tests and assessment parameters</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -232,17 +232,17 @@ const SubjectDetails = () => {
                             <FiFileText size={18} />
                           </div>
                           <div>
-                            <h4 className="text-sm font-extrabold text-white leading-tight capitalize max-w-[140px] md:max-w-[180px] truncate">
+                            <h4 className="text-lg font-extrabold text-white leading-tight capitalize max-w-[140px] md:max-w-[180px] truncate">
                               {ex.title}
                             </h4>
-                            <span className="text-[10px] text-gray-500 font-bold mt-1 block uppercase">
+                            <span className="text-sm text-gray-500 font-bold mt-1 block uppercase">
                               {ex.date}
                             </span>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black uppercase bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full">
+                          <span className="text-sm font-black uppercase bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full">
                             Published
                           </span>
                           <button
@@ -259,7 +259,7 @@ const SubjectDetails = () => {
                       <div className="border-t border-gray-800/40 my-1" />
 
                       {/* Metadata */}
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase text-gray-500 tracking-wider pt-1">
+                      <div className="flex justify-between items-center text-sm font-black uppercase text-gray-500 tracking-wider pt-1">
                         <div className="flex items-center gap-1.5">
                           <FiHelpCircle className="text-gray-650" size={14} />
                           <span>{ex.questionsCount} questions</span>

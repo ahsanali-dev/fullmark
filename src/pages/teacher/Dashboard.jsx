@@ -173,7 +173,7 @@ const TeacherDashboard = () => {
               <FiBookOpen size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">{subjects.length}</span>
-            <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Subjects</span>
+            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">Subjects</span>
           </div>
 
           {/* Questions */}
@@ -185,7 +185,7 @@ const TeacherDashboard = () => {
               <FiHelpCircle size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">{questions.length}</span>
-            <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Questions</span>
+            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">Questions</span>
           </div>
 
           {/* Exams */}
@@ -197,7 +197,7 @@ const TeacherDashboard = () => {
               <FiFileText size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">{exams.length}</span>
-            <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Exams</span>
+            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">Exams</span>
           </div>
 
           {/* Students */}
@@ -208,7 +208,7 @@ const TeacherDashboard = () => {
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">
               {subjectsWithCounts.reduce((acc, curr) => acc + curr.studentsCount, 0)}
             </span>
-            <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Students</span>
+            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">Students</span>
           </div>
         </div>
 
@@ -223,7 +223,7 @@ const TeacherDashboard = () => {
               <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 transition-transform duration-300 group-hover:scale-110">
                 <FiUploadCloud size={18} />
               </div>
-              <span className="text-xs font-bold text-white tracking-wide">Upload PDF</span>
+              <span className="text-base font-bold text-white tracking-wide">Upload PDF</span>
             </button>
 
             <button 
@@ -233,7 +233,7 @@ const TeacherDashboard = () => {
               <div className="w-11 h-11 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 transition-transform duration-300 group-hover:scale-110">
                 <FiPlus size={18} />
               </div>
-              <span className="text-xs font-bold text-white tracking-wide">Add Question</span>
+              <span className="text-base font-bold text-white tracking-wide">Add Question</span>
             </button>
 
             <button 
@@ -243,7 +243,7 @@ const TeacherDashboard = () => {
               <div className="w-11 h-11 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 transition-transform duration-300 group-hover:scale-110">
                 <FiFileText size={18} />
               </div>
-              <span className="text-xs font-bold text-white tracking-wide">New Exam</span>
+              <span className="text-base font-bold text-white tracking-wide">New Exam</span>
             </button>
           </div>
         </div>
@@ -254,7 +254,7 @@ const TeacherDashboard = () => {
             <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">My Subjects</h3>
             <button 
               onClick={() => navigate('/teacher/subjects')}
-              className="text-blue-400 hover:text-blue-300 font-bold text-sm transition-colors cursor-pointer"
+              className="text-blue-400 hover:text-blue-300 font-bold text-base transition-colors cursor-pointer"
             >
               Manage
             </button>
@@ -262,7 +262,7 @@ const TeacherDashboard = () => {
 
           {subjects.length === 0 ? (
             <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl flex flex-col items-center justify-center">
-              <span className="text-sm font-bold text-gray-500">No subjects assigned yet</span>
+              <span className="text-lg font-bold text-gray-500">No subjects assigned yet</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
@@ -280,11 +280,11 @@ const TeacherDashboard = () => {
                   </div>
                   
                   <div className="text-left mt-2">
-                    <h4 className="text-lg font-extrabold text-white leading-tight capitalize">{sub.title}</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1 leading-normal line-clamp-2">{sub.description}</p>
+                    <h4 className="text-xl font-extrabold text-white leading-tight capitalize">{sub.title}</h4>
+                    <p className="text-base text-gray-500 font-semibold mt-1 leading-normal line-clamp-2">{sub.description}</p>
                   </div>
 
-                  <div className="flex items-center gap-4 text-xs font-bold text-gray-500 mt-2 border-t border-gray-800/40 pt-3">
+                  <div className="flex items-center gap-4 text-base font-bold text-gray-500 mt-2 border-t border-gray-800/40 pt-3">
                     <span className="flex items-center gap-1.5">
                       <FiBookOpen size={14} className="text-blue-400" />
                       {sub.examsCount}

@@ -153,13 +153,13 @@ const EditQuestion = () => {
               <FiChevronLeft size={20} />
             </button>
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-white">Edit Question</h2>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Modify question details for {subject.title}</p>
+              <h2 className="text-2xl md:text-3xl font-black text-white">Edit Question</h2>
+              <p className="text-sm text-gray-500 font-semibold mt-1">Modify question details for {subject.title}</p>
             </div>
           </div>
 
           {/* Difficulty Level Indicator */}
-          <div className={`px-4.5 py-1.5 rounded-full text-xs font-black border flex items-center gap-1.5 ${
+          <div className={`px-4.5 py-1.5 rounded-full text-sm font-black border flex items-center gap-1.5 ${
             difficulty === 'Easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
             difficulty === 'Medium' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
             'bg-red-500/10 border-red-500/20 text-red-400'
@@ -175,7 +175,7 @@ const EditQuestion = () => {
 
         {/* 1. Difficulty Level Selector */}
         <div className="flex flex-col gap-3 text-left">
-          <span className="text-[10px] font-black tracking-widest text-gray-500 uppercase px-1">
+          <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
             Difficulty Level
           </span>
           <div className="grid grid-cols-3 gap-3">
@@ -185,11 +185,11 @@ const EditQuestion = () => {
               className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer border transition-all ${
                 difficulty === 'Easy' 
                   ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)]' 
-                  : 'border-gray-800 bg-[#0e101a] text-gray-500 hover:border-gray-700'
+                  : 'border-gray-800 bg-[#0e101a] text-gray-500 hover:border-gray-705'
               }`}
             >
               <FiSmile size={24} />
-              <span className="text-xs font-bold">Easy</span>
+              <span className="text-sm font-bold">Easy</span>
             </div>
             {/* Medium */}
             <div 
@@ -197,11 +197,11 @@ const EditQuestion = () => {
               className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer border transition-all ${
                 difficulty === 'Medium' 
                   ? 'border-blue-500 bg-blue-500/10 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)]' 
-                  : 'border-gray-800 bg-[#0e101a] text-gray-500 hover:border-gray-700'
+                  : 'border-gray-800 bg-[#0e101a] text-gray-500 hover:border-gray-705'
               }`}
             >
               <FiMeh size={24} />
-              <span className="text-xs font-bold">Medium</span>
+              <span className="text-sm font-bold">Medium</span>
             </div>
             {/* Hard */}
             <div 
@@ -209,11 +209,11 @@ const EditQuestion = () => {
               className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer border transition-all ${
                 difficulty === 'Hard' 
                   ? 'border-red-500 bg-red-500/10 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.15)]' 
-                  : 'border-gray-800 bg-[#0e101a] text-gray-500 hover:border-gray-700'
+                  : 'border-gray-800 bg-[#0e101a] text-gray-500 hover:border-gray-705'
               }`}
             >
               <FiFrown size={24} />
-              <span className="text-xs font-bold">Hard</span>
+              <span className="text-sm font-bold">Hard</span>
             </div>
           </div>
         </div>
@@ -243,7 +243,7 @@ const EditQuestion = () => {
                   onChange={(e) => setQuestionText(e.target.value)}
                   placeholder="Question Text"
                   rows={4}
-                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-sm focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
+                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
                 />
                 
                 <input
@@ -301,7 +301,7 @@ const EditQuestion = () => {
 
             {activeAccordion === 'options' && (
               <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
-                <div className="flex items-center gap-3 p-3.5 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-400 text-xs font-semibold">
+                <div className="flex items-center gap-3 p-3.5 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-400 text-sm font-semibold">
                   <FiInfo size={16} className="shrink-0" />
                   <span>Tap the circle to mark the correct answer</span>
                 </div>
@@ -323,7 +323,7 @@ const EditQuestion = () => {
                         <button
                           type="button"
                           onClick={() => setCorrectOption(letter)}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 cursor-pointer transition-all ${
+                          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm shrink-0 cursor-pointer transition-all ${
                             isCorrect 
                               ? 'bg-emerald-500 text-white shadow-md' 
                               : 'bg-gray-800 text-gray-400 hover:bg-gray-750'
@@ -337,11 +337,11 @@ const EditQuestion = () => {
                           value={value}
                           onChange={(e) => setOptionsData({ ...optionsData, [optionKey]: e.target.value })}
                           placeholder={`Option ${letter}...`}
-                          className="w-full bg-transparent border-none text-white text-sm font-semibold outline-none focus:outline-none focus:ring-0"
+                          className="w-full bg-transparent border-none text-white text-base font-semibold outline-none focus:outline-none focus:ring-0"
                         />
 
                         {isCorrect && (
-                          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-black uppercase shrink-0">
+                          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-black uppercase shrink-0">
                             Correct
                           </span>
                         )}
@@ -370,7 +370,7 @@ const EditQuestion = () => {
 
             {activeAccordion === 'explanation' && (
               <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
-                <div className="flex items-center gap-3 p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-emerald-400 text-xs font-semibold">
+                <div className="flex items-center gap-3 p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm font-semibold">
                   <FiInfo size={16} className="shrink-0" />
                   <span>This explanation is shown to students when they answer incorrectly.</span>
                 </div>
@@ -380,7 +380,7 @@ const EditQuestion = () => {
                   onChange={(e) => setExplanation(e.target.value)}
                   placeholder="Explanation"
                   rows={3}
-                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-sm focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
+                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
                 />
 
                 <div className="relative w-full">
@@ -390,7 +390,7 @@ const EditQuestion = () => {
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
                     placeholder="Explanation Video URL"
-                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0"
+                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0"
                   />
                 </div>
               </div>
@@ -402,7 +402,7 @@ const EditQuestion = () => {
         {/* Submit Button */}
         <button 
           onClick={handleSaveQuestion}
-          className="w-full py-4 mt-6 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer shadow-md"
+          className="w-full py-4 mt-6 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black text-base shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer shadow-md"
         >
           <span>Save Changes</span>
           <FiCheck className="text-base" />

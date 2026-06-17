@@ -122,14 +122,14 @@ const TeacherExams = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/teacher/subjects/select/create-exam')}
-              className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all flex items-center gap-1.5 cursor-pointer text-sm"
+              className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all flex items-center gap-1.5 cursor-pointer text-base"
             >
               <FiPlus size={16} />
               <span>Create Exam</span>
             </button>
             <button
               onClick={() => toast.success('Downloading Exams PDF...')}
-              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black transition-all flex items-center gap-1.5 cursor-pointer text-sm"
+              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black transition-all flex items-center gap-1.5 cursor-pointer text-base"
             >
               <FiFileText size={16} />
               <span>PDF</span>
@@ -145,7 +145,7 @@ const TeacherExams = () => {
               placeholder="Search exams..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-650"
+              className="w-full pl-12 pr-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-655"
             />
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" size={18} />
           </div>
@@ -154,7 +154,7 @@ const TeacherExams = () => {
             <select
               value={selectedSubjectFilter}
               onChange={(e) => setSelectedSubjectFilter(e.target.value)}
-              className="w-full pl-11 pr-10 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0"
+              className="w-full pl-11 pr-10 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0"
             >
               <option value="all">All Subjects</option>
               {subjects.map(s => (
@@ -169,24 +169,24 @@ const TeacherExams = () => {
         <div className="grid grid-cols-4 gap-2.5 md:gap-4">
           <div className="p-3.5 bg-blue-500/[0.02] border border-blue-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-blue-400 block">{totalCount}</span>
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1 block">Total</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Total</span>
           </div>
           <div className="p-3.5 bg-emerald-500/[0.02] border border-emerald-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-emerald-400 block">{publishedCount}</span>
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1 block">Published</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Published</span>
           </div>
           <div className="p-3.5 bg-amber-500/[0.02] border border-amber-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-amber-400 block">{draftCount}</span>
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1 block">Draft</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Draft</span>
           </div>
           <div className="p-3.5 bg-indigo-500/[0.02] border border-indigo-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-indigo-400 block">{upcomingCount}</span>
-            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1 block">Upcoming</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Upcoming</span>
           </div>
         </div>
 
         {/* Results Counter & Sort */}
-        <div className="flex justify-between items-center text-xs font-bold text-gray-400 px-1">
+        <div className="flex justify-between items-center text-sm font-bold text-gray-400 px-1">
           <span>{filteredExams.length} results</span>
           <div className="flex items-center gap-1.5 text-blue-450 hover:text-blue-400 cursor-pointer">
             <FiSliders size={13} />
@@ -198,8 +198,8 @@ const TeacherExams = () => {
         {filteredExams.length === 0 ? (
           <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] flex flex-col items-center justify-center">
             <FiAlertCircle className="text-gray-650 mb-3" size={40} />
-            <span className="text-sm font-extrabold text-gray-500">No exams found</span>
-            <p className="text-xs text-gray-600 font-semibold mt-1">Create a new exam or adjust your filters</p>
+            <span className="text-lg font-extrabold text-gray-500">No exams found</span>
+            <p className="text-base text-gray-600 font-semibold mt-1">Create a new exam or adjust your filters</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -220,16 +220,16 @@ const TeacherExams = () => {
                         <FiFileText size={18} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-extrabold text-white leading-tight capitalize max-w-[140px] md:max-w-[240px] truncate">
+                        <h4 className="text-lg font-extrabold text-white leading-tight capitalize max-w-[140px] md:max-w-[240px] truncate">
                           {ex.title}
                         </h4>
-                        <span className="text-[10px] text-gray-500 font-bold mt-1 block uppercase">
+                        <span className="text-sm text-gray-500 font-bold mt-1 block uppercase">
                           {subObj ? subObj.title : 'Unassigned'}
                         </span>
                       </div>
                     </div>
 
-                    <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border ${
+                    <span className={`text-sm font-black uppercase px-3 py-1 rounded-full border ${
                       isPublished
                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                         : isDraft
@@ -241,17 +241,17 @@ const TeacherExams = () => {
                   </div>
 
                   {/* Metadata Row: Qs, Duration, Date, Timer */}
-                  <div className="flex items-center gap-3 flex-wrap text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                  <div className="flex items-center gap-3 flex-wrap text-sm font-bold text-gray-500 uppercase tracking-wide">
                     <div className="flex items-center gap-1">
-                      <FiHelpCircle size={12} className="text-gray-600" />
+                      <FiHelpCircle size={12} className="text-gray-650" />
                       <span>{ex.questionsCount} Qs</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <FiClock size={12} className="text-gray-600" />
+                      <FiClock size={12} className="text-gray-650" />
                       <span>{ex.duration} min</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <FiCalendar size={12} className="text-gray-600" />
+                      <FiCalendar size={12} className="text-gray-650" />
                       <span>{ex.date}</span>
                     </div>
                     <div className="flex items-center gap-1 text-blue-400">
@@ -263,25 +263,25 @@ const TeacherExams = () => {
                   {/* Score Stats Grid */}
                   <div className="grid grid-cols-4 gap-2">
                     <div className="p-2.5 rounded-xl bg-amber-500/[0.05] border border-amber-500/10 text-center">
-                      <span className="text-sm font-black text-amber-400 block">0%</span>
-                      <span className="text-[9px] text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Avg Score</span>
+                      <span className="text-base font-black text-amber-400 block">0%</span>
+                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Avg Score</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/10 text-center">
-                      <span className="text-sm font-black text-emerald-400 block">0%</span>
-                      <span className="text-[9px] text-gray-600 font-bold uppercase tracking-wider block mt-0.5">High Score</span>
+                      <span className="text-base font-black text-emerald-400 block">0%</span>
+                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">High Score</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-red-500/[0.05] border border-red-500/10 text-center">
-                      <span className="text-sm font-black text-red-400 block">0%</span>
-                      <span className="text-[9px] text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Low Score</span>
+                      <span className="text-base font-black text-red-400 block">0%</span>
+                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Low Score</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-blue-500/[0.05] border border-blue-500/10 text-center">
-                      <span className="text-sm font-black text-blue-400 block">0/0</span>
-                      <span className="text-[9px] text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Submitted</span>
+                      <span className="text-base font-black text-blue-400 block">0/0</span>
+                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Submitted</span>
                     </div>
                   </div>
 
                   {/* Submission Rate */}
-                  <p className="text-[10px] font-semibold text-gray-600 -mt-1">0% submission rate</p>
+                  <p className="text-sm font-semibold text-gray-600 -mt-1">0% submission rate</p>
 
                   {/* Divider */}
                   <div className="border-t border-gray-800/40" />
@@ -290,7 +290,7 @@ const TeacherExams = () => {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => toast.success('Viewing results for: ' + ex.title)}
-                      className="flex-1 py-3 rounded-2xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/20 text-blue-400 font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      className="flex-1 py-3 rounded-2xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/20 text-blue-400 font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
                       <FiBarChart2 size={14} />
                       <span>View Results</span>

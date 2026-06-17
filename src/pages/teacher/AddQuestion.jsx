@@ -149,15 +149,15 @@ const AddQuestion = () => {
               <FiChevronLeft size={20} />
             </button>
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-white">Add Question</h2>
-              <p className="text-xs text-gray-500 font-semibold mt-1">
+              <h2 className="text-2xl md:text-3xl font-black text-white">Add Question</h2>
+              <p className="text-sm text-gray-500 font-semibold mt-1">
                 {subjectId === 'select' ? 'Fill in question details' : `Fill in question details for ${subject.title}`}
               </p>
             </div>
           </div>
 
           {/* Difficulty Level Indicator */}
-          <div className={`px-4.5 py-1.5 rounded-full text-xs font-black border flex items-center gap-1.5 ${
+          <div className={`px-4.5 py-1.5 rounded-full text-sm font-black border flex items-center gap-1.5 ${
             difficulty === 'Easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
             difficulty === 'Medium' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
             'bg-red-500/10 border-red-500/20 text-red-400'
@@ -173,7 +173,7 @@ const AddQuestion = () => {
 
         {/* Subject Dropdown Selector */}
         <div className="flex flex-col gap-3 text-left">
-          <span className="text-[10px] font-black tracking-widest text-gray-500 uppercase px-1">
+          <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
             Subject
           </span>
           <div className="relative w-full">
@@ -181,7 +181,7 @@ const AddQuestion = () => {
             <select
               value={selectedSubjectId}
               onChange={(e) => setSelectedSubjectId(e.target.value)}
-              className="w-full pl-12 pr-10 py-4 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0 text-sm"
+              className="w-full pl-12 pr-10 py-4 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0 text-base"
             >
               <option value="" disabled>Select Subject</option>
               {subjects.map(s => (
@@ -194,7 +194,7 @@ const AddQuestion = () => {
 
         {/* 1. Difficulty Level Selector */}
         <div className="flex flex-col gap-3 text-left">
-          <span className="text-[10px] font-black tracking-widest text-gray-500 uppercase px-1">
+          <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
             Difficulty Level
           </span>
           <div className="grid grid-cols-3 gap-3">
@@ -208,7 +208,7 @@ const AddQuestion = () => {
               }`}
             >
               <FiSmile size={24} />
-              <span className="text-xs font-bold">Easy</span>
+              <span className="text-sm font-bold">Easy</span>
             </div>
             {/* Medium */}
             <div 
@@ -220,7 +220,7 @@ const AddQuestion = () => {
               }`}
             >
               <FiMeh size={24} />
-              <span className="text-xs font-bold">Medium</span>
+              <span className="text-sm font-bold">Medium</span>
             </div>
             {/* Hard */}
             <div 
@@ -232,7 +232,7 @@ const AddQuestion = () => {
               }`}
             >
               <FiFrown size={24} />
-              <span className="text-xs font-bold">Hard</span>
+              <span className="text-sm font-bold">Hard</span>
             </div>
           </div>
         </div>
@@ -262,7 +262,7 @@ const AddQuestion = () => {
                   onChange={(e) => setQuestionText(e.target.value)}
                   placeholder="Question Text"
                   rows={4}
-                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-sm focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
+                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
                 />
                 
                 <input
@@ -320,7 +320,7 @@ const AddQuestion = () => {
 
             {activeAccordion === 'options' && (
               <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
-                <div className="flex items-center gap-3 p-3.5 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-400 text-xs font-semibold">
+                <div className="flex items-center gap-3 p-3.5 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-400 text-sm font-semibold">
                   <FiInfo size={16} className="shrink-0" />
                   <span>Tap the circle to mark the correct answer</span>
                 </div>
@@ -342,7 +342,7 @@ const AddQuestion = () => {
                         <button
                           type="button"
                           onClick={() => setCorrectOption(letter)}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 cursor-pointer transition-all ${
+                          className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm shrink-0 cursor-pointer transition-all ${
                             isCorrect 
                               ? 'bg-emerald-500 text-white shadow-md' 
                               : 'bg-gray-800 text-gray-400 hover:bg-gray-750'
@@ -356,11 +356,11 @@ const AddQuestion = () => {
                           value={value}
                           onChange={(e) => setOptionsData({ ...optionsData, [optionKey]: e.target.value })}
                           placeholder={`Option ${letter}...`}
-                          className="w-full bg-transparent border-none text-white text-sm font-semibold outline-none focus:outline-none focus:ring-0"
+                          className="w-full bg-transparent border-none text-white text-base font-semibold outline-none focus:outline-none focus:ring-0"
                         />
 
                         {isCorrect && (
-                          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-black uppercase shrink-0">
+                          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-black uppercase shrink-0">
                             Correct
                           </span>
                         )}
@@ -389,7 +389,7 @@ const AddQuestion = () => {
 
             {activeAccordion === 'explanation' && (
               <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
-                <div className="flex items-center gap-3 p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-emerald-400 text-xs font-semibold">
+                <div className="flex items-center gap-3 p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm font-semibold">
                   <FiInfo size={16} className="shrink-0" />
                   <span>This explanation is shown to students when they answer incorrectly.</span>
                 </div>
@@ -399,7 +399,7 @@ const AddQuestion = () => {
                   onChange={(e) => setExplanation(e.target.value)}
                   placeholder="Explanation"
                   rows={3}
-                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-sm focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
+                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
                 />
 
                 <div className="relative w-full">
@@ -409,7 +409,7 @@ const AddQuestion = () => {
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
                     placeholder="Explanation Video URL"
-                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0"
+                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0"
                   />
                 </div>
               </div>
@@ -421,7 +421,7 @@ const AddQuestion = () => {
         {/* Submit Button */}
         <button 
           onClick={handleSaveQuestion}
-          className="w-full py-4 mt-6 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer shadow-md"
+          className="w-full py-4 mt-6 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black text-base shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer shadow-md"
         >
           <span>Add Question</span>
           <FiPlus className="text-base" />

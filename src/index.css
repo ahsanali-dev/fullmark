@@ -996,3 +996,116 @@ input:-webkit-autofill:active {
 .light .shadow-\[0_4px_20px_rgba\(37\,99\,235\,0\.25\)\] * {
   color: #ffffff !important;
 }
+
+/* ==========================================================================
+   LIGHT MODE – STUDENT PAGES OVERRIDES
+   ========================================================================== */
+
+/* Turn dark gradient cards to clean white cards in light mode */
+.light .bg-gradient-to-br.from-\[\#0c0d19\]\/90.to-\[\#0a0a12\]\/95 {
+  background-image: none !important;
+  background-color: #ffffff !important;
+}
+
+/* Light Mode Result Cards */
+.light .bg-gradient-to-br.from-emerald-950\/60 {
+  background-image: linear-gradient(to bottom right, rgba(209, 250, 229, 0.8), rgba(240, 253, 244, 0.95)) !important;
+}
+.light .bg-gradient-to-br.from-pink-950\/40 {
+  background-image: linear-gradient(to bottom right, rgba(253, 242, 248, 0.8), rgba(253, 242, 248, 0.95)) !important;
+}
+
+/* Lesson Slide Player Screen */
+.light .bg-gradient-to-br.from-\[\#0a0f26\].to-\[\#05081a\] {
+  background-image: linear-gradient(to bottom right, #f8fafc, #f1f5f9) !important;
+  border-color: #cbd5e1 !important;
+}
+.light .from-\[\#0a0f26\] .text-white {
+  color: #0f172a !important;
+}
+.light .from-\[\#0a0f26\] .text-gray-300 {
+  color: #334155 !important;
+}
+.light .from-\[\#0a0f26\] .text-purple-300 {
+  color: #6d28d9 !important;
+}
+.light .from-\[\#0a0f26\] .text-blue-300 {
+  color: #1d4ed8 !important;
+}
+
+/* Student Dashboard and Profile welcome banner in light mode */
+.light .from-purple-600 .text-white,
+.light .from-purple-600 h1,
+.light .from-purple-600 h2,
+.light .from-purple-600 p,
+.light .from-purple-600 span,
+.light .from-purple-600 .text-gray-400,
+.light .from-purple-600 .text-gray-500,
+.light .from-purple-600 .text-purple-300 {
+  color: #ffffff !important;
+}
+.light .from-purple-600 .text-purple-200 {
+  color: #e9d5ff !important;
+}
+.light .from-purple-600 .text-purple-300 {
+  color: #d8b4fe !important;
+}
+.light .from-purple-600 .text-gray-400 {
+  color: #cbd5e1 !important;
+}
+
+/* Specific cyan & pink text colors for stats cards contrast */
+.light .text-cyan-400 {
+  color: #0891b2 !important;
+}
+.light .text-pink-400 {
+  color: #db2777 !important;
+}
+
+/* TakeExam header & footer bg overrides */
+.light .bg-\[\#080911\]\/80 {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+
+/* Purple backgrounds should retain white text (e.g. selected option circles) */
+.light .bg-purple-500 {
+  background-color: #8b5cf6 !important;
+  color: #ffffff !important;
+}
+.light .bg-purple-500 * {
+  color: #ffffff !important;
+}
+
+/* Light mode overrides for cosmic-gray classes to prevent dark-muddy background leaks */
+.light .bg-gray-900\/30 {
+  background-color: #ffffff !important;
+}
+
+.light .bg-gray-900\/40 {
+  background-color: #f1f5f9 !important;
+}
+
+.light .bg-gray-900\/50 {
+  background-color: #ffffff !important;
+}
+
+/* Light mode overrides for transparent gray-950 classes to prevent dark leaks */
+.light .bg-gray-950\/30 {
+  background-color: rgba(241, 245, 249, 0.5) !important;
+}
+
+.light .bg-gray-950\/40 {
+  background-color: rgba(241, 245, 249, 0.7) !important;
+}
+
+.light .bg-gray-950\/50 {
+  background-color: rgba(241, 245, 249, 0.7) !important;
+}
+
+.light .bg-gray-950\/60 {
+  background-color: rgba(241, 245, 249, 0.8) !important;
+}
+
+.light .bg-gray-950\/65 {
+  background-color: rgba(226, 232, 240, 0.8) !important;
+}

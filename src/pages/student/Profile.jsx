@@ -1,0 +1,863 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  FiUser, 
+  FiMail, 
+  FiPhone, 
+  FiAward, 
+  FiStar, 
+  FiBookOpen, 
+  FiBell, 
+  FiSun, 
+  FiMoon, 
+  FiLogOut, 
+  FiChevronRight, 
+  FiChevronLeft,
+  FiCamera, 
+  FiLock,
+  FiGlobe, 
+  FiUsers, 
+  FiCopy, 
+  FiCheck,
+  FiX,
+  FiCheckCircle,
+  FiClock,
+  FiVolume2
+} from 'react-icons/fi';
+import { FaFire } from 'react-icons/fa';
+import { Formik, Form } from 'formik';
+import * as Yup from 'yup';
+import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+
+import DashboardLayout from '../../components/layout/DashboardLayout';
+import Input from '../../components/ui/Input';
+import { ChangePasswordSchema } from '../../schemas/authSchemas';
+
+const StudentProfileSchema = Yup.object().shape({
+  name: Yup.string().required('Full Name is required'),
+  phone: Yup.string().nullable(),
+  bio: Yup.string().max(200, 'Bio must be less than 200 characters').nullable(),
+});
+
+const Profile = () => {
+  const navigate = useNavigate();
+
+  // Profile fields state
+  const [name, setName] = useState('ali');
+  const [email, setEmail] = useState('ali@fullmark.edu');
+  const [phone, setPhone] = useState('+966 50 123 4567');
+  const [bio, setBio] = useState('I am a passionate chemistry student striving to hit a perfect full score!');
+  
+  // Stats counters
+  const [points, setPoints] = useState(40);
+  const [streak, setStreak] = useState(8);
+  const [completedLessonsCount, setCompletedLessonsCount] = useState(0);
+  const [enrolledCoursesCount, setEnrolledCoursesCount] = useState(1);
+  const [exams, setExams] = useState([]);
+
+  // Modals state
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('English');
+  const [tempLanguage, setTempLanguage] = useState('English');
+
+  // Switch Toggles state
+  const [pushNotifications, setPushNotifications] = useState(true);
+  const [examReminders, setExamReminders] = useState(true);
+  const [resultAlerts, setResultAlerts] = useState(true);
+  const [soundEffects, setSoundEffects] = useState(false);
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    const loadProfileData = () => {
+      const storedName = localStorage.getItem('student_profile_name') || 'ali';
+      setName(storedName);
+      
+      const storedPoints = parseInt(localStorage.getItem('student_points') || '40');
+      setPoints(storedPoints);
+      
+      const storedStreak = parseInt(localStorage.getItem('student_streak') || '8');
+      setStreak(storedStreak);
+      
+      const storedCompleted = JSON.parse(localStorage.getItem('student_completed_lessons') || '[]');
+      setCompletedLessonsCount(storedCompleted.length);
+
+      const storedEnrolled = JSON.parse(localStorage.getItem('student_enrolled_courses') || '["chem-1"]');
+      setEnrolledCoursesCount(storedEnrolled.length);
+
+      const storedExams = localStorage.getItem('student_exams');
+      if (storedExams) {
+        setExams(JSON.parse(storedExams));
+      } else {
+        const defaults = [
+          { id: 'exam-2', name: 'exam 2', subject: 'chemistry', score: 100, status: 'Passed', date: 'Jun 14, 2026' },
+          { id: 'chem-test-1', name: 'chemistry test 1', subject: 'chemistry', score: 50, status: 'Failed', date: 'Jun 14, 2026' }
+        ];
+        setExams(defaults);
+      }
+    };
+    loadProfileData();
+    window.addEventListener('profileUpdate', loadProfileData);
+    return () => window.removeEventListener('profileUpdate', loadProfileData);
+  }, []);
+
+  // Theme Sync
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+    localStorage.setItem('theme', theme);
+    window.dispatchEvent(new Event('themeChange'));
+  }, [theme]);
+
+  // Metric computations
+  const totalExams = exams.length;
+  const passedExams = exams.filter(e => e.status === 'Passed').length;
+  const averageScore = totalExams > 0 ? Math.round(exams.reduce((sum, e) => sum + e.score, 0) / totalExams) : 0;
+
+  // Copy Parent Code logic
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText('FM-8UTT2N');
+    toast.success('Parent invite code copied! 📋');
+  };
+
+  // Profile form submission
+  const handleProfileSave = (values) => {
+    setName(values.name);
+    setPhone(values.phone || '');
+    setBio(values.bio || '');
+    localStorage.setItem('student_profile_name', values.name);
+    toast.success('Profile settings updated!');
+    setIsEditProfileOpen(false);
+    window.dispatchEvent(new Event('profileUpdate'));
+  };
+
+  // Change Password form submission
+  const handleUpdatePassword = (values, { resetForm }) => {
+    const loadToast = toast.loading('Updating password...');
+    setTimeout(() => {
+      toast.dismiss(loadToast);
+      toast.success('Password updated successfully!');
+      setIsChangePasswordOpen(false);
+      resetForm();
+    }, 1000);
+  };
+
+  // Apply Language choice
+  const handleApplyLanguage = () => {
+    setSelectedLanguage(tempLanguage);
+    setIsLanguageOpen(false);
+    toast.success(`Language set to ${tempLanguage}!`);
+  };
+
+  const handleLogout = () => {
+    toast.success('Logged out successfully!');
+    navigate('/login');
+  };
+
+  // Initials for avatar
+  const avatarInitials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+  const isModalActive = isEditProfileOpen || isChangePasswordOpen || isLanguageOpen;
+
+  return (
+    <DashboardLayout
+      role="student"
+      activeTab="profile"
+      title="Settings"
+      subtitle="Customize student profile and system options"
+      disableScroll={true}
+      isModalOpen={isModalActive}
+    >
+      {/* Main Container - Full Width layout matching teacher settings */}
+      <div className="h-full flex flex-col px-4 md:px-8 py-4 overflow-hidden gap-5 animate-fade-in relative transition-all duration-300">
+        
+        {/* Scrollable Panel */}
+        <div className="flex-1 overflow-y-auto pr-1 pb-36 flex flex-col gap-6">
+
+          {/* 1. Hero Profile Banner */}
+          <div className="w-full bg-gradient-to-br from-purple-700/90 to-indigo-600/90 text-white rounded-3xl p-6 text-center relative overflow-hidden shadow-[0_15px_30px_rgba(139,92,246,0.2)] shrink-0">
+            {/* Banner Background decorative elements */}
+            <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-white/5 border border-white/10" />
+            <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5 border border-white/10" />
+
+            {/* Header controls inside banner */}
+            <div className="flex items-center justify-between z-10 relative">
+              <button
+                onClick={() => navigate('/student/dashboard')}
+                className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/10"
+              >
+                <FiChevronLeft size={20} />
+              </button>
+              <span className="text-sm font-black tracking-wide uppercase text-white/90">My Profile</span>
+              <button
+                onClick={() => setIsEditProfileOpen(true)}
+                className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/10"
+              >
+                <FiUser size={16} />
+              </button>
+            </div>
+
+            {/* Avatar & User Details */}
+            <div className="flex flex-col items-center gap-3 z-10 relative mt-4">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-[2rem] bg-white/15 border border-white/25 flex items-center justify-center text-white text-3xl font-black shadow-[0_0_25px_rgba(139,92,246,0.3)]">
+                  {avatarInitials}
+                </div>
+                <button
+                  onClick={() => setIsEditProfileOpen(true)}
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-xl bg-yellow-500 text-gray-900 border-2 border-indigo-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg"
+                >
+                  <FiCamera size={14} className="stroke-[2.5]" />
+                </button>
+              </div>
+              <div className="flex flex-col items-center">
+                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight capitalize tracking-wide">{name}</h3>
+                <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1">{email}</span>
+              </div>
+            </div>
+
+            {/* Horizontal Badge Tags Row */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-4 z-10 relative">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
+                <FiBookOpen size={11} className="text-blue-300" /> Student
+              </span>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
+                <FiStar size={11} className="text-yellow-300" /> {averageScore}% avg
+              </span>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
+                <FaFire size={11} className="text-pink-300" /> {streak}d streak
+              </span>
+            </div>
+          </div>
+
+          {/* 2. About Me & Learning Summary split */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+            {/* About Me Card */}
+            <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-left">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-800/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+                    <FiUser size={16} />
+                  </div>
+                  <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">About Me</h4>
+                </div>
+                <button
+                  onClick={() => setIsEditProfileOpen(true)}
+                  className="text-xs font-extrabold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
+                >
+                  Edit
+                </button>
+              </div>
+
+              <p className="text-xs font-semibold text-gray-400 italic leading-relaxed">
+                "{bio || 'No bio yet. Tap Edit to add one.'}"
+              </p>
+
+              <div className="flex flex-col gap-2.5 mt-2 text-xs font-semibold text-gray-400">
+                <div className="flex items-center gap-3">
+                  <FiMail className="text-gray-500 text-sm shrink-0" />
+                  <span>{email}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <FiPhone className="text-gray-500 text-sm shrink-0" />
+                  <span>{phone || 'Not provided'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Learning summary Card */}
+            <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-left justify-between">
+              <div className="flex items-center gap-3 pb-2 border-b border-gray-800/40">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                  <FiStar size={16} />
+                </div>
+                <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">Progress Summary</h4>
+              </div>
+
+              <div className="flex flex-col gap-2.5 my-2">
+                <div className="flex items-center justify-between text-xs font-bold text-gray-400">
+                  <span>Overall Completed Lessons</span>
+                  <span className="text-emerald-400 font-extrabold">{completedLessonsCount} / 12</span>
+                </div>
+                <div className="w-full h-2.5 bg-gray-950/60 rounded-full overflow-hidden border border-gray-900">
+                  <div 
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-500 shadow-[0_0_10px_#10b981]" 
+                    style={{ width: `${Math.max(5, Math.round((completedLessonsCount / 12) * 100))}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs font-bold text-gray-500 border-t border-gray-800/40 pt-2.5 mt-1">
+                <span>Streak Reward Points</span>
+                <span className="text-yellow-500 font-black">{points} Points</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Metrics grid */}
+          <div className="flex flex-col gap-3 shrink-0">
+            <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider text-left pl-1">
+              Performance Metrics
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
+                <span className="text-lg md:text-xl font-black text-emerald-400 leading-none mb-1">{averageScore}%</span>
+                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">Avg Score</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
+                <span className="text-lg md:text-xl font-black text-purple-400 leading-none mb-1">{totalExams}</span>
+                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">Exams taken</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
+                <span className="text-lg md:text-xl font-black text-blue-400 leading-none mb-1">{enrolledCoursesCount}</span>
+                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">Active Courses</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
+                <span className="text-lg md:text-xl font-black text-yellow-500 leading-none mb-1">{passedExams}</span>
+                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">Passed count</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Account Settings Section (3 Column Grid Desktop) */}
+          <div className="flex flex-col gap-3 shrink-0">
+            <div className="flex items-center gap-2 mb-1 pl-1 text-left">
+              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <FiUser size={13} />
+              </div>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Account</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Edit Profile */}
+              <div 
+                onClick={() => setIsEditProfileOpen(true)}
+                className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-400">
+                    <FiUser size={18} />
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-white leading-none">Edit Profile</h5>
+                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Name, bio, photo</span>
+                  </div>
+                </div>
+                <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+
+              {/* Change Password */}
+              <div 
+                onClick={() => setIsChangePasswordOpen(true)}
+                className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400">
+                    <FiLock size={18} />
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-white leading-none">Change Password</h5>
+                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Update security password</span>
+                  </div>
+                </div>
+                <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+
+              {/* Language Selection */}
+              <div 
+                onClick={() => { setTempLanguage(selectedLanguage); setIsLanguageOpen(true); }}
+                className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
+                    <FiGlobe size={18} />
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-bold text-white leading-none">Language</h5>
+                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">{selectedLanguage} / العربية</span>
+                  </div>
+                </div>
+                <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Family & Badges Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+            {/* Link a parent card */}
+            <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-left justify-between">
+              <div className="flex items-center gap-3 pb-2 border-b border-gray-800/40">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+                  <FiUsers size={16} />
+                </div>
+                <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">Family Linking</h4>
+              </div>
+
+              <p className="text-xs font-semibold text-gray-500 leading-relaxed">
+                Connect a parent account to follow your progress, exam scores, and study completion history.
+              </p>
+
+              <div className="flex items-center justify-between gap-3 bg-gray-950/65 border border-gray-800 p-3 rounded-2xl mt-1">
+                <span className="text-xs font-black text-white tracking-widest pl-1"># FM-8UTT2N</span>
+                <button 
+                  onClick={handleCopyCode}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer transition-all shadow-[0_4px_15px_rgba(139,92,246,0.3)]"
+                >
+                  <FiCopy size={11} /> Copy Code
+                </button>
+              </div>
+            </div>
+
+            {/* Badges showcase */}
+            <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-left">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-800/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500">
+                    <FiAward size={16} />
+                  </div>
+                  <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">My Badges</h4>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-[9px] font-black text-yellow-500">
+                  3 earned
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3.5 mt-2">
+                <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
+                  <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-400">
+                    <FiBookOpen size={13} />
+                  </div>
+                  <span className="text-[8.5px] font-black text-gray-400">First Exam</span>
+                </div>
+                <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
+                  <div className="w-8 h-8 rounded-full bg-pink-500/15 border border-pink-500/25 flex items-center justify-center text-pink-400">
+                    <FiStar size={13} />
+                  </div>
+                  <span className="text-[8.5px] font-black text-gray-400">Perfect Score</span>
+                </div>
+                <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
+                  <div className="w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-400">
+                    <FaFire size={13} />
+                  </div>
+                  <span className="text-[8.5px] font-black text-gray-400">7-Day Streak</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 6. Notifications & Sound grid (4 Column Grid Desktop) */}
+          <div className="flex flex-col gap-3 shrink-0">
+            <div className="flex items-center gap-2 mb-1 pl-1 text-left">
+              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <FiBell size={13} />
+              </div>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Notifications & Alert Toggles</h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Push notifications */}
+              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl">
+                <div className="text-left">
+                  <h5 className="text-xs font-bold text-white leading-none">Push</h5>
+                  <span className="text-[9px] text-gray-500 font-semibold mt-1 block">Receive app alerts</span>
+                </div>
+                <button 
+                  onClick={() => setPushNotifications(!pushNotifications)}
+                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${pushNotifications ? 'bg-purple-600 justify-end' : 'bg-gray-800 justify-start'}`}
+                >
+                  <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
+                </button>
+              </div>
+
+              {/* Exam Reminders */}
+              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl">
+                <div className="text-left">
+                  <h5 className="text-xs font-bold text-white leading-none">Reminders</h5>
+                  <span className="text-[9px] text-gray-500 font-semibold mt-1 block">Get warned before exams</span>
+                </div>
+                <button 
+                  onClick={() => setExamReminders(!examReminders)}
+                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${examReminders ? 'bg-blue-600 justify-end' : 'bg-gray-800 justify-start'}`}
+                >
+                  <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
+                </button>
+              </div>
+
+              {/* Result alerts */}
+              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl">
+                <div className="text-left">
+                  <h5 className="text-xs font-bold text-white leading-none">Result Alerts</h5>
+                  <span className="text-[9px] text-gray-500 font-semibold mt-1 block">Notify when scored</span>
+                </div>
+                <button 
+                  onClick={() => setResultAlerts(!resultAlerts)}
+                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${resultAlerts ? 'bg-emerald-500 justify-end' : 'bg-gray-800 justify-start'}`}
+                >
+                  <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
+                </button>
+              </div>
+
+              {/* Sound Effects */}
+              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl">
+                <div className="text-left">
+                  <h5 className="text-xs font-bold text-white leading-none">Sounds</h5>
+                  <span className="text-[9px] text-gray-500 font-semibold mt-1 block">Play audio cues</span>
+                </div>
+                <button 
+                  onClick={() => setSoundEffects(!soundEffects)}
+                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${soundEffects ? 'bg-gray-400 justify-end' : 'bg-gray-800 justify-start'}`}
+                >
+                  <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 7. Appearance section */}
+          <div className="flex flex-col gap-3 shrink-0">
+            <div className="flex items-center gap-2 mb-1 pl-1 text-left">
+              <div className="w-6 h-6 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500">
+                <FiSun size={13} />
+              </div>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Appearance</h3>
+            </div>
+
+            <div className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-sm">
+                  {theme === 'dark' ? <FiMoon size={18} /> : <FiSun size={18} />}
+                </div>
+                <div className="text-left">
+                  <h4 className="text-sm font-black text-white leading-tight">Dark Mode</h4>
+                  <p className="text-xs text-gray-500 font-semibold mt-1">Switch app appearance theme</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-800 justify-start'}`}
+              >
+                <div className="w-5 h-5 rounded-full bg-white shadow-md" />
+              </button>
+            </div>
+          </div>
+
+          {/* 8. Support Row (4 column Grid Desktop) */}
+          <div className="flex flex-col gap-3 shrink-0">
+            <div className="flex items-center gap-2 mb-1 pl-1 text-left">
+              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <FiGlobe size={13} />
+              </div>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Support</h3>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all group text-left">
+                <div>
+                  <h5 className="text-xs font-bold text-white">Help Center</h5>
+                  <span className="text-[9px] text-gray-500 font-semibold mt-0.5 block">FAQs & guides</span>
+                </div>
+                <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all group text-left">
+                <div>
+                  <h5 className="text-xs font-bold text-white">Contact Us</h5>
+                  <span className="text-[9px] text-gray-500 font-semibold mt-0.5 block">Reach our support team</span>
+                </div>
+                <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all group text-left">
+                <div>
+                  <h5 className="text-xs font-bold text-white">Feedback</h5>
+                  <span className="text-[9px] text-gray-500 font-semibold mt-0.5 block">Rate app experience</span>
+                </div>
+                <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all group text-left">
+                <div>
+                  <h5 className="text-xs font-bold text-white">About</h5>
+                  <span className="text-[9px] text-gray-500 font-semibold mt-0.5 block">FullMark v1.0.0</span>
+                </div>
+                <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />
+              </div>
+            </div>
+          </div>
+
+          {/* 9. Sign Out Button */}
+          <button
+            onClick={handleLogout}
+            className="w-full py-4 mt-4 border border-red-500/40 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all duration-300 active:scale-95 cursor-pointer shadow-sm shrink-0"
+          >
+            <FiLogOut className="text-lg" />
+            <span>Sign Out</span>
+          </button>
+
+        </div>
+
+      </div>
+
+      {/* EDIT PROFILE MODAL */}
+      <AnimatePresence>
+        {isEditProfileOpen && (
+          <div
+            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+            onClick={() => setIsEditProfileOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 100, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 100, opacity: 0 }}
+              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
+              
+              <button
+                onClick={() => setIsEditProfileOpen(false)}
+                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+              >
+                <FiX size={20} />
+              </button>
+
+              <h3 className="text-xl sm:text-2xl font-black text-white mb-6">
+                Edit Profile
+              </h3>
+
+              <Formik
+                initialValues={{
+                  name: name,
+                  phone: phone,
+                  bio: bio
+                }}
+                validationSchema={StudentProfileSchema}
+                onSubmit={handleProfileSave}
+                enableReinitialize
+              >
+                {({ values, handleChange, handleBlur, isSubmitting }) => (
+                  <Form className="flex flex-col gap-4 mt-2">
+                    <Input
+                      name="name"
+                      type="text"
+                      label="Full Name"
+                      placeholder="Ali"
+                      icon={FiUser}
+                      roleColor="student"
+                    />
+
+                    <Input
+                      name="phone"
+                      type="text"
+                      label="Phone Number"
+                      placeholder="+966 50 123 4567"
+                      icon={FiPhone}
+                      roleColor="student"
+                    />
+
+                    <div className="w-full flex flex-col mb-2 relative">
+                      <div className="w-full flex flex-col relative rounded-2xl px-4 py-3 bg-gray-950/40 border border-gray-800/80 min-h-[100px] justify-start focus-within:border-purple-500/50 transition-colors">
+                        <span className="absolute left-4 top-1.5 pointer-events-none font-semibold text-[10px] text-purple-400 uppercase tracking-wider">
+                          Bio
+                        </span>
+                        <textarea
+                          name="bio"
+                          value={values.bio || ''}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          rows={3}
+                          placeholder="Tell us about yourself"
+                          className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold outline-none focus:ring-0 resize-none pt-4 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-4 mt-2 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(139,92,246,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer disabled:opacity-55"
+                    >
+                      <span>Save Changes</span>
+                      <FiCheck className="text-base" />
+                    </button>
+                  </Form>
+                )}
+              </Formik>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CHANGE PASSWORD MODAL */}
+      <AnimatePresence>
+        {isChangePasswordOpen && (
+          <div
+            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+            onClick={() => setIsChangePasswordOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 100, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 100, opacity: 0 }}
+              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
+
+              <button
+                onClick={() => setIsChangePasswordOpen(false)}
+                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+              >
+                <FiX size={20} />
+              </button>
+
+              <h3 className="text-xl sm:text-2xl font-black text-white mb-6">
+                Change Password
+              </h3>
+
+              <Formik
+                initialValues={{
+                  currentPassword: '',
+                  newPassword: '',
+                  confirmPassword: '',
+                }}
+                validationSchema={ChangePasswordSchema}
+                onSubmit={handleUpdatePassword}
+              >
+                {({ isSubmitting }) => (
+                  <Form className="flex flex-col gap-4 mt-2">
+                    <Input
+                      name="currentPassword"
+                      type="password"
+                      label="Current Password"
+                      placeholder="Current Password"
+                      icon={FiLock}
+                      showPasswordToggle={true}
+                      roleColor="student"
+                    />
+                    <Input
+                      name="newPassword"
+                      type="password"
+                      label="New Password"
+                      placeholder="New Password"
+                      icon={FiLock}
+                      showPasswordToggle={true}
+                      roleColor="student"
+                    />
+                    <Input
+                      name="confirmPassword"
+                      type="password"
+                      label="Confirm Password"
+                      placeholder="Confirm Password"
+                      icon={FiLock}
+                      showPasswordToggle={true}
+                      roleColor="student"
+                    />
+                    
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-4 mt-2 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(139,92,246,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer disabled:opacity-55"
+                    >
+                      <span>Update Password</span>
+                      <FiCheck className="text-base" />
+                    </button>
+                  </Form>
+                )}
+              </Formik>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* LANGUAGE SELECTOR SHEET */}
+      <AnimatePresence>
+        {isLanguageOpen && (
+          <div
+            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+            onClick={() => setIsLanguageOpen(false)}
+          >
+            <motion.div
+              initial={{ y: 200, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 200, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
+
+              <button
+                onClick={() => setIsLanguageOpen(false)}
+                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+              >
+                <FiX size={20} />
+              </button>
+
+              <h3 className="text-xl font-black text-center text-white mb-6">
+                Select Language
+              </h3>
+
+              <div className="flex flex-col gap-3 mt-4">
+                {/* English choice */}
+                <button 
+                  onClick={() => setTempLanguage('English')}
+                  className={`w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
+                    tempLanguage === 'English' 
+                      ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5' 
+                      : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🇬🇧</span>
+                    <span className="text-xs sm:text-sm font-bold text-white">English</span>
+                  </div>
+                  {tempLanguage === 'English' && (
+                    <span className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white shrink-0">
+                      <FiCheck size={12} />
+                    </span>
+                  )}
+                </button>
+
+                {/* Arabic choice */}
+                <button 
+                  onClick={() => setTempLanguage('Arabic')}
+                  className={`w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
+                    tempLanguage === 'Arabic' 
+                      ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5' 
+                      : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🇯🇴</span>
+                    <span className="text-xs sm:text-sm font-bold text-white">Arabic — العربية</span>
+                  </div>
+                  {tempLanguage === 'Arabic' && (
+                    <span className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white shrink-0">
+                      <FiCheck size={12} />
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Apply action button */}
+              <button
+                onClick={handleApplyLanguage}
+                className="w-full py-4 mt-6 bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(139,92,246,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer"
+              >
+                <span>Apply</span>
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </DashboardLayout>
+  );
+};
+
+export default Profile;

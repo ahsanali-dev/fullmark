@@ -211,7 +211,7 @@ const Settings = () => {
               <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Account</h3>
             </div>
 
-            <div className="flex flex-col gap-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
               {/* Edit Profile Row */}
               <button
@@ -317,7 +317,7 @@ const Settings = () => {
               <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Quick Access</h3>
             </div>
 
-            <div className="flex flex-col gap-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
               {/* User Management */}
               <button
