@@ -74,11 +74,11 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
           dotClass: 'bg-purple-500',
           activeMenuClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]',
           menus: [
-            { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
-            { id: 'children', label: 'Children Stats', icon: FiUsers },
-            { id: 'attendance', label: 'Attendance', icon: FiCalendar },
-            { id: 'reports', label: 'Reports', icon: FiBarChart2 },
-            { id: 'settings', label: 'Settings', icon: FiSettings }
+            { id: 'dashboard', label: 'Home', icon: FiHome },
+            { id: 'children', label: 'Children', icon: FiUsers },
+            { id: 'attendance', label: 'Analysis', icon: FiBarChart2 },
+            { id: 'reports', label: 'Reports', icon: FiFileText },
+            { id: 'settings', label: 'Profile', icon: FiUser }
           ]
         };
       case 'admin':
@@ -146,6 +146,21 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
         setProfileName(storedName);
         const initials = storedName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
         setProfileAvatar(initials || 'AL');
+      } else if (role === 'parent') {
+        const stored = localStorage.getItem('parent_profile');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            setProfileName(parsed.name || 'ali faraz');
+            setProfileAvatar(parsed.initials || 'AF');
+          } catch (e) {
+            setProfileName('ali faraz');
+            setProfileAvatar('AF');
+          }
+        } else {
+          setProfileName('ali faraz');
+          setProfileAvatar('AF');
+        }
       } else {
         setProfileName(role === 'admin' ? 'Admin Panel' : 'User');
         setProfileAvatar(config.avatarText);
@@ -266,10 +281,11 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
         <div className="relative" ref={userMenuRef}>
           {showUserMenu && (
             <div className="absolute bottom-full left-0 w-full mb-3 bg-[#111222] border border-gray-800 rounded-2xl p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-fade-in">
-              {(role === 'teacher' || role === 'student') && (
+              {(role === 'teacher' || role === 'student' || role === 'parent') && (
                 <button
                   onClick={() => {
-                    navigate(role === 'teacher' ? '/teacher/settings' : '/student/profile');
+                    const profileRoute = role === 'teacher' ? '/teacher/settings' : role === 'student' ? '/student/profile' : '/parent/settings';
+                    navigate(profileRoute);
                     setShowUserMenu(false);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-300 hover:bg-gray-800/40 rounded-xl transition-all duration-200 cursor-pointer mb-1 text-left"
@@ -421,10 +437,11 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
                     <p className="text-xs font-bold text-white leading-tight text-left">{profileName}</p>
                     <p className="text-[10px] text-gray-500 text-left">{config.roleName}</p>
                   </div>
-                  {(role === 'teacher' || role === 'student') && (
+                  {(role === 'teacher' || role === 'student' || role === 'parent') && (
                     <button
                       onClick={() => {
-                        navigate(role === 'teacher' ? '/teacher/settings' : '/student/profile');
+                        const profileRoute = role === 'teacher' ? '/teacher/settings' : role === 'student' ? '/student/profile' : '/parent/settings';
+                        navigate(profileRoute);
                         setShowUserMenu(false);
                       }}
                       className="w-full flex items-center gap-3 px-3.5 py-2 text-sm font-bold text-gray-300 hover:bg-gray-800/40 rounded-xl transition-all duration-200 cursor-pointer text-left mb-1"

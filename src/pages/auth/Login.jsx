@@ -51,6 +51,8 @@ const Login = () => {
         navigate('/teacher/dashboard');
       } else if (selectedRole === 'student') {
         navigate('/student/dashboard');
+      } else if (selectedRole === 'parent') {
+        navigate('/parent/dashboard');
       }
     }, 1000);
   };

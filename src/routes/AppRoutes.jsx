@@ -31,6 +31,12 @@ import StudentResults from '../pages/student/Results';
 import StudentResultDetails from '../pages/student/ResultDetails';
 import StudentProfile from '../pages/student/Profile';
 
+import ParentDashboard from '../pages/parent/Dashboard';
+import ParentChildren from '../pages/parent/Children';
+import ParentAnalysis from '../pages/parent/Analysis';
+import ParentReports from '../pages/parent/Reports';
+import ParentSettings from '../pages/parent/Settings';
+
 const router = createBrowserRouter([
   {
     path: '/',
@@ -149,8 +155,32 @@ const router = createBrowserRouter([
     element: <StudentProfile />,
   },
   {
+    path: '/parent/dashboard',
+    element: <ParentDashboard />,
+  },
+  {
+    path: '/parent/children',
+    element: <ParentChildren />,
+  },
+  {
+    path: '/parent/attendance',
+    element: <ParentAnalysis />,
+  },
+  {
+    path: '/parent/reports',
+    element: <ParentReports />,
+  },
+  {
+    path: '/parent/settings',
+    element: <ParentSettings />,
+  },
+  {
     path: '/student',
     element: <Navigate to="/student/dashboard" replace />,
+  },
+  {
+    path: '/parent',
+    element: <Navigate to="/parent/dashboard" replace />,
   },
   {
     path: '/teacher',
