@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import Landing from '../pages/Landing';
+import BoyleLaw from '../pages/BoyleLaw';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import ForgotPassword from '../pages/auth/ForgotPassword';
@@ -41,6 +42,10 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <Landing />,
+  },
+  {
+    path: '/boyle-law',
+    element: <BoyleLaw />,
   },
   {
     path: '/login',

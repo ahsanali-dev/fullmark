@@ -11,6 +11,8 @@ import {
 import Background3D from '../components/shared/Background3D';
 import { InteractiveDemo } from '../components/shared/InteractiveDemo';
 import { FaqAccordion } from '../components/shared/FaqAccordion';
+import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
 
 /* ─── Floating Orb ─────────────────────────────────────────── */
 const Orb = ({ color, size, top, left, blur, delay }) => (
@@ -154,6 +156,16 @@ export default function Landing() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (window.location.hash) {
+      const id = window.location.hash.substring(1);
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 350);
+    }
+  }, []);
+
   const roles = [
     {
       role: 'Admin', icon: FiShield, color: '#f87171', gradient: ['rgba(239,68,68,0.15)', 'rgba(239,68,68,0.3)'],
@@ -186,44 +198,7 @@ export default function Landing() {
       <Background3D roleColor="admin" />
 
       {/* ── NAVBAR ── */}
-      <motion.nav
-        initial={{ y: -60, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-[#080911]/70 backdrop-blur-xl border-b border-gray-800/50"
-      >
-        <div className="flex items-center gap-3 cursor-pointer select-none group" onClick={scrollToTop}>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-rose-500 flex items-center justify-center font-black text-white text-sm shadow-[0_0_20px_rgba(239,68,68,0.5)] group-hover:scale-105 transition-transform">FM</div>
-          <span className="text-lg font-black text-white tracking-wide group-hover:text-red-400 transition-colors">FullMark</span>
-        </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-bold">
-          <a href="#stats" className={`hover:text-white transition-all duration-300 cursor-pointer relative py-1 ${activeSection === 'stats' ? 'text-white' : 'text-gray-400'}`}>
-            Stats
-            {activeSection === 'stats' && (
-              <motion.span layoutId="activeNavLine" className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-            )}
-          </a>
-          <a href="#roles" className={`hover:text-white transition-all duration-300 cursor-pointer relative py-1 ${activeSection === 'roles' ? 'text-white' : 'text-gray-400'}`}>
-            Portals
-            {activeSection === 'roles' && (
-              <motion.span layoutId="activeNavLine" className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-            )}
-          </a>
-          <a href="#features" className={`hover:text-white transition-all duration-300 cursor-pointer relative py-1 ${activeSection === 'features' ? 'text-white' : 'text-gray-400'}`}>
-            Features
-            {activeSection === 'features' && (
-              <motion.span layoutId="activeNavLine" className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-            )}
-          </a>
-
-        </div>
-        <button
-          onClick={() => navigate('/login')}
-          className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 text-white text-sm font-black shadow-[0_0_20px_rgba(239,68,68,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
-        >
-          Get Started
-        </button>
-      </motion.nav>
+      <Navbar activeSection={activeSection} />
 
       {/* ── HERO ── */}
       <section id="hero" ref={heroRef} className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-24 pb-16 overflow-hidden">
@@ -549,97 +524,7 @@ export default function Landing() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="relative border-t border-gray-900 bg-[#080911]/90 backdrop-blur-xl py-16 px-6 md:px-12 z-20">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10">
-
-          {/* Brand Info (col-span-4) */}
-          <div className="lg:col-span-4 flex flex-col gap-5 text-left">
-            <div className="flex items-center gap-3 cursor-pointer select-none group w-fit" onClick={scrollToTop}>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-rose-500 flex items-center justify-center font-black text-white text-sm shadow-[0_0_20px_rgba(239,68,68,0.5)] group-hover:scale-105 transition-transform">FM</div>
-              <span className="text-lg font-black text-white tracking-wide group-hover:text-red-400 transition-colors">FullMark</span>
-            </div>
-            <p className="text-xs font-semibold text-gray-500 leading-relaxed max-w-sm">
-              Empowering classrooms with AI-assisted assessment parsing, dynamic test banks, and comprehensive real-time dashboards for admins, teachers, and students.
-            </p>
-            {/* Social Icons */}
-            <div className="flex items-center gap-3 mt-2">
-              {[
-                { Icon: FiGithub, href: 'https://github.com' },
-                { Icon: FiTwitter, href: 'https://twitter.com' },
-                { Icon: FiLinkedin, href: 'https://linkedin.com' },
-                { Icon: FiYoutube, href: 'https://youtube.com' }
-              ].map((s, idx) => (
-                <a
-                  key={idx}
-                  href={s.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-10 h-10 rounded-xl bg-gray-900/50 border border-gray-800/80 flex items-center justify-center text-gray-500 hover:text-white hover:border-gray-700 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                  style={{ boxShadow: `inset 0 1px 0 rgba(255,255,255,0.03)` }}
-                >
-                  <s.Icon size={18} />
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Links (col-span-2) */}
-          <div className="lg:col-span-2 flex flex-col gap-4 text-left">
-            <h4 className="text-xs font-black uppercase tracking-wider text-red-500 font-sans">Platform</h4>
-            <div className="flex flex-col gap-2.5 text-xs font-bold text-gray-500">
-              <a href="#features" className="hover:text-white transition-colors">Features</a>
-              <a href="#roles" className="hover:text-white transition-colors">Portals</a>
-              <a href="#stats" className="hover:text-white transition-colors">Stats</a>
-              <a onClick={() => navigate('/login')} className="hover:text-white transition-colors cursor-pointer">Login Panel</a>
-            </div>
-          </div>
-
-          {/* Support / Docs (col-span-2) */}
-          <div className="lg:col-span-2 flex flex-col gap-4 text-left">
-            <h4 className="text-xs font-black uppercase tracking-wider text-blue-500 font-sans">Resources</h4>
-            <div className="flex flex-col gap-2.5 text-xs font-bold text-gray-500">
-              <a href="#" className="hover:text-white transition-colors">Documentation</a>
-              <a href="#" className="hover:text-white transition-colors">Help Center</a>
-              <a href="#" className="hover:text-white transition-colors">API Reference</a>
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            </div>
-          </div>
-
-          {/* Newsletter (col-span-4) */}
-          <div className="lg:col-span-4 flex flex-col gap-4 text-left">
-            <h4 className="text-xs font-black uppercase tracking-wider text-emerald-500 font-sans">Stay Updated</h4>
-            <p className="text-xs font-semibold text-gray-500 leading-relaxed">
-              Subscribe to get the latest updates on AI parsing enhancements and feature releases.
-            </p>
-            <form onSubmit={(e) => e.preventDefault()} className="flex items-center gap-2 mt-1">
-              <div className="relative flex-grow">
-                <input
-                  type="email"
-                  placeholder="Enter email address"
-                  className="w-full bg-[#0a0b12] text-white border border-gray-800/80 rounded-xl px-4 py-3 text-xs font-bold focus:outline-none focus:border-red-500/50 focus:shadow-[0_0_15px_rgba(239,68,68,0.1)] transition-all"
-                />
-              </div>
-              <button
-                type="submit"
-                className="p-3 rounded-xl bg-gradient-to-br from-red-600 to-rose-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center border-none"
-              >
-                <FiSend size={15} />
-              </button>
-            </form>
-          </div>
-
-        </div>
-
-        {/* Bottom copyright */}
-        <div className="max-w-7xl mx-auto border-t border-gray-900/60 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[10px] text-gray-600 font-semibold">
-            © 2026 FullMark. Smart Digital Assessment Ecosystem. All Rights Reserved.
-          </p>
-          <p className="text-[10px] text-gray-600 font-semibold flex items-center gap-1">
-            Made with <span className="text-red-500 animate-pulse">❤️</span> for modern education.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
