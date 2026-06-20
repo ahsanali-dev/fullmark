@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   FiUsers, 
   FiBookOpen, 
@@ -14,22 +14,19 @@ import {
   FiLock,
   FiCheck,
   FiHeart,
-  FiChevronDown
+  FiChevronDown,
+  FiDollarSign
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 import { Formik, Form, useFormik, FormikProvider } from 'formik';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
-import StatCard from '../../components/shared/StatCard';
-import ModalWrapper from '../../components/shared/ModalWrapper';
 import { UserSchema, SubjectSchema } from '../../schemas/adminSchemas';
 
 // Schemas imported from src/schemas/adminSchemas.js
 
 const Dashboard = () => {
-  const navigate = useNavigate();
 
   // Modals state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -400,6 +397,7 @@ const Dashboard = () => {
                 title: '',
                 description: '',
                 teacher: 'teacher 23',
+                price: 0,
               }}
               validationSchema={SubjectSchema}
               onSubmit={handleSubjectSubmit}
@@ -413,6 +411,15 @@ const Dashboard = () => {
                     label="Subject Title"
                     placeholder="Chemistry"
                     icon={FiBookOpen}
+                    roleColor="admin"
+                  />
+
+                  <Input
+                    name="price"
+                    type="number"
+                    label="Price (Points)"
+                    placeholder="0"
+                    icon={FiDollarSign}
                     roleColor="admin"
                   />
 

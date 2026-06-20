@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FiGrid, 
@@ -13,18 +13,17 @@ import {
   FiChevronUp, 
   FiChevronDown,
   FiChevronLeft,
-  FiAward,
-  FiCalendar,
   FiFileText,
   FiUser,
   FiShield,
   FiHelpCircle,
   FiHome,
-  FiClipboard
+  FiClipboard,
+  FiTag
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
-const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', setActiveTab, title, subtitle, disableScroll, isModalOpen = false, showBackButton = false, onBackClick, headerActions }) => {
+const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', title, subtitle, disableScroll, isModalOpen = false, showBackButton = false, onBackClick, headerActions }) => {
   const navigate = useNavigate();
 
   // Get color theme based on role
@@ -95,6 +94,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
             { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
             { id: 'users', label: 'Users', icon: FiUsers },
             { id: 'content', label: 'Content', icon: FiBookOpen },
+            { id: 'coupons', label: 'Coupons', icon: FiTag },
             { id: 'reports', label: 'Reports', icon: FiBarChart2 },
             { id: 'settings', label: 'Settings', icon: FiSettings }
           ]
@@ -133,7 +133,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
             } else {
               setProfileAvatar('AA');
             }
-          } catch (e) {
+          } catch {
             setProfileName('Ahsan Ali');
             setProfileAvatar('AA');
           }
@@ -153,7 +153,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
             const parsed = JSON.parse(stored);
             setProfileName(parsed.name || 'ali faraz');
             setProfileAvatar(parsed.initials || 'AF');
-          } catch (e) {
+          } catch {
             setProfileName('ali faraz');
             setProfileAvatar('AF');
           }
@@ -226,6 +226,8 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', se
         return 'User Management';
       case 'content':
         return 'Content Library';
+      case 'coupons':
+        return 'Coupon Management';
       case 'reports':
         return 'Platform Reports';
       case 'settings':

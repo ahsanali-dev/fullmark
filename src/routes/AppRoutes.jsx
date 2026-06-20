@@ -1,4 +1,3 @@
-import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import Landing from '../pages/Landing';
 import BoyleLaw from '../pages/BoyleLaw';
@@ -8,6 +7,7 @@ import ForgotPassword from '../pages/auth/ForgotPassword';
 import Dashboard from '../pages/admin/Dashboard';
 import Users from '../pages/admin/Users';
 import Content from '../pages/admin/Content';
+import Coupons from '../pages/admin/Coupons';
 import Reports from '../pages/admin/Reports';
 import Settings from '../pages/admin/Settings';
 
@@ -20,6 +20,7 @@ import TeacherAddQuestion from '../pages/teacher/AddQuestion';
 import TeacherSubjectDetails from '../pages/teacher/SubjectDetails';
 import TeacherEditQuestion from '../pages/teacher/EditQuestion';
 import TeacherCreateExam from '../pages/teacher/CreateExam';
+import TeacherAddLesson from '../pages/teacher/AddLesson';
 
 import StudentDashboard from '../pages/student/StudentDashboard';
 import StudentCourses from '../pages/student/Courses';
@@ -72,6 +73,10 @@ const router = createBrowserRouter([
     element: <Content />,
   },
   {
+    path: '/admin/coupons',
+    element: <Coupons />,
+  },
+  {
     path: '/admin/reports',
     element: <Reports />,
   },
@@ -106,6 +111,14 @@ const router = createBrowserRouter([
   {
     path: '/teacher/subjects/:subjectId/create-exam',
     element: <TeacherCreateExam />,
+  },
+  {
+    path: '/teacher/subjects/:subjectId/add-lesson',
+    element: <TeacherAddLesson />,
+  },
+  {
+    path: '/teacher/subjects/:subjectId/edit-lesson/:lessonId',
+    element: <TeacherAddLesson />,
   },
   {
     path: '/teacher/questions',

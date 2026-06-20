@@ -64,3 +64,16 @@ export const setStoredProfile = (profile) => {
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('profileUpdate'));
 };
+
+export const getStoredLessons = () => {
+  const data = localStorage.getItem('teacher_lessons');
+  if (data) return JSON.parse(data);
+  const initial = [];
+  localStorage.setItem('teacher_lessons', JSON.stringify(initial));
+  return initial;
+};
+
+export const setStoredLessons = (lessons) => {
+  localStorage.setItem('teacher_lessons', JSON.stringify(lessons));
+  window.dispatchEvent(new Event('storage'));
+};

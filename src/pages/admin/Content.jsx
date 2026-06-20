@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FiBookOpen,
   FiSearch,
@@ -10,21 +10,20 @@ import {
   FiPlus,
   FiCheck,
   FiX,
-  FiChevronDown
+  FiChevronDown,
+  FiDollarSign
 } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
-import ModalWrapper from '../../components/shared/ModalWrapper';
 import { SubjectSchema } from '../../schemas/adminSchemas';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 // SubjectSchema imported from src/schemas/adminSchemas.js
 
 const Content = () => {
-  const navigate = useNavigate();
 
   // Initial subjects data matching screenshot
   const [subjects, setSubjects] = useState([
@@ -37,6 +36,7 @@ const Content = () => {
       questionsCount: 0,
       studentsCount: 0,
       createdAt: 'May 2026',
+      price: 200,
     },
     {
       id: 'sub-2',
@@ -47,6 +47,7 @@ const Content = () => {
       questionsCount: 0,
       studentsCount: 0,
       createdAt: 'May 2026',
+      price: 100,
     },
     {
       id: 'sub-3',
@@ -57,6 +58,7 @@ const Content = () => {
       questionsCount: 0,
       studentsCount: 0,
       createdAt: 'May 2026',
+      price: 0,
     }
   ]);
 
@@ -72,10 +74,12 @@ const Content = () => {
 
   const location = useLocation();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (location.state?.openAddModal) {
-      setEditingSubject(null);
-      setIsModalOpen(true);
+      setTimeout(() => {
+        setEditingSubject(null);
+        setIsModalOpen(true);
+      }, 0);
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -125,7 +129,7 @@ const Content = () => {
       setSubjects(prev =>
         prev.map(sub =>
           sub.id === editingSubject.id
-            ? { ...sub, title: values.title, description: values.description, teacher: values.teacher }
+            ? { ...sub, title: values.title, description: values.description, teacher: values.teacher, price: Number(values.price) }
             : sub
         )
       );
@@ -137,6 +141,7 @@ const Content = () => {
         title: values.title,
         description: values.description,
         teacher: values.teacher,
+        price: Number(values.price),
         status: 'active',
         questionsCount: 0,
         studentsCount: 0,
@@ -280,9 +285,15 @@ const Content = () => {
                       <div className="flex flex-col text-left">
                         <h4 className="text-base font-extrabold text-white leading-tight capitalize">{sub.title}</h4>
                         <p className="text-xs text-gray-500 font-semibold mt-1 mb-1 leading-normal">{sub.description}</p>
-                        <div className="flex items-center gap-1.5 text-[11px] text-gray-500 font-bold">
-                          <FiUser size={13} className="text-red-400" />
-                          <span>{sub.teacher}</span>
+                        <div className="flex items-center gap-2 mt-1 mb-1 text-[11px] text-gray-500 font-bold">
+                          <span className="flex items-center gap-1">
+                            <FiUser size={13} className="text-red-400" />
+                            <span>{sub.teacher}</span>
+                          </span>
+                          <span className="text-gray-700 font-black">•</span>
+                          <span className="text-yellow-400">
+                            {sub.price === 0 || sub.price === '0' || sub.price === undefined ? 'Free' : `${sub.price} Pts`}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -384,6 +395,7 @@ const Content = () => {
                 title: editingSubject ? editingSubject.title : '',
                 description: editingSubject ? editingSubject.description : '',
                 teacher: editingSubject ? editingSubject.teacher : 'teacher 23',
+                price: editingSubject ? (editingSubject.price !== undefined ? editingSubject.price : 0) : 0,
               }}
               validationSchema={SubjectSchema}
               onSubmit={handleFormSubmit}
@@ -397,6 +409,15 @@ const Content = () => {
                     label="Subject Title"
                     placeholder="Chemistry"
                     icon={FiBookOpen}
+                    roleColor="admin"
+                  />
+
+                  <Input
+                    name="price"
+                    type="number"
+                    label="Price (Points)"
+                    placeholder="0"
+                    icon={FiDollarSign}
                     roleColor="admin"
                   />
 

@@ -25,4 +25,7 @@ export const SubjectSchema = Yup.object().shape({
     .min(5, 'Description must be at least 5 characters')
     .required('Description is required'),
   teacher: Yup.string().required('Please assign a teacher'),
+  price: Yup.number()
+    .min(0, 'Price must be 0 or greater')
+    .required('Price is required'),
 });
