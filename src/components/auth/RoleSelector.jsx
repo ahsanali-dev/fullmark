@@ -9,11 +9,13 @@ const roles = [
   { id: 'parent', name: 'Parent', icon: FaUsers, color: 'parent', themeColor: 'purple' },
 ];
 
-const RoleSelector = ({ selectedRole, onChange }) => {
+const RoleSelector = ({ selectedRole, onChange, excludeAdmin = false }) => {
+  const filteredRoles = excludeAdmin ? roles.filter(r => r.id !== 'admin') : roles;
+
   return (
     <div className="w-full mb-8">
-      <div className="grid grid-cols-4 gap-3 md:gap-4">
-        {roles.map((role) => {
+      <div className={`grid ${excludeAdmin ? 'grid-cols-3' : 'grid-cols-4'} gap-3 md:gap-4`}>
+        {filteredRoles.map((role) => {
           const isActive = selectedRole === role.id;
           const Icon = role.icon;
 

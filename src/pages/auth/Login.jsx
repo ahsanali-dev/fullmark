@@ -4,6 +4,8 @@ import * as Yup from 'yup';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiLogIn, FiUserPlus } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { loginUser } from '../../redux/slices/authSlice';
 
 import toast from 'react-hot-toast';
 
@@ -25,6 +27,7 @@ const Login = () => {
   const [selectedRole, setSelectedRole] = useState('student');
   const [colorFlow, setColorFlow] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -33,16 +36,17 @@ const Login = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSubmit = (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting }) => {
     const payload = {
-      ...values,
+      email: values.email,
+      password: values.password,
       role: selectedRole,
     };
     
-    console.log('--- Form Submission Success ---');
-    console.log('Form Data:', payload);
-    
-    setTimeout(() => {
+    const loadToast = toast.loading('Logging you in...');
+    try {
+      const data = await dispatch(loginUser(payload)).unwrap();
+      toast.dismiss(loadToast);
       toast.success(`Logged in successfully as ${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}!`);
       setSubmitting(false);
       if (selectedRole === 'admin') {
@@ -54,7 +58,16 @@ const Login = () => {
       } else if (selectedRole === 'parent') {
         navigate('/parent/dashboard');
       }
-    }, 1000);
+    } catch (err) {
+      toast.dismiss(loadToast);
+      if (err?.needsVerification) {
+        toast.error('Please verify your email first.');
+        navigate('/verify-otp', { state: { email: err.email } });
+      } else {
+        toast.error(err?.message || 'Login failed. Please check your credentials.');
+      }
+      setSubmitting(false);
+    }
   };
 
   const getRoleThemeColor = () => {

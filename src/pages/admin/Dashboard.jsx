@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FiUsers, 
   FiBookOpen, 
@@ -20,19 +20,43 @@ import {
 import toast from 'react-hot-toast';
 import { Formik, Form, useFormik, FormikProvider } from 'formik';
 import { motion } from 'framer-motion';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchDashboardStats, createUser, createSubject, fetchAllUsers } from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
+import { DashboardSkeleton } from '../../components/shared/SkeletonLoading';
 import { UserSchema, SubjectSchema } from '../../schemas/adminSchemas';
 
 // Schemas imported from src/schemas/adminSchemas.js
 
 const Dashboard = () => {
+  const dispatch = useDispatch();
+  const { stats, recentUsers, isLoading } = useSelector((state) => state.admin);
+
+  useEffect(() => {
+    dispatch(fetchDashboardStats());
+  }, [dispatch]);
 
   // Modals state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
   const [isDescFocused, setIsDescFocused] = useState(false);
   const [isSelectFocused, setIsSelectFocused] = useState(false);
+  const [teachers, setTeachers] = useState([]);
+
+  // Fetch teachers when Subject modal opens
+  useEffect(() => {
+    if (isSubjectModalOpen) {
+      dispatch(fetchAllUsers({ role: 'teacher' })).unwrap()
+        .then((res) => {
+          setTeachers(res.users || []);
+        })
+        .catch((err) => {
+          toast.error('Failed to load teachers list');
+        });
+    }
+  }, [isSubjectModalOpen, dispatch]);
 
   // Formik for User Modal
   const userFormik = useFormik({
@@ -43,29 +67,64 @@ const Dashboard = () => {
       role: 'Teacher'
     },
     validationSchema: UserSchema,
-    onSubmit: (values, { resetForm }) => {
-      toast.success(`${values.name} added as ${values.role}!`);
-      setIsUserModalOpen(false);
-      resetForm();
+    onSubmit: async (values, { resetForm, setSubmitting }) => {
+      const loadToast = toast.loading('Creating user...');
+      try {
+        await dispatch(createUser({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          role: values.role.toLowerCase()
+        })).unwrap();
+        toast.dismiss(loadToast);
+        toast.success(`${values.name} added successfully as ${values.role}!`);
+        setIsUserModalOpen(false);
+        resetForm();
+        dispatch(fetchDashboardStats());
+      } catch (err) {
+        toast.dismiss(loadToast);
+        toast.error(err || 'Failed to create user');
+      } finally {
+        setSubmitting(false);
+      }
     }
   });
 
-  const handleSubjectSubmit = (values, { resetForm }) => {
-    toast.success(`Subject "${values.title}" created successfully!`);
-    setIsSubjectModalOpen(false);
-    resetForm();
+  const handleSubjectSubmit = async (values, { resetForm, setSubmitting }) => {
+    const loadToast = toast.loading('Creating subject...');
+    try {
+      await dispatch(createSubject({
+        name: values.title,
+        description: values.description,
+        teacher: values.teacher || null,
+        price: values.price || 0,
+        colorTop: '#ef4444',
+        colorBottom: '#f43f5e',
+        icon: 'FiBookOpen',
+        grade: 'Primary'
+      })).unwrap();
+      toast.dismiss(loadToast);
+      toast.success(`Subject "${values.title}" created successfully!`);
+      setIsSubjectModalOpen(false);
+      resetForm();
+      dispatch(fetchDashboardStats());
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to create subject');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // Static mock data mimicking the screenshots
-  const recentUsers = [
-    { name: 'Ahmad', email: 'baaddawe@gmail.com', role: 'Student', status: 'Inactive', avatar: 'AH', color: 'emerald' },
-    { name: 'teacher 23', email: 't2@gmail.com', role: 'Teacher', status: 'Inactive', avatar: 'T2', color: 'blue' },
-    { name: 'teacher', email: 't@gmail.com', role: 'Teacher', status: 'Inactive', avatar: 'TE', color: 'blue' },
-    { name: 'Ali Faraz', email: 'alifaraz933@gmail.commmm', role: 'Student', status: 'Inactive', avatar: 'AF', color: 'emerald' },
-    { name: 'Ali Faraz', email: 'alifaraz933@gmail.commmm', role: 'Student', status: 'Inactive', avatar: 'AF', color: 'emerald' }
-  ];
-
   const isBlurred = isUserModalOpen || isSubjectModalOpen;
+
+  if (isLoading && !stats) {
+    return (
+      <DashboardLayout role="admin" activeTab="dashboard">
+        <DashboardSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="admin" activeTab="dashboard" isModalOpen={isBlurred}>
@@ -79,7 +138,7 @@ const Dashboard = () => {
             <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] mb-4">
               <FiAward className="text-xl" />
             </div>
-            <span className="text-2xl md:text-3xl font-extrabold text-white">4</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-white">{stats?.totalStudents || 0}</span>
             <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">Students</span>
           </div>
           {/* Teachers */}
@@ -87,24 +146,24 @@ const Dashboard = () => {
             <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] mb-4">
               <FiUsers className="text-xl" />
             </div>
-            <span className="text-2xl md:text-3xl font-extrabold text-white">2</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-white">{stats?.totalTeachers || 0}</span>
             <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">Teachers</span>
           </div>
-          {/* Exams */}
+          {/* Subjects */}
           <div className="p-5 stat-card-exam rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
             <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)] mb-4">
               <FiBookOpen className="text-xl" />
             </div>
-            <span className="text-2xl md:text-3xl font-extrabold text-white">0</span>
-            <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">Exams</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-white">{stats?.totalSubjects || 0}</span>
+            <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">Subjects</span>
           </div>
-          {/* Questions */}
+          {/* Coupons */}
           <div className="p-5 stat-card-question rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
             <div className="w-12 h-12 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)] mb-4">
-              <span className="text-lg font-bold">?</span>
+              <span className="text-lg font-bold">$</span>
             </div>
-            <span className="text-2xl md:text-3xl font-extrabold text-white">0</span>
-            <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">Questions</span>
+            <span className="text-2xl md:text-3xl font-extrabold text-white">{stats?.totalCoupons || 0}</span>
+            <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">Coupons</span>
           </div>
         </div>
 
@@ -112,34 +171,28 @@ const Dashboard = () => {
         <div className="flex flex-col gap-4">
           <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">System Health</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Sessions */}
+            {/* Parents */}
             <div className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl flex flex-col justify-between shadow-lg">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.12)]">
                   <FiActivity className="text-lg" />
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-emerald-500/30 text-emerald-400 bg-emerald-500/5 flex items-center gap-1">
-                  ↑ +0%
-                </span>
               </div>
               <div>
-                <h4 className="text-xl md:text-2xl font-black text-white leading-none">0</h4>
-                <span className="text-xs text-gray-500 font-semibold tracking-wide mt-1 block">Sessions</span>
+                <h4 className="text-xl md:text-2xl font-black text-white leading-none">{stats?.totalParents || 0}</h4>
+                <span className="text-xs text-gray-500 font-semibold tracking-wide mt-1 block">Parents</span>
               </div>
             </div>
-            {/* Exams Today */}
+            {/* Exams Completed */}
             <div className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl flex flex-col justify-between shadow-lg">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.12)]">
                   <FiCalendar className="text-lg" />
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-emerald-500/30 text-emerald-400 bg-emerald-500/5 flex items-center gap-1">
-                  ↑ +0
-                </span>
               </div>
               <div>
-                <h4 className="text-xl md:text-2xl font-black text-white leading-none">0</h4>
-                <span className="text-xs text-gray-500 font-semibold tracking-wide mt-1 block">Exams Today</span>
+                <h4 className="text-xl md:text-2xl font-black text-white leading-none">{stats?.totalExams || 0}</h4>
+                <span className="text-xs text-gray-500 font-semibold tracking-wide mt-1 block">Exams Completed</span>
               </div>
             </div>
             {/* Avg Score */}
@@ -148,12 +201,12 @@ const Dashboard = () => {
                 <div className="w-10 h-10 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-[0_0_12px_rgba(234,179,8,0.12)]">
                   <FiTrendingUp className="text-lg" />
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-red-500/30 text-red-400 bg-red-500/5 flex items-center gap-1">
-                  ↓ 0%
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold border border-emerald-500/30 text-emerald-400 bg-emerald-500/5 flex items-center gap-1">
+                  Pass Rate: {stats?.passRate || 0}%
                 </span>
               </div>
               <div>
-                <h4 className="text-xl md:text-2xl font-black text-white leading-none">0%</h4>
+                <h4 className="text-xl md:text-2xl font-black text-white leading-none">{stats?.avgScore || 0}%</h4>
                 <span className="text-xs text-gray-500 font-semibold tracking-wide mt-1 block">Avg Score</span>
               </div>
             </div>
@@ -206,43 +259,61 @@ const Dashboard = () => {
         <div className="flex flex-col gap-4">
           <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">Recent Users</h3>
           <div className="flex flex-col gap-3">
-            {recentUsers.map((user, idx) => (
-              <div 
-                key={idx}
-                className="flex items-center justify-between p-4 bg-[#0e101a]/90 border border-gray-800/80 rounded-3xl shadow-lg transition-all hover:bg-gray-800/20"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm ${
-                    user.color === 'emerald' 
-                      ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
-                      : 'bg-blue-500/10 border border-blue-500/20 text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
-                  }`}>
-                    {user.avatar}
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm md:text-base font-extrabold text-white leading-snug">{user.name}</span>
-                    <span className="text-xs text-gray-500 tracking-wide font-semibold">{user.email}</span>
-                  </div>
-                </div>
+            {recentUsers && recentUsers.map((u, idx) => {
+              const avatarInitials = u.name
+                ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+                : 'U';
+              const roleDisplay = u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'User';
+              const isTeacher = u.role === 'teacher';
+              const isStudent = u.role === 'student';
+              const isParent = u.role === 'parent';
+              
+              let roleColorClass = 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]';
+              let badgeColorClass = 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400';
+              let roleDotColorClass = 'bg-emerald-500';
+              
+              if (isTeacher) {
+                roleColorClass = 'bg-blue-500/10 border border-blue-500/20 text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.2)]';
+                badgeColorClass = 'bg-blue-500/10 border border-blue-500/20 text-blue-400';
+                roleDotColorClass = 'bg-blue-500';
+              } else if (isParent) {
+                roleColorClass = 'bg-purple-500/10 border border-purple-500/20 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.2)]';
+                badgeColorClass = 'bg-purple-500/10 border border-purple-500/20 text-purple-400';
+                roleDotColorClass = 'bg-purple-500';
+              }
 
-                <div className="flex flex-col md:flex-row items-end md:items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
-                    user.color === 'emerald'
-                      ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                      : 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${
-                      user.color === 'emerald' ? 'bg-emerald-500' : 'bg-blue-500'
-                    }`} />
-                    {user.role}
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 bg-gray-500/10 border border-gray-500/20 text-gray-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
-                    {user.status}
-                  </span>
+              return (
+                <div 
+                  key={u._id || idx}
+                  className="flex items-center justify-between p-4 bg-[#0e101a]/90 border border-gray-800/80 rounded-3xl shadow-lg transition-all hover:bg-gray-800/20"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm ${roleColorClass}`}>
+                      {avatarInitials}
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="text-sm md:text-base font-extrabold text-white leading-snug">{u.name}</span>
+                      <span className="text-xs text-gray-500 tracking-wide font-semibold">{u.email}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col md:flex-row items-end md:items-center gap-2">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${badgeColorClass}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${roleDotColorClass}`} />
+                      {roleDisplay}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
+                      u.isVerified 
+                        ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' 
+                        : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${u.isVerified ? 'bg-emerald-500' : 'bg-yellow-500'}`} />
+                      {u.isVerified ? 'Verified' : 'Unverified'}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -354,13 +425,22 @@ const Dashboard = () => {
                 </div>
 
                 {/* Submit button */}
-                <button
+                <Button
                   type="submit"
-                  className="w-full py-4 mt-2 bg-gradient-to-r from-red-600 to-rose-500 text-white rounded-2xl font-black text-sm tracking-wide shadow-[0_4px_25px_rgba(239,68,68,0.4)] flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer"
+                  roleColor={userFormik.values.role.toLowerCase()}
+                  disabled={userFormik.isSubmitting}
+                  icon={userFormik.isSubmitting ? undefined : FiCheck}
+                  className="w-full mt-2 !rounded-2xl"
                 >
-                  <span>Create User</span>
-                  <FiCheck size={16} />
-                </button>
+                  {userFormik.isSubmitting ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                      <span>Creating User...</span>
+                    </span>
+                  ) : (
+                    'Create User'
+                  )}
+                </Button>
               </form>
             </FormikProvider>
           </div>
@@ -396,13 +476,13 @@ const Dashboard = () => {
               initialValues={{
                 title: '',
                 description: '',
-                teacher: 'teacher 23',
+                teacher: '',
                 price: 0,
               }}
               validationSchema={SubjectSchema}
               onSubmit={handleSubjectSubmit}
             >
-              {({ values, handleChange, handleBlur, touched, errors, isValid, dirty }) => (
+              {({ values, handleChange, handleBlur, touched, errors, isValid, dirty, isSubmitting }) => (
                 <Form className="flex flex-col gap-4 mt-2">
 
                   <Input
@@ -485,8 +565,11 @@ const Dashboard = () => {
                           className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer z-0"
                         >
                           <option value="" className="bg-[#0b0c16] text-gray-500">Select Teacher</option>
-                          <option value="teacher 23" className="bg-[#0b0c16] text-white">teacher 23</option>
-                          <option value="teacher" className="bg-[#0b0c16] text-white">teacher</option>
+                          {teachers && teachers.map((t) => (
+                            <option key={t._id} value={t._id} className="bg-[#0b0c16] text-white">
+                              {t.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-red-400 z-10">
@@ -496,14 +579,22 @@ const Dashboard = () => {
                   </div>
 
                   {/* Submit Button */}
-                  <button
+                  <Button
                     type="submit"
-                    disabled={!(isValid && dirty)}
-                    className="w-full py-4 mt-2 bg-gradient-to-r from-red-600 to-rose-500 hover:opacity-95 disabled:opacity-50 text-white rounded-2xl font-extrabold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_8px_20px_rgba(239,68,68,0.3)]"
+                    roleColor="admin"
+                    disabled={isSubmitting || !(isValid && dirty)}
+                    icon={isSubmitting ? undefined : FiCheck}
+                    className="w-full mt-2 !rounded-2xl"
                   >
-                    <span>Create Subject</span>
-                    <FiCheck size={18} />
-                  </button>
+                    {isSubmitting ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                        <span>Creating Subject...</span>
+                      </span>
+                    ) : (
+                      'Create Subject'
+                    )}
+                  </Button>
 
                 </Form>
               )}

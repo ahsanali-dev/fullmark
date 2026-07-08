@@ -22,9 +22,12 @@ import {
   FiTag
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
+import { logoutUser } from '../../redux/slices/authSlice';
 
 const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', title, subtitle, disableScroll, isModalOpen = false, showBackButton = false, onBackClick, headerActions }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // Get color theme based on role
   const getRoleConfig = () => {
@@ -114,7 +117,8 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
     { id: 2, text: 'System update completed successfully.', time: '2h ago', read: false, type: 'system' },
     { id: 3, text: 'New subject added to curriculum', time: '1d ago', read: true, type: 'content' }
   ]);
-  const userMenuRef = useRef(null);
+  const desktopUserMenuRef = useRef(null);
+  const mobileUserMenuRef = useRef(null);
   const notificationsRef = useRef(null);
 
   const [profileName, setProfileName] = useState('User');
@@ -199,7 +203,10 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
   // Close dropdowns if clicked outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+      const clickedOutsideDesktop = !desktopUserMenuRef.current || !desktopUserMenuRef.current.contains(event.target);
+      const clickedOutsideMobile = !mobileUserMenuRef.current || !mobileUserMenuRef.current.contains(event.target);
+      
+      if (clickedOutsideDesktop && clickedOutsideMobile) {
         setShowUserMenu(false);
       }
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
@@ -211,6 +218,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
   }, []);
 
   const handleLogout = () => {
+    dispatch(logoutUser());
     toast.success('Logged out successfully!');
     navigate('/login');
   };
@@ -280,7 +288,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
         </div>
 
         {/* Desktop Bottom User Profile Dropdown */}
-        <div className="relative" ref={userMenuRef}>
+        <div className="relative" ref={desktopUserMenuRef}>
           {showUserMenu && (
             <div className="absolute bottom-full left-0 w-full mb-3 bg-[#111222] border border-gray-800 rounded-2xl p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-fade-in">
               {(role === 'teacher' || role === 'student' || role === 'parent') && (
@@ -426,7 +434,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
               )}
             </div>
             {/* Mobile User Profile Trigger */}
-            <div className="relative lg:hidden" ref={userMenuRef}>
+            <div className="relative lg:hidden" ref={mobileUserMenuRef}>
               <button 
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center font-bold text-white text-xs sm:text-sm transition-transform active:scale-95 cursor-pointer bg-gradient-to-r ${config.gradientClass}`}

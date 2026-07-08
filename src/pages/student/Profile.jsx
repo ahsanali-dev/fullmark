@@ -30,6 +30,8 @@ import * as Yup from 'yup';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser, changePassword, updateProfile } from '../../redux/slices/authSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import { ChangePasswordSchema } from '../../schemas/authSchemas';
@@ -42,12 +44,23 @@ const StudentProfileSchema = Yup.object().shape({
 
 const Profile = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
 
   // Profile fields state
-  const [name, setName] = useState('ali');
-  const [email, setEmail] = useState('ali@fullmark.edu');
-  const [phone, setPhone] = useState('+966 50 123 4567');
-  const [bio, setBio] = useState('I am a passionate chemistry student striving to hit a perfect full score!');
+  const [name, setName] = useState(user?.name || 'ali');
+  const [email, setEmail] = useState(user?.email || 'ali@fullmark.edu');
+  const [phone, setPhone] = useState(user?.phone || '+966 50 123 4567');
+  const [bio, setBio] = useState(user?.bio || 'I am a passionate chemistry student striving to hit a perfect full score!');
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+      setPhone(user.phone || '');
+      setBio(user.bio || 'I am a passionate chemistry student striving to hit a perfect full score!');
+    }
+  }, [user]);
   
   // Stats counters
   const [points, setPoints] = useState(40);
@@ -126,25 +139,40 @@ const Profile = () => {
   };
 
   // Profile form submission
-  const handleProfileSave = (values) => {
-    setName(values.name);
-    setPhone(values.phone || '');
-    setBio(values.bio || '');
-    localStorage.setItem('student_profile_name', values.name);
-    toast.success('Profile settings updated!');
-    setIsEditProfileOpen(false);
-    window.dispatchEvent(new Event('profileUpdate'));
+  const handleProfileSave = async (values, { setSubmitting }) => {
+    try {
+      await dispatch(updateProfile({
+        name: values.name,
+        phone: values.phone
+      })).unwrap();
+      toast.success('Profile settings updated!');
+      setIsEditProfileOpen(false);
+      window.dispatchEvent(new Event('profileUpdate'));
+    } catch (err) {
+      toast.error(err || 'Failed to update profile settings.');
+    } finally {
+      if (setSubmitting) setSubmitting(false);
+    }
   };
 
   // Change Password form submission
-  const handleUpdatePassword = (values, { resetForm }) => {
+  const handleUpdatePassword = async (values, { resetForm, setSubmitting }) => {
     const loadToast = toast.loading('Updating password...');
-    setTimeout(() => {
+    try {
+      await dispatch(changePassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword
+      })).unwrap();
       toast.dismiss(loadToast);
       toast.success('Password updated successfully!');
       setIsChangePasswordOpen(false);
       resetForm();
-    }, 1000);
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to update password.');
+    } finally {
+      if (setSubmitting) setSubmitting(false);
+    }
   };
 
   // Apply Language choice
@@ -155,6 +183,7 @@ const Profile = () => {
   };
 
   const handleLogout = () => {
+    dispatch(logoutUser());
     toast.success('Logged out successfully!');
     navigate('/login');
   };

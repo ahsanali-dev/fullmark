@@ -15,8 +15,11 @@ import {
 } from 'react-icons/fi';
 
 import toast from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
+import { registerUser } from '../../redux/slices/authSlice';
 
 import Background3D from '../../components/shared/Background3D';
+import RoleSelector from '../../components/auth/RoleSelector';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 
@@ -41,7 +44,9 @@ const RegisterSchema = Yup.object().shape({
 
 const Register = () => {
   const [step, setStep] = useState(1);
+  const [selectedRole, setSelectedRole] = useState('student');
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleBack = () => {
     if (step === 2) {
@@ -51,36 +56,40 @@ const Register = () => {
     }
   };
 
-  const handleSubmit = (values, { setSubmitting }) => {
+  const handleSubmit = async (values, { setSubmitting }) => {
     const payload = {
-      fullName: values.fullName,
+      name: values.fullName,
       email: values.email,
-      phoneNumber: values.phoneNumber,
+      phone: values.phoneNumber || undefined,
       password: values.password,
-      role: 'student', // default registration role
+      role: selectedRole,
     };
     
-    console.log('--- Register Form Submission Success ---');
-    console.log('Registered User Data:', payload);
-    
-    setTimeout(() => {
-      toast.success(`Account created successfully for ${values.fullName}!`);
+    const loadToast = toast.loading('Creating your account...');
+    try {
+      await dispatch(registerUser(payload)).unwrap();
+      toast.dismiss(loadToast);
+      toast.success(`Account created successfully! Please verify your email.`);
       setSubmitting(false);
-      navigate('/login');
-    }, 1000);
+      navigate('/verify-otp', { state: { email: values.email } });
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Registration failed. Please try again.');
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden select-none z-0">
-      {/* Background Starry Layer (Uses Indigo 'auth' theme colors) */}
-      <Background3D roleColor="auth" />
+      {/* Background Starry Layer */}
+      <Background3D roleColor={selectedRole} />
 
       {/* Centered Form Container */}
       <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-8 relative z-10">
         <div className="w-full max-w-lg z-20 flex flex-col justify-center">
           
           {/* Header Layout */}
-          <div className="flex items-center gap-5 mb-8">
+          <div className="flex items-center gap-5 mb-6">
             <motionFramer.button 
               type="button"
               onClick={handleBack}
@@ -100,6 +109,9 @@ const Register = () => {
               </p>
             </div>
           </div>
+
+          {/* Role Selector */}
+          <RoleSelector selectedRole={selectedRole} onChange={setSelectedRole} excludeAdmin={true} />
 
           {/* Progress Tracker Bar */}
           <div className="flex items-center justify-center mb-8 px-4">
@@ -201,7 +213,7 @@ const Register = () => {
                           label="Full Name"
                           placeholder="Ahmad Al-Khalidi"
                           icon={FiUser}
-                          roleColor="auth"
+                          roleColor={selectedRole}
                         />
 
                         <Input
@@ -210,7 +222,7 @@ const Register = () => {
                           label="Email Address"
                           placeholder="example@email.com"
                           icon={FiMail}
-                          roleColor="auth"
+                          roleColor={selectedRole}
                         />
 
                         <Input
@@ -219,13 +231,13 @@ const Register = () => {
                           label="Phone Number (optional)"
                           placeholder="+962 77 123 4567"
                           icon={FiPhone}
-                          roleColor="auth"
+                          roleColor={selectedRole}
                         />
 
                         <div className="mt-4">
                           <Button
                             type="button"
-                            roleColor="auth"
+                            roleColor={selectedRole}
                             icon={FiArrowRight}
                             onClick={async () => {
                               // Touch fields to reveal any initial errors
@@ -264,7 +276,7 @@ const Register = () => {
                           placeholder="••••••••"
                           icon={FiLock}
                           showPasswordToggle={true}
-                          roleColor="auth"
+                          roleColor={selectedRole}
                         />
 
                         <Input
@@ -274,7 +286,7 @@ const Register = () => {
                           placeholder="••••••••"
                           icon={FiLock}
                           showPasswordToggle={true}
-                          roleColor="auth"
+                          roleColor={selectedRole}
                         />
 
                         {/* Custom Themed Terms of Service Checkbox */}
@@ -286,14 +298,14 @@ const Register = () => {
                                 name="agreeToTerms"
                                 checked={values.agreeToTerms}
                                 onChange={(e) => setFieldValue('agreeToTerms', e.target.checked)}
-                                className="w-5 h-5 rounded border border-gray-700 bg-gray-900/60 focus:ring-0 focus:outline-none transition-colors duration-200 appearance-none flex items-center justify-center cursor-pointer checked:bg-indigo-600 checked:border-indigo-500"
+                                className={`w-5 h-5 rounded border border-gray-700 bg-gray-900/60 focus:ring-0 focus:outline-none transition-colors duration-200 appearance-none flex items-center justify-center cursor-pointer checked:bg-${selectedRole === 'student' ? 'emerald' : selectedRole === 'teacher' ? 'blue' : 'purple'}-600 checked:border-${selectedRole === 'student' ? 'emerald' : selectedRole === 'teacher' ? 'blue' : 'purple'}-500`}
                               />
                               {values.agreeToTerms && (
                                 <FiCheck className="absolute top-1 left-1 text-white pointer-events-none" size={12} />
                               )}
                             </div>
                             <span className="leading-tight">
-                              I agree to the <a href="#terms" className="text-indigo-400 hover:underline font-bold">Terms of Service</a> and <a href="#privacy" className="text-indigo-400 hover:underline font-bold">Privacy Policy</a>
+                              I agree to the <a href="#terms" className={`text-${selectedRole === 'student' ? 'emerald' : selectedRole === 'teacher' ? 'blue' : 'purple'}-400 hover:underline font-bold`}>Terms of Service</a> and <a href="#privacy" className={`text-${selectedRole === 'student' ? 'emerald' : selectedRole === 'teacher' ? 'blue' : 'purple'}-400 hover:underline font-bold`}>Privacy Policy</a>
                             </span>
                           </label>
                           {touched.agreeToTerms && errors.agreeToTerms && (
@@ -306,7 +318,7 @@ const Register = () => {
                         <Button
                           type="submit"
                           disabled={isSubmitting || !values.agreeToTerms}
-                          roleColor="auth"
+                          roleColor={selectedRole}
                           icon={FiUserCheck}
                         >
                           {isSubmitting ? 'Creating Account...' : 'Create Account'}

@@ -16,51 +16,21 @@ import {
 import { Formik, Form } from 'formik';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAllSubjects, createSubject, updateSubject, deleteSubject, fetchAllUsers } from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
 import { SubjectSchema } from '../../schemas/adminSchemas';
 import { useLocation } from 'react-router-dom';
+import { ContentSkeleton } from '../../components/shared/SkeletonLoading';
 
 // SubjectSchema imported from src/schemas/adminSchemas.js
 
 const Content = () => {
-
-  // Initial subjects data matching screenshot
-  const [subjects, setSubjects] = useState([
-    {
-      id: 'sub-1',
-      title: 'chemistry',
-      description: 'jutvurfhtfhyhf',
-      teacher: 'teacher',
-      status: 'active',
-      questionsCount: 0,
-      studentsCount: 0,
-      createdAt: 'May 2026',
-      price: 200,
-    },
-    {
-      id: 'sub-2',
-      title: 'mathsss',
-      description: 'testing',
-      teacher: 'teacher',
-      status: 'active',
-      questionsCount: 0,
-      studentsCount: 0,
-      createdAt: 'May 2026',
-      price: 100,
-    },
-    {
-      id: 'sub-3',
-      title: 'physics',
-      description: 'Introduction to Physics mechanics and optics',
-      teacher: 'teacher 23',
-      status: 'inactive',
-      questionsCount: 0,
-      studentsCount: 0,
-      createdAt: 'May 2026',
-      price: 0,
-    }
-  ]);
+  const dispatch = useDispatch();
+  const { subjects, isLoading } = useSelector((state) => state.admin);
+  const [teachers, setTeachers] = useState([]);
 
   // States
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,6 +45,15 @@ const Content = () => {
   const location = useLocation();
 
   useEffect(() => {
+    dispatch(fetchAllSubjects());
+    dispatch(fetchAllUsers({ role: 'teacher' })).unwrap()
+      .then((res) => {
+        setTeachers(res.users || []);
+      })
+      .catch(() => {});
+  }, [dispatch]);
+
+  useEffect(() => {
     if (location.state?.openAddModal) {
       setTimeout(() => {
         setEditingSubject(null);
@@ -85,15 +64,20 @@ const Content = () => {
   }, [location.state]);
 
   // Toggle switch handler
-  const toggleSubjectStatus = (id) => {
-    setSubjects(prev =>
-      prev.map(sub =>
-        sub.id === id
-          ? { ...sub, status: sub.status === 'active' ? 'inactive' : 'active' }
-          : sub
-      )
-    );
-    toast.success('Subject status updated!');
+  const toggleSubjectStatus = async (id, currentStatus) => {
+    const loadToast = toast.loading('Updating subject status...');
+    try {
+      await dispatch(updateSubject({
+        id,
+        subjectData: { isActive: !currentStatus }
+      })).unwrap();
+      toast.dismiss(loadToast);
+      toast.success('Subject status updated!');
+      dispatch(fetchAllSubjects());
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to update subject status');
+    }
   };
 
   // Add Click Handler
@@ -115,69 +99,105 @@ const Content = () => {
   };
 
   // Confirm Delete
-  const confirmDelete = () => {
-    setSubjects(prev => prev.filter(sub => sub.id !== deletingSubject.id));
-    setShowDeleteConfirm(false);
-    setDeletingSubject(null);
-    toast.success('Subject deleted successfully!');
+  const confirmDelete = async () => {
+    const loadToast = toast.loading('Deleting subject...');
+    try {
+      await dispatch(deleteSubject(deletingSubject._id)).unwrap();
+      toast.dismiss(loadToast);
+      toast.success('Subject deleted successfully!');
+      setShowDeleteConfirm(false);
+      setDeletingSubject(null);
+      dispatch(fetchAllSubjects());
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to delete subject');
+    }
   };
 
   // Form Submit Handler
-  const handleFormSubmit = (values, { resetForm }) => {
-    if (editingSubject) {
-      // Edit mode
-      setSubjects(prev =>
-        prev.map(sub =>
-          sub.id === editingSubject.id
-            ? { ...sub, title: values.title, description: values.description, teacher: values.teacher, price: Number(values.price) }
-            : sub
-        )
-      );
-      toast.success('Subject updated successfully!');
-    } else {
-      // Create mode
-      const newSubject = {
-        id: `sub-${Date.now()}`,
-        title: values.title,
-        description: values.description,
-        teacher: values.teacher,
-        price: Number(values.price),
-        status: 'active',
-        questionsCount: 0,
-        studentsCount: 0,
-        createdAt: 'May 2026',
-      };
-      setSubjects(prev => [...prev, newSubject]);
-      toast.success('Subject created successfully!');
+  const handleFormSubmit = async (values, { resetForm, setSubmitting }) => {
+    const loadToast = toast.loading(editingSubject ? 'Saving subject...' : 'Creating subject...');
+    try {
+      if (editingSubject) {
+        await dispatch(updateSubject({
+          id: editingSubject._id,
+          subjectData: {
+            name: values.title,
+            description: values.description,
+            teacher: values.teacher || null,
+            price: Number(values.price),
+          }
+        })).unwrap();
+        toast.dismiss(loadToast);
+        toast.success('Subject updated successfully!');
+      } else {
+        await dispatch(createSubject({
+          name: values.title,
+          description: values.description,
+          teacher: values.teacher || null,
+          price: Number(values.price),
+          colorTop: '#ef4444',
+          colorBottom: '#f43f5e',
+          icon: 'FiBookOpen',
+          grade: 'Primary',
+        })).unwrap();
+        toast.dismiss(loadToast);
+        toast.success('Subject created successfully!');
+      }
+      setIsModalOpen(false);
+      setEditingSubject(null);
+      resetForm();
+      dispatch(fetchAllSubjects());
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to submit subject form');
+    } finally {
+      setSubmitting(false);
     }
-    setIsModalOpen(false);
-    setEditingSubject(null);
-    resetForm();
   };
 
   // Calculations for Metrics
-  const totalSubjects = subjects.length;
-  const totalQuestions = subjects.reduce((sum, s) => sum + s.questionsCount, 0);
-  const totalStudents = subjects.reduce((sum, s) => sum + s.studentsCount, 0);
+  const subjectsList = subjects || [];
+  const totalSubjects = subjectsList.length;
+  const totalQuestions = subjectsList.reduce((sum, s) => sum + (s.questionsCount || 0), 0);
+  const totalStudents = subjectsList.reduce((sum, s) => sum + (s.studentsCount || 0), 0);
 
-  const activeSubjectsCount = subjects.filter(s => s.status === 'active').length;
+  const activeSubjectsCount = subjectsList.filter(s => s.isActive).length;
 
   // Filtered list
-  const filteredSubjects = subjects.filter(sub => {
+  const filteredSubjects = subjectsList.filter(sub => {
+    const nameMatch = sub.name ? sub.name.toLowerCase() : '';
+    const teacherName = sub.teacher && typeof sub.teacher === 'object' ? sub.teacher.name : (sub.teacher || '');
+    const teacherMatch = teacherName ? teacherName.toLowerCase() : '';
+
     const matchesSearch =
-      sub.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.teacher.toLowerCase().includes(searchQuery.toLowerCase());
+      nameMatch.includes(searchQuery.toLowerCase()) ||
+      teacherMatch.includes(searchQuery.toLowerCase());
 
     if (filterStatus === 'active') {
-      return matchesSearch && sub.status === 'active';
+      return matchesSearch && sub.isActive;
     }
     if (filterStatus === 'inactive') {
-      return matchesSearch && sub.status === 'inactive';
+      return matchesSearch && !sub.isActive;
     }
     return matchesSearch;
   });
 
   const isBlurred = isModalOpen || showDeleteConfirm;
+
+  if (isLoading && subjectsList.length === 0) {
+    return (
+      <DashboardLayout
+        role="admin"
+        activeTab="content"
+        title="Subjects"
+        subtitle="Loading subjects..."
+        disableScroll={true}
+      >
+        <ContentSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout
@@ -270,91 +290,97 @@ const Content = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSubjects.map((sub) => (
-                <div
-                  key={sub.id}
-                  className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden"
-                >
-                  {/* Top section */}
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3.5">
-                      {/* Book Icon Box */}
-                      <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)] shrink-0">
-                        <FiBookOpen size={22} />
-                      </div>
-                      <div className="flex flex-col text-left">
-                        <h4 className="text-base font-extrabold text-white leading-tight capitalize">{sub.title}</h4>
-                        <p className="text-xs text-gray-500 font-semibold mt-1 mb-1 leading-normal">{sub.description}</p>
-                        <div className="flex items-center gap-2 mt-1 mb-1 text-[11px] text-gray-500 font-bold">
-                          <span className="flex items-center gap-1">
-                            <FiUser size={13} className="text-red-400" />
-                            <span>{sub.teacher}</span>
-                          </span>
-                          <span className="text-gray-700 font-black">•</span>
-                          <span className="text-yellow-400">
-                            {sub.price === 0 || sub.price === '0' || sub.price === undefined ? 'Free' : `${sub.price} Pts`}
-                          </span>
+              {filteredSubjects.map((sub) => {
+                const teacherName = sub.teacher && typeof sub.teacher === 'object' ? sub.teacher.name : 'Unassigned';
+                const formattedDate = sub.createdAt ? new Date(sub.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+                const displayStatus = sub.isActive ? 'active' : 'inactive';
+
+                return (
+                  <div
+                    key={sub._id}
+                    className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden"
+                  >
+                    {/* Top section */}
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3.5">
+                        {/* Book Icon Box */}
+                        <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)] shrink-0">
+                          <FiBookOpen size={22} />
+                        </div>
+                        <div className="flex flex-col text-left">
+                          <h4 className="text-base font-extrabold text-white leading-tight capitalize">{sub.name}</h4>
+                          <p className="text-xs text-gray-500 font-semibold mt-1 mb-1 leading-normal">{sub.description}</p>
+                          <div className="flex items-center gap-2 mt-1 mb-1 text-[11px] text-gray-500 font-bold">
+                            <span className="flex items-center gap-1">
+                              <FiUser size={13} className="text-red-400" />
+                              <span>{teacherName}</span>
+                            </span>
+                            <span className="text-gray-700 font-black">•</span>
+                            <span className="text-yellow-400">
+                              {sub.price === 0 || sub.price === '0' || sub.price === undefined ? 'Free' : `${sub.price} Pts`}
+                            </span>
+                          </div>
                         </div>
                       </div>
+
+                      {/* Toggle Switch */}
+                      <label className="relative inline-flex items-center cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={!!sub.isActive}
+                          onChange={() => toggleSubjectStatus(sub._id, sub.isActive)}
+                        />
+                        <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500" />
+                      </label>
                     </div>
 
-                    {/* Toggle Switch */}
-                    <label className="relative inline-flex items-center cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={sub.status === 'active'}
-                        onChange={() => toggleSubjectStatus(sub.id)}
-                      />
-                      <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500" />
-                    </label>
-                  </div>
+                    {/* Divider */}
+                    <div className="h-[1px] bg-gray-800/50" />
 
-                  {/* Divider */}
-                  <div className="h-[1px] bg-gray-800/50" />
-
-                  {/* Middle details row */}
-                  <div className="flex justify-between items-center text-xs font-bold">
-                    <div className="flex gap-4 text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <FiHelpCircle size={14} className="text-red-400" />
-                        {sub.questionsCount} Qs
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FiUsers size={14} className="text-emerald-400" />
-                        {sub.studentsCount}
-                      </span>
+                    {/* Middle details row */}
+                    <div className="flex justify-between items-center text-xs font-bold">
+                      <div className="flex gap-4 text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <FiHelpCircle size={14} className="text-red-400" />
+                          {sub.questionsCount || 0} Qs
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <FiUsers size={14} className="text-emerald-400" />
+                          {sub.studentsCount || 0}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2.5 py-0.5 rounded-full border text-[9px] font-extrabold uppercase tracking-wider ${sub.isActive
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                            : 'bg-gray-500/10 border-gray-500/20 text-gray-400'
+                          }`}>
+                          {displayStatus}
+                        </span>
+                        <span className="text-[10px] text-gray-500">Created {formattedDate}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-0.5 rounded-full border text-[9px] font-extrabold uppercase tracking-wider ${sub.status === 'active'
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                          : 'bg-gray-500/10 border-gray-500/20 text-gray-400'
-                        }`}>
-                        {sub.status}
-                      </span>
-                      <span className="text-[10px] text-gray-500">Created {sub.createdAt}</span>
+
+                    {/* Edit / Delete Buttons */}
+                    <div className="flex justify-end gap-2.5 pt-1">
+                      <button
+                        onClick={() => handleEditClick(sub)}
+                        className="flex items-center gap-1 px-4 py-2 border border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
+                      >
+                        <FiEdit size={12} />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(sub)}
+                        className="flex items-center gap-1 px-4 py-2 border border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
+                      >
+                        <FiTrash2 size={12} />
+                        Delete
+                      </button>
                     </div>
                   </div>
-
-                  {/* Edit / Delete Buttons */}
-                  <div className="flex justify-end gap-2.5 pt-1">
-                    <button
-                      onClick={() => handleEditClick(sub)}
-                      className="flex items-center gap-1 px-4 py-2 border border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
-                    >
-                      <FiEdit size={12} />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(sub)}
-                      className="flex items-center gap-1 px-4 py-2 border border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
-                    >
-                      <FiTrash2 size={12} />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -392,15 +418,15 @@ const Content = () => {
 
             <Formik
               initialValues={{
-                title: editingSubject ? editingSubject.title : '',
+                title: editingSubject ? editingSubject.name : '',
                 description: editingSubject ? editingSubject.description : '',
-                teacher: editingSubject ? editingSubject.teacher : 'teacher 23',
+                teacher: editingSubject ? (editingSubject.teacher && typeof editingSubject.teacher === 'object' ? editingSubject.teacher._id : (editingSubject.teacher || '')) : '',
                 price: editingSubject ? (editingSubject.price !== undefined ? editingSubject.price : 0) : 0,
               }}
               validationSchema={SubjectSchema}
               onSubmit={handleFormSubmit}
             >
-              {({ values, handleChange, handleBlur, touched, errors, isValid, dirty }) => (
+              {({ values, handleChange, handleBlur, touched, errors, isValid, dirty, isSubmitting }) => (
                 <Form className="flex flex-col gap-4 mt-2">
 
                   <Input
@@ -483,8 +509,11 @@ const Content = () => {
                           className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer z-0"
                         >
                           <option value="" className="bg-[#0b0c16] text-gray-500">Select Teacher</option>
-                          <option value="teacher 23" className="bg-[#0b0c16] text-white">teacher 23</option>
-                          <option value="teacher" className="bg-[#0b0c16] text-white">teacher</option>
+                          {teachers && teachers.map((t) => (
+                             <option key={t._id} value={t._id} className="bg-[#0b0c16] text-white">
+                               {t.name}
+                             </option>
+                           ))}
                         </select>
                       </div>
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-red-400 z-10">
@@ -494,14 +523,22 @@ const Content = () => {
                   </div>
 
                   {/* Submit Button */}
-                  <button
+                  <Button
                     type="submit"
-                    disabled={!(isValid && dirty)}
-                    className="w-full py-4 mt-2 bg-gradient-to-r from-red-600 to-rose-500 hover:opacity-95 disabled:opacity-50 text-white rounded-2xl font-extrabold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_8px_20px_rgba(239,68,68,0.3)]"
+                    roleColor="admin"
+                    disabled={isSubmitting || !(isValid && dirty)}
+                    icon={isSubmitting ? undefined : FiCheck}
+                    className="w-full mt-2 !rounded-2xl"
                   >
-                    <span>{editingSubject ? 'Save Changes' : 'Create Subject'}</span>
-                    <FiCheck size={18} />
-                  </button>
+                    {isSubmitting ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                        <span>{editingSubject ? 'Saving Changes...' : 'Creating Subject...'}</span>
+                      </span>
+                    ) : (
+                      editingSubject ? 'Save Changes' : 'Create Subject'
+                    )}
+                  </Button>
 
                 </Form>
               )}

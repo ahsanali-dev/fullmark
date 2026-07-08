@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormik, FormikProvider } from 'formik';
 import * as Yup from 'yup';
 import { 
@@ -17,20 +17,16 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAllUsers, createUser, toggleUserActive } from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
+import { UsersSkeleton } from '../../components/shared/SkeletonLoading';
 
 const Users = () => {
-  // Local list of users
-  const [users, setUsers] = useState([
-    { name: 'Ahmad', email: 'baaddawe@gmail.com', role: 'Student', status: 'Active', avatar: 'AH', color: 'emerald', date: 'May 2026', detail: '0% avg', lastActive: 'Never' },
-    { name: 'teacher 23', email: 't2@gmail.com', role: 'Teacher', status: 'Active', avatar: 'T2', color: 'blue', date: 'May 2026', detail: '0 students', lastActive: 'Never' },
-    { name: 'teacher', email: 't@gmail.com', role: 'Teacher', status: 'Active', avatar: 'TE', color: 'blue', date: 'May 2026', detail: '0 students', lastActive: '3d ago' },
-    { name: 'Ali Faraz', email: 'alifaraz933@gmail.commmm', role: 'Student', status: 'Active', avatar: 'AF', color: 'emerald', date: 'May 2026', detail: '0% avg', lastActive: 'Never' },
-    { name: 'Ahmad Faraz', email: 'ahmadfaraz@gmail.com', role: 'Student', status: 'Active', avatar: 'AF', color: 'emerald', date: 'May 2026', detail: '0% avg', lastActive: 'Never' },
-    { name: 'Admin Principal', email: 'admin@fullmark.com', role: 'Admin', status: 'Active', avatar: 'AP', color: 'red', date: 'Apr 2026', detail: 'Primary', lastActive: 'Just now' },
-    { name: 'Parent User', email: 'parent@gmail.com', role: 'Parent', status: 'Active', avatar: 'PU', color: 'purple', date: 'May 2026', detail: '1 child', lastActive: '1d ago' }
-  ]);
+  const dispatch = useDispatch();
+  const { users, isLoading, pagination } = useSelector((state) => state.admin);
 
   // Filters and sorting
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,19 +37,22 @@ const Users = () => {
   // Drawer / Add user state
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Dynamically calculate metrics
-  const totalCount = users.length;
-  const activeCount = users.filter(u => u.status === 'Active').length;
-  const studentsCount = users.filter(u => u.role === 'Student').length;
-  const teachersCount = users.filter(u => u.role === 'Teacher').length;
+  useEffect(() => {
+    dispatch(fetchAllUsers({
+      search: searchQuery,
+      role: selectedFilter === 'All' ? undefined : selectedFilter.toLowerCase(),
+      sortBy: sortBy === 'Newest' ? 'createdAt' : '-createdAt'
+    }));
+  }, [dispatch, searchQuery, selectedFilter, sortBy]);
 
-  // Filter & search users
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = selectedFilter === 'All' || user.role === selectedFilter;
-    return matchesSearch && matchesRole;
-  });
+  // Dynamically calculate metrics
+  const totalCount = pagination?.total || users.length;
+  const activeCount = users.filter(u => u.isActive).length;
+  const studentsCount = users.filter(u => u.role === 'student').length;
+  const teachersCount = users.filter(u => u.role === 'teacher').length;
+
+  // Filtered users (coming directly pre-filtered/pre-sorted from API)
+  const filteredUsers = users || [];
 
   const getRoleColors = (role) => {
     switch (role) {
@@ -107,25 +106,30 @@ const Users = () => {
         .oneOf(['Student', 'Teacher', 'Parent'], 'Invalid role')
         .required('Role selection is required')
     }),
-    onSubmit: (values, { resetForm }) => {
-      const initials = values.name.trim().split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-      
-      const newUser = {
-        name: values.name,
-        email: values.email,
-        role: values.role,
-        status: 'Active',
-        avatar: initials || 'US',
-        color: values.role === 'Student' ? 'emerald' : values.role === 'Teacher' ? 'blue' : 'purple',
-        date: 'Jun 2026',
-        detail: values.role === 'Student' ? '0% avg' : values.role === 'Teacher' ? '0 students' : '0 children',
-        lastActive: 'Never'
-      };
-
-      setUsers([newUser, ...users]);
-      toast.success(`${values.name} added as ${values.role}!`);
-      setIsModalOpen(false);
-      resetForm();
+    onSubmit: async (values, { resetForm, setSubmitting }) => {
+      const loadToast = toast.loading('Creating user...');
+      try {
+        await dispatch(createUser({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          role: values.role.toLowerCase()
+        })).unwrap();
+        toast.dismiss(loadToast);
+        toast.success(`${values.name} added successfully as ${values.role}!`);
+        setIsModalOpen(false);
+        resetForm();
+        dispatch(fetchAllUsers({
+          search: searchQuery,
+          role: selectedFilter === 'All' ? undefined : selectedFilter.toLowerCase(),
+          sortBy: sortBy === 'Newest' ? 'createdAt' : '-createdAt'
+        }));
+      } catch (err) {
+        toast.dismiss(loadToast);
+        toast.error(err || 'Failed to create user');
+      } finally {
+        setSubmitting(false);
+      }
     }
   });
 
@@ -140,6 +144,14 @@ const Users = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  if (isLoading && users.length === 0) {
+    return (
+      <DashboardLayout role="admin" activeTab="users" title="User Management" subtitle="Loading users..." disableScroll={true}>
+        <UsersSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="admin" activeTab="users" title="User Management" subtitle={`${totalCount} total users`} disableScroll={true} isModalOpen={isModalOpen}>
@@ -236,16 +248,22 @@ const Users = () => {
         <div className="flex-1 overflow-y-auto pr-1 pb-28 flex flex-col gap-3">
           {filteredUsers.length > 0 ? (
             filteredUsers.map((user, idx) => {
-              const colors = getRoleColors(user.role);
+              const roleDisplay = user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User';
+              const colors = getRoleColors(roleDisplay);
+              const initials = user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'US';
+              const formattedDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+              const statusDisplay = user.isActive ? 'Active' : 'Inactive';
+              const detailDisplay = user.isVerified ? 'Verified' : 'Unverified';
+
               return (
                 <div 
-                  key={idx}
-                  className="flex items-center justify-between p-4 bg-[#0c0d19]/90 border border-gray-800/80 rounded-[1.75rem] shadow-lg"
+                  key={user._id || idx}
+                  className="flex items-center justify-between p-4 bg-[#0c0d19]/90 border border-gray-800/80 rounded-[1.75rem] shadow-lg hover:border-red-500/20 transition-all duration-300"
                 >
                   <div className="flex items-center gap-3.5">
                     {/* Avatar Icon */}
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm border shrink-0 ${colors.bg}`}>
-                      {user.avatar}
+                      {initials}
                     </div>
                     {/* Text Details */}
                     <div className="flex flex-col text-left">
@@ -253,23 +271,31 @@ const Users = () => {
                       <span className="text-xs text-gray-500 font-semibold mb-1 mt-0.5">{user.email}</span>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${colors.badge}`}>
-                          {user.role}
+                          {roleDisplay}
                         </span>
-                        <span className="flex items-center gap-1 text-[10px] text-gray-500 font-semibold">
-                          <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-                          {user.lastActive}
-                        </span>
+                        <button
+                          onClick={() => {
+                            dispatch(toggleUserActive(user._id)).unwrap()
+                              .then(() => toast.success(`${user.name} status updated!`))
+                              .catch(err => toast.error(err || 'Failed to update user status'));
+                          }}
+                          className="flex items-center gap-1 text-[10px] text-gray-500 font-semibold hover:text-white transition-colors cursor-pointer"
+                          title="Click to toggle active status"
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-gray-500'}`} />
+                          {statusDisplay}
+                        </button>
                       </div>
                     </div>
                   </div>
                   
                   {/* Right Metric detail */}
                   <div className="flex flex-col items-end text-right">
-                    <span className="text-[10px] font-bold text-gray-500">{user.date}</span>
+                    <span className="text-[10px] font-bold text-gray-500">{formattedDate}</span>
                     <span className={`text-xs font-black mt-1.5 ${
-                      user.role === 'Student' ? 'text-emerald-400' : user.role === 'Teacher' ? 'text-blue-400' : 'text-purple-400'
+                      user.isVerified ? 'text-emerald-400' : 'text-yellow-400'
                     }`}>
-                      {user.detail}
+                      {detailDisplay}
                     </span>
                   </div>
                 </div>
@@ -393,13 +419,22 @@ const Users = () => {
                   </div>
 
                   {/* Submit button */}
-                  <button
+                  <Button
                     type="submit"
-                    className="w-full py-4 mt-2 bg-gradient-to-r from-red-600 to-rose-500 text-white rounded-2xl font-black text-sm tracking-wide shadow-[0_4px_25px_rgba(239,68,68,0.4)] flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer"
+                    roleColor={formik.values.role.toLowerCase()}
+                    disabled={formik.isSubmitting}
+                    icon={formik.isSubmitting ? undefined : FiCheck}
+                    className="w-full mt-2 !rounded-2xl"
                   >
-                    <span>Create User</span>
-                    <FiCheck size={16} />
-                  </button>
+                    {formik.isSubmitting ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                        <span>Creating User...</span>
+                      </span>
+                    ) : (
+                      'Create User'
+                    )}
+                  </Button>
                 </form>
               </FormikProvider>
             </div>

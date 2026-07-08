@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FiTag,
   FiCheckCircle,
@@ -17,40 +17,17 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchAllCoupons, createCoupon, toggleCouponActive, deleteCoupon } from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import { CouponsSkeleton } from '../../components/shared/SkeletonLoading';
 
 const Coupons = () => {
   const navigate = useNavigate();
-
-  // Initial mock coupons data
-  const [coupons, setCoupons] = useState([
-    {
-      id: 'cp-1',
-      code: 'FM-STBBACC9',
-      value: 2000,
-      balance: 1800,
-      status: 'active', // active, used, expired, revoked
-      createdDate: 'Jun 12, 2026',
-      linkedUser: 'ali',
-      expiresIn: 'never',
-      history: [
-        { id: 'h-1', user: 'ali', spent: 200, date: 'Jun 12, 2026 • 6:37 AM', subjectName: 'chemistry', balanceAfter: 1800 }
-      ]
-    },
-    {
-      id: 'cp-2',
-      code: 'FM-60D8RF52',
-      value: 500,
-      balance: 500,
-      status: 'active',
-      createdDate: 'Jun 12, 2026',
-      linkedUser: 'Not linked',
-      expiresIn: '30 days',
-      history: []
-    }
-  ]);
+  const dispatch = useDispatch();
+  const { coupons, isLoading } = useSelector((state) => state.admin);
 
   // States
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,12 +49,31 @@ const Coupons = () => {
   const [autoGenerate, setAutoGenerate] = useState(true);
   const [customCode, setCustomCode] = useState('');
   const [expiresIn, setExpiresIn] = useState('never'); // never, 30 days, 60 days, 90 days, 180 days
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Fetch coupons on mount and when filter/search changes
+  useEffect(() => {
+    dispatch(fetchAllCoupons({
+      search: searchQuery || undefined,
+      status: filterStatus === 'all' ? undefined : filterStatus
+    }));
+  }, [dispatch, searchQuery, filterStatus]);
+
+  // Helper to determine coupon status dynamically
+  const getCouponStatus = (c) => {
+    if (!c.isActive) return 'revoked';
+    if (c.expiresAt && new Date(c.expiresAt) < new Date()) return 'expired';
+    if (c.balance === 0) return 'used';
+    return 'active';
+  };
+
+  const couponsList = coupons || [];
 
   // Stats
-  const totalCoupons = coupons.length;
-  const activeCoupons = coupons.filter(c => c.status === 'active').length;
-  const usedCoupons = coupons.filter(c => c.status === 'used' || (c.value > c.balance && c.balance === 0)).length;
-  const expiredCoupons = coupons.filter(c => c.status === 'expired').length;
+  const totalCoupons = couponsList.length;
+  const activeCoupons = couponsList.filter(c => getCouponStatus(c) === 'active').length;
+  const usedCoupons = couponsList.filter(c => getCouponStatus(c) === 'used').length;
+  const expiredCoupons = couponsList.filter(c => getCouponStatus(c) === 'expired').length;
 
   // Copy Code to Clipboard
   const handleCopyCode = (code) => {
@@ -92,17 +88,22 @@ const Coupons = () => {
   };
 
   // Confirm Revoke
-  const confirmRevoke = () => {
-    setCoupons(prev =>
-      prev.map(c =>
-        c.id === revokingCoupon.id
-          ? { ...c, status: 'revoked' }
-          : c
-      )
-    );
-    setShowRevokeConfirm(false);
-    setRevokingCoupon(null);
-    toast.success('Coupon revoked successfully!');
+  const confirmRevoke = async () => {
+    const loadToast = toast.loading('Revoking coupon...');
+    try {
+      await dispatch(toggleCouponActive(revokingCoupon._id)).unwrap();
+      toast.dismiss(loadToast);
+      toast.success('Coupon status updated!');
+      setShowRevokeConfirm(false);
+      setRevokingCoupon(null);
+      dispatch(fetchAllCoupons({
+        search: searchQuery || undefined,
+        status: filterStatus === 'all' ? undefined : filterStatus
+      }));
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to revoke coupon');
+    }
   };
 
   // Delete Click
@@ -112,11 +113,22 @@ const Coupons = () => {
   };
 
   // Confirm Delete
-  const confirmDelete = () => {
-    setCoupons(prev => prev.filter(c => c.id !== deletingCoupon.id));
-    setShowDeleteConfirm(false);
-    setDeletingCoupon(null);
-    toast.success('Coupon deleted successfully!');
+  const confirmDelete = async () => {
+    const loadToast = toast.loading('Deleting coupon...');
+    try {
+      await dispatch(deleteCoupon(deletingCoupon._id)).unwrap();
+      toast.dismiss(loadToast);
+      toast.success('Coupon deleted successfully!');
+      setShowDeleteConfirm(false);
+      setDeletingCoupon(null);
+      dispatch(fetchAllCoupons({
+        search: searchQuery || undefined,
+        status: filterStatus === 'all' ? undefined : filterStatus
+      }));
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to delete coupon');
+    }
   };
 
   // View History
@@ -136,7 +148,7 @@ const Coupons = () => {
   };
 
   // Form Submit Handler
-  const handleGenerateSubmit = (e) => {
+  const handleGenerateSubmit = async (e) => {
     e.preventDefault();
 
     const valueNum = Number(couponValue);
@@ -154,64 +166,67 @@ const Coupons = () => {
         return;
       }
       codeToUse = customCode.trim().toUpperCase();
-      // Ensure custom code starts with FM- or format it nicely
       if (!codeToUse.startsWith('FM-')) {
         codeToUse = `FM-${codeToUse}`;
       }
     }
 
-    // Check for duplicate codes
-    if (coupons.some(c => c.code === codeToUse)) {
-      toast.error('This coupon code already exists.');
-      return;
+    // Calculate expiresAt date
+    let expiresAt = null;
+    if (expiresIn !== 'never') {
+      const days = parseInt(expiresIn);
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      expiresAt = date.toISOString();
     }
 
-    const newCoupon = {
-      id: `cp-${Date.now()}`,
-      code: codeToUse,
-      value: valueNum,
-      balance: valueNum,
-      status: 'active',
-      createdDate: 'Jun 20, 2026',
-      linkedUser: 'Not linked',
-      expiresIn: expiresIn,
-      history: []
-    };
+    const loadToast = toast.loading('Generating coupon...');
+    setIsGenerating(true);
+    try {
+      await dispatch(createCoupon({
+        code: codeToUse,
+        value: valueNum,
+        expiresAt
+      })).unwrap();
+      toast.dismiss(loadToast);
+      toast.success(`Coupon ${codeToUse} generated successfully!`);
+      setIsModalOpen(false);
 
-    setCoupons(prev => [newCoupon, ...prev]);
-    toast.success(`Coupon ${codeToUse} generated successfully!`);
-    setIsModalOpen(false);
-
-    // Reset Form
-    setCouponValue('');
-    setCustomCode('');
-    setAutoGenerate(true);
-    setExpiresIn('never');
+      // Reset Form
+      setCouponValue('');
+      setCustomCode('');
+      setAutoGenerate(true);
+      setExpiresIn('never');
+      dispatch(fetchAllCoupons({
+        search: searchQuery || undefined,
+        status: filterStatus === 'all' ? undefined : filterStatus
+      }));
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to generate coupon');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  // Filtered coupons
-  const filteredCoupons = coupons.filter(c => {
-    const matchesSearch =
-      c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.linkedUser.toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (filterStatus === 'active') {
-      return matchesSearch && c.status === 'active';
-    }
-    if (filterStatus === 'used') {
-      // either marked used or balance is fully spent
-      return matchesSearch && (c.status === 'used' || (c.value > 0 && c.balance === 0));
-    }
-    if (filterStatus === 'expired') {
-      return matchesSearch && c.status === 'expired';
-    }
-    if (filterStatus === 'revoked') {
-      return matchesSearch && c.status === 'revoked';
-    }
-    return matchesSearch;
-  });
+  // Filtered coupons list (filtering done primarily in API, minor local fallback)
+  const filteredCoupons = couponsList;
 
   const isBlurred = isModalOpen || showDeleteConfirm || showRevokeConfirm || isHistoryOpen;
+
+  if (isLoading && couponsList.length === 0) {
+    return (
+      <DashboardLayout
+        role="admin"
+        activeTab="coupons"
+        title="Coupon Management"
+        subtitle="Loading coupons..."
+        disableScroll={true}
+      >
+        <CouponsSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout
@@ -309,12 +324,16 @@ const Coupons = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCoupons.map((coupon) => {
-                const spentAmount = coupon.value - coupon.balance;
-                const progressPercent = coupon.value > 0 ? Math.round((coupon.balance / coupon.value) * 100) : 0;
+                const status = getCouponStatus(coupon);
+                const spentAmount = (coupon.amount || 0) - (coupon.remainingBalance || 0);
+                const progressPercent = coupon.amount > 0 ? Math.round(((coupon.remainingBalance || 0) / coupon.amount) * 100) : 0;
+                const createdDate = coupon.createdAt ? new Date(coupon.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                const linkedUser = coupon.assignedTo ? (coupon.assignedTo.name || coupon.assignedTo.email || 'Linked User') : 'Not linked';
+                const expiresIn = coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'never';
 
                 return (
                   <div
-                    key={coupon.id}
+                    key={coupon._id}
                     className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:border-emerald-500/25"
                   >
                     {/* Top Row: Icon, Value, Status */}
@@ -329,26 +348,26 @@ const Coupons = () => {
                           </svg>
                         </div>
                         <div className="flex flex-col text-left">
-                          <h4 className="text-base font-extrabold text-white leading-tight">Value: {coupon.value.toLocaleString()}</h4>
-                          <p className="text-xs text-gray-500 font-semibold mt-1">Created {coupon.createdDate}</p>
+                          <h4 className="text-base font-extrabold text-white leading-tight">Value: {(coupon.amount || 0).toLocaleString()}</h4>
+                          <p className="text-xs text-gray-500 font-semibold mt-1">Created {createdDate}</p>
                         </div>
                       </div>
 
                       <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
-                        coupon.status === 'active'
+                        status === 'active'
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                          : coupon.status === 'used'
+                          : status === 'used'
                           ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
-                          : coupon.status === 'expired'
+                          : status === 'expired'
                           ? 'bg-orange-500/10 border-orange-500/20 text-orange-400'
                           : 'bg-red-500/10 border-red-500/20 text-red-400'
                       }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${
-                          coupon.status === 'active' ? 'bg-emerald-400 animate-pulse' :
-                          coupon.status === 'used' ? 'bg-blue-400' :
-                          coupon.status === 'expired' ? 'bg-orange-400' : 'bg-red-400'
+                          status === 'active' ? 'bg-emerald-400 animate-pulse' :
+                          status === 'used' ? 'bg-blue-400' :
+                          status === 'expired' ? 'bg-orange-400' : 'bg-red-400'
                         }`} />
-                        {coupon.status}
+                        {status}
                       </span>
                     </div>
 
@@ -370,7 +389,7 @@ const Coupons = () => {
                     {/* Progress Balance */}
                     <div className="flex flex-col gap-2">
                       <div className="flex justify-between items-center text-xs font-bold">
-                        <span className="text-gray-400">Balance: {coupon.balance.toLocaleString()} / {coupon.value.toLocaleString()}</span>
+                        <span className="text-gray-400">Balance: {(coupon.remainingBalance || 0).toLocaleString()} / {(coupon.amount || 0).toLocaleString()}</span>
                         <span className="text-blue-400 font-extrabold">{spentAmount.toLocaleString()} spent</span>
                       </div>
                       <div className="h-2 w-full bg-gray-900 rounded-full overflow-hidden border border-gray-800/60">
@@ -384,14 +403,14 @@ const Coupons = () => {
                     {/* Linked User */}
                     <div className="flex items-center gap-2 px-3 py-2.5 bg-[#07080e]/40 border border-gray-800/40 rounded-2xl text-xs font-bold text-gray-400">
                       <FiUser size={14} className="text-blue-400" />
-                      <span>Linked to {coupon.linkedUser}</span>
+                      <span>Linked to {linkedUser}</span>
                     </div>
 
                     {/* Bottom row: Expires and Actions */}
                     <div className="flex justify-between items-center pt-2">
                       <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1">
                         <FiClock size={12} className="text-orange-400" />
-                        Expires: {coupon.expiresIn === 'never' ? 'Never' : coupon.expiresIn}
+                        Expires: {expiresIn}
                       </span>
                       <div className="flex gap-2">
                         <button
@@ -400,7 +419,7 @@ const Coupons = () => {
                         >
                           History
                         </button>
-                        {coupon.status === 'active' && (
+                        {status === 'active' && (
                           <button
                             onClick={() => handleRevokeClick(coupon)}
                             className="px-3.5 py-2 border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
@@ -588,10 +607,18 @@ const Coupons = () => {
                 <Button
                   type="submit"
                   roleColor="admin"
-                  icon={FiTag}
-                  className="w-full mt-2 !rounded-2xl"
+                  icon={isGenerating ? undefined : FiTag}
+                  disabled={isGenerating}
+                  className="w-full mt-2 !rounded-2xl flex items-center justify-center gap-2"
                 >
-                  Generate Coupon
+                  {isGenerating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                      <span>Generating Coupon...</span>
+                    </>
+                  ) : (
+                    'Generate Coupon'
+                  )}
                 </Button>
 
               </form>
@@ -638,8 +665,8 @@ const Coupons = () => {
                 </div>
                 
                 <div className="flex flex-col items-end text-right">
-                  <span className="text-xl font-black text-emerald-400">{historyCoupon.balance.toLocaleString()}</span>
-                  <span className="text-[10px] font-bold text-gray-500 tracking-wide mt-0.5">of {historyCoupon.value.toLocaleString()} left</span>
+                  <span className="text-xl font-black text-emerald-400">{(historyCoupon.remainingBalance || 0).toLocaleString()}</span>
+                  <span className="text-[10px] font-bold text-gray-500 tracking-wide mt-0.5">of {(historyCoupon.amount || 0).toLocaleString()} left</span>
                 </div>
               </div>
 
@@ -650,28 +677,34 @@ const Coupons = () => {
                     <span className="text-xs font-semibold text-gray-500">No transactions recorded yet.</span>
                   </div>
                 ) : (
-                  historyCoupon.history.map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="p-4 bg-[#07080e]/45 border border-gray-800 rounded-3xl flex justify-between items-center"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)] shrink-0">
-                          <FiShoppingBag size={18} />
+                  historyCoupon.history.map((tx) => {
+                    const subjectName = tx.subject && typeof tx.subject === 'object' ? tx.subject.name : (tx.type === 'admin_adjustment' ? 'Admin Adjustment' : 'Purchase');
+                    const studentName = tx.student && typeof tx.student === 'object' ? (tx.student.name || tx.student.email) : 'Unknown User';
+                    const txDate = tx.createdAt ? new Date(tx.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+                    return (
+                      <div
+                        key={tx._id}
+                        className="p-4 bg-[#07080e]/45 border border-gray-800 rounded-3xl flex justify-between items-center"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)] shrink-0">
+                            <FiShoppingBag size={18} />
+                          </div>
+                          <div className="flex flex-col text-left">
+                            <span className="font-extrabold text-sm text-white leading-tight">{subjectName}</span>
+                            <span className="text-xs font-semibold text-gray-400 mt-1">{studentName}</span>
+                            <span className="text-[10px] font-medium text-gray-500 mt-0.5">{txDate}</span>
+                          </div>
                         </div>
-                        <div className="flex flex-col text-left">
-                          <span className="font-extrabold text-sm text-white leading-tight">{tx.subjectName || 'chemistry'}</span>
-                          <span className="text-xs font-semibold text-gray-400 mt-1">{tx.user}</span>
-                          <span className="text-[10px] font-medium text-gray-500 mt-0.5">{tx.date}</span>
+                        
+                        <div className="flex flex-col items-end text-right shrink-0">
+                          <span className="text-sm font-extrabold text-red-500">-{tx.amount.toLocaleString()}</span>
+                          <span className="text-[10px] font-semibold text-gray-500 mt-1">bal {tx.balanceAfter.toLocaleString()}</span>
                         </div>
                       </div>
-                      
-                      <div className="flex flex-col items-end text-right shrink-0">
-                        <span className="text-sm font-extrabold text-red-500">-{tx.spent.toLocaleString()}</span>
-                        <span className="text-[10px] font-semibold text-gray-500 mt-1">bal {tx.balanceAfter.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 

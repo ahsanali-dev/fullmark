@@ -1,9 +1,14 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import ProtectedRoute from './ProtectedRoute';
+import PublicRoute from './PublicRoute';
+
 import Landing from '../pages/Landing';
 import BoyleLaw from '../pages/BoyleLaw';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import ForgotPassword from '../pages/auth/ForgotPassword';
+import VerifyOtp from '../pages/auth/VerifyOtp';
+import ResetPassword from '../pages/auth/ResetPassword';
 import Dashboard from '../pages/admin/Dashboard';
 import Users from '../pages/admin/Users';
 import Content from '../pages/admin/Content';
@@ -48,150 +53,195 @@ const router = createBrowserRouter([
     path: '/boyle-law',
     element: <BoyleLaw />,
   },
+  
+  // Public routes (for unauthenticated users only)
   {
-    path: '/login',
-    element: <Login />,
+    element: <PublicRoute />,
+    children: [
+      {
+        path: '/login',
+        element: <Login />,
+      },
+      {
+        path: '/register',
+        element: <Register />,
+      },
+      {
+        path: '/forgot-password',
+        element: <ForgotPassword />,
+      },
+      {
+        path: '/verify-otp',
+        element: <VerifyOtp />,
+      },
+      {
+        path: '/reset-password',
+        element: <ResetPassword />,
+      },
+    ],
   },
+
+  // Admin Routes
   {
-    path: '/register',
-    element: <Register />,
+    element: <ProtectedRoute allowedRoles={['admin']} />,
+    children: [
+      {
+        path: '/admin/dashboard',
+        element: <Dashboard />,
+      },
+      {
+        path: '/admin/users',
+        element: <Users />,
+      },
+      {
+        path: '/admin/content',
+        element: <Content />,
+      },
+      {
+        path: '/admin/coupons',
+        element: <Coupons />,
+      },
+      {
+        path: '/admin/reports',
+        element: <Reports />,
+      },
+      {
+        path: '/admin/settings',
+        element: <Settings />,
+      },
+    ],
   },
+
+  // Teacher Routes
   {
-    path: '/forgot-password',
-    element: <ForgotPassword />,
+    element: <ProtectedRoute allowedRoles={['teacher']} />,
+    children: [
+      {
+        path: '/teacher/dashboard',
+        element: <TeacherDashboard />,
+      },
+      {
+        path: '/teacher/subjects',
+        element: <TeacherSubjects />,
+      },
+      {
+        path: '/teacher/subjects/:subjectId',
+        element: <TeacherSubjectDetails />,
+      },
+      {
+        path: '/teacher/subjects/:subjectId/add-question',
+        element: <TeacherAddQuestion />,
+      },
+      {
+        path: '/teacher/subjects/select/add-question',
+        element: <TeacherAddQuestion />,
+      },
+      {
+        path: '/teacher/subjects/:subjectId/edit-question/:questionId',
+        element: <TeacherEditQuestion />,
+      },
+      {
+        path: '/teacher/subjects/:subjectId/create-exam',
+        element: <TeacherCreateExam />,
+      },
+      {
+        path: '/teacher/subjects/:subjectId/add-lesson',
+        element: <TeacherAddLesson />,
+      },
+      {
+        path: '/teacher/subjects/:subjectId/edit-lesson/:lessonId',
+        element: <TeacherAddLesson />,
+      },
+      {
+        path: '/teacher/questions',
+        element: <TeacherQuestions />,
+      },
+      {
+        path: '/teacher/exams',
+        element: <TeacherExams />,
+      },
+      {
+        path: '/teacher/settings',
+        element: <TeacherSettings />,
+      },
+    ],
   },
+
+  // Student Routes
   {
-    path: '/admin/dashboard',
-    element: <Dashboard />,
+    element: <ProtectedRoute allowedRoles={['student']} />,
+    children: [
+      {
+        path: '/student/dashboard',
+        element: <StudentDashboard />,
+      },
+      {
+        path: '/student/courses',
+        element: <StudentCourses />,
+      },
+      {
+        path: '/student/courses/:courseId',
+        element: <StudentCourseDetails />,
+      },
+      {
+        path: '/student/courses/:courseId/lessons',
+        element: <StudentCourseLessons />,
+      },
+      {
+        path: '/student/courses/:courseId/lessons/:lessonId',
+        element: <StudentLessonPlayer />,
+      },
+      {
+        path: '/student/exams',
+        element: <StudentExams />,
+      },
+      {
+        path: '/student/exams/:examId',
+        element: <StudentTakeExam />,
+      },
+      {
+        path: '/student/results',
+        element: <StudentResults />,
+      },
+      {
+        path: '/student/results/:attemptId',
+        element: <StudentResultDetails />,
+      },
+      {
+        path: '/student/profile',
+        element: <StudentProfile />,
+      },
+    ],
   },
+
+  // Parent Routes
   {
-    path: '/admin/users',
-    element: <Users />,
+    element: <ProtectedRoute allowedRoles={['parent']} />,
+    children: [
+      {
+        path: '/parent/dashboard',
+        element: <ParentDashboard />,
+      },
+      {
+        path: '/parent/children',
+        element: <ParentChildren />,
+      },
+      {
+        path: '/parent/attendance',
+        element: <ParentAnalysis />,
+      },
+      {
+        path: '/parent/reports',
+        element: <ParentReports />,
+      },
+      {
+        path: '/parent/settings',
+        element: <ParentSettings />,
+      },
+    ],
   },
-  {
-    path: '/admin/content',
-    element: <Content />,
-  },
-  {
-    path: '/admin/coupons',
-    element: <Coupons />,
-  },
-  {
-    path: '/admin/reports',
-    element: <Reports />,
-  },
-  {
-    path: '/admin/settings',
-    element: <Settings />,
-  },
-  {
-    path: '/teacher/dashboard',
-    element: <TeacherDashboard />,
-  },
-  {
-    path: '/teacher/subjects',
-    element: <TeacherSubjects />,
-  },
-  {
-    path: '/teacher/subjects/:subjectId',
-    element: <TeacherSubjectDetails />,
-  },
-  {
-    path: '/teacher/subjects/:subjectId/add-question',
-    element: <TeacherAddQuestion />,
-  },
-  {
-    path: '/teacher/subjects/select/add-question',
-    element: <TeacherAddQuestion />,
-  },
-  {
-    path: '/teacher/subjects/:subjectId/edit-question/:questionId',
-    element: <TeacherEditQuestion />,
-  },
-  {
-    path: '/teacher/subjects/:subjectId/create-exam',
-    element: <TeacherCreateExam />,
-  },
-  {
-    path: '/teacher/subjects/:subjectId/add-lesson',
-    element: <TeacherAddLesson />,
-  },
-  {
-    path: '/teacher/subjects/:subjectId/edit-lesson/:lessonId',
-    element: <TeacherAddLesson />,
-  },
-  {
-    path: '/teacher/questions',
-    element: <TeacherQuestions />,
-  },
-  {
-    path: '/teacher/exams',
-    element: <TeacherExams />,
-  },
-  {
-    path: '/teacher/settings',
-    element: <TeacherSettings />,
-  },
-  {
-    path: '/student/dashboard',
-    element: <StudentDashboard />,
-  },
-  {
-    path: '/student/courses',
-    element: <StudentCourses />,
-  },
-  {
-    path: '/student/courses/:courseId',
-    element: <StudentCourseDetails />,
-  },
-  {
-    path: '/student/courses/:courseId/lessons',
-    element: <StudentCourseLessons />,
-  },
-  {
-    path: '/student/courses/:courseId/lessons/:lessonId',
-    element: <StudentLessonPlayer />,
-  },
-  {
-    path: '/student/exams',
-    element: <StudentExams />,
-  },
-  {
-    path: '/student/exams/:examId',
-    element: <StudentTakeExam />,
-  },
-  {
-    path: '/student/results',
-    element: <StudentResults />,
-  },
-  {
-    path: '/student/results/:attemptId',
-    element: <StudentResultDetails />,
-  },
-  {
-    path: '/student/profile',
-    element: <StudentProfile />,
-  },
-  {
-    path: '/parent/dashboard',
-    element: <ParentDashboard />,
-  },
-  {
-    path: '/parent/children',
-    element: <ParentChildren />,
-  },
-  {
-    path: '/parent/attendance',
-    element: <ParentAnalysis />,
-  },
-  {
-    path: '/parent/reports',
-    element: <ParentReports />,
-  },
-  {
-    path: '/parent/settings',
-    element: <ParentSettings />,
-  },
+
+  // Fallbacks and Redirects
   {
     path: '/student',
     element: <Navigate to="/student/dashboard" replace />,

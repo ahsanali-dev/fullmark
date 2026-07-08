@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FiGrid, 
   FiUsers, 
@@ -11,13 +11,21 @@ import {
   FiShield, 
   FiChevronRight, 
   FiDownload,
-  FiShare2
+  FiShare2,
+  FiTag,
+  FiTrendingUp
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchReports } from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import { ReportsSkeleton } from '../../components/shared/SkeletonLoading';
 
 const Reports = () => {
-  const [timeframe, setTimeframe] = useState('month'); // Default to This Month to match screenshots
+  const dispatch = useDispatch();
+  const { reports, isLoading } = useSelector((state) => state.admin);
+
+  const [timeframe, setTimeframe] = useState('month'); // today, week, month, year
   const [activeTab, setActiveTab] = useState('overview'); // overview or users
   const [isExportOpen, setIsExportOpen] = useState(false);
 
@@ -29,99 +37,22 @@ const Reports = () => {
     { id: 'year', label: 'This Year' }
   ];
 
-  // Dynamic dashboard stats based on timeframe selected
-  const statsData = {
-    today: {
-      overview: {
-        totalUsers: 14,
-        activeSessions: 5,
-        examsToday: 8,
-        avgScore: '76%'
-      },
-      users: {
-        distribution: [
-          { label: 'Students', count: 9, percentage: 64, color: 'emerald', icon: FiAward, iconBg: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', barBg: 'bg-emerald-500', textColor: 'text-emerald-400' },
-          { label: 'Teachers', count: 3, percentage: 21, color: 'blue', icon: FiTv, iconBg: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', barBg: 'bg-blue-500', textColor: 'text-blue-400' },
-          { label: 'Parents', count: 1, percentage: 7, color: 'purple', icon: FiUsers, iconBg: 'bg-purple-500/10 border border-purple-500/20 text-purple-400', barBg: 'bg-purple-500', textColor: 'text-purple-400' },
-          { label: 'Admins', count: 1, percentage: 7, color: 'red', icon: FiShield, iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400', barBg: 'bg-red-500', textColor: 'text-red-400' }
-        ],
-        cards: [
-          { value: '3', label: 'New This Week', color: 'emerald', border: 'border-emerald-500/20', text: 'text-emerald-400' },
-          { value: '14', label: 'New This Month', color: 'blue', border: 'border-blue-500/20', text: 'text-blue-400' },
-          { value: '5', label: 'Active Today', color: 'yellow', border: 'border-yellow-500/20', text: 'text-yellow-400' },
-          { value: '0', label: 'Inactive', color: 'red', border: 'border-red-500/20', text: 'text-red-400' }
-        ]
-      }
-    },
-    week: {
-      overview: {
-        totalUsers: 48,
-        activeSessions: 16,
-        examsToday: 42,
-        avgScore: '81%'
-      },
-      users: {
-        distribution: [
-          { label: 'Students', count: 34, percentage: 71, color: 'emerald', icon: FiAward, iconBg: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', barBg: 'bg-emerald-500', textColor: 'text-emerald-400' },
-          { label: 'Teachers', count: 7, percentage: 15, color: 'blue', icon: FiTv, iconBg: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', barBg: 'bg-blue-500', textColor: 'text-blue-400' },
-          { label: 'Parents', count: 5, percentage: 10, color: 'purple', icon: FiUsers, iconBg: 'bg-purple-500/10 border border-purple-500/20 text-purple-400', barBg: 'bg-purple-500', textColor: 'text-purple-400' },
-          { label: 'Admins', count: 2, percentage: 4, color: 'red', icon: FiShield, iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400', barBg: 'bg-red-500', textColor: 'text-red-400' }
-        ],
-        cards: [
-          { value: '12', label: 'New This Week', color: 'emerald', border: 'border-emerald-500/20', text: 'text-emerald-400' },
-          { value: '48', label: 'New This Month', color: 'blue', border: 'border-blue-500/20', text: 'text-blue-400' },
-          { value: '16', label: 'Active Today', color: 'yellow', border: 'border-yellow-500/20', text: 'text-yellow-400' },
-          { value: '2', label: 'Inactive', color: 'red', border: 'border-red-500/20', text: 'text-red-400' }
-        ]
-      }
-    },
-    month: {
-      overview: {
-        totalUsers: 0,
-        activeSessions: 0,
-        examsToday: 0,
-        avgScore: '0%'
-      },
-      users: {
-        distribution: [
-          { label: 'Students', count: 0, percentage: 0, color: 'emerald', icon: FiAward, iconBg: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', barBg: 'bg-emerald-500', textColor: 'text-emerald-400' },
-          { label: 'Teachers', count: 0, percentage: 0, color: 'blue', icon: FiTv, iconBg: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', barBg: 'bg-blue-500', textColor: 'text-blue-400' },
-          { label: 'Parents', count: 0, percentage: 0, color: 'purple', icon: FiUsers, iconBg: 'bg-purple-500/10 border border-purple-500/20 text-purple-400', barBg: 'bg-purple-500', textColor: 'text-purple-400' },
-          { label: 'Admins', count: 0, percentage: 0, color: 'red', icon: FiShield, iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400', barBg: 'bg-red-500', textColor: 'text-red-400' }
-        ],
-        cards: [
-          { value: '0', label: 'New This Week', color: 'emerald', border: 'border-emerald-500/10', text: 'text-emerald-400' },
-          { value: '0', label: 'New This Month', color: 'blue', border: 'border-blue-500/10', text: 'text-blue-400' },
-          { value: '0', label: 'Active Today', color: 'yellow', border: 'border-yellow-500/10', text: 'text-yellow-400' },
-          { value: '0', label: 'Inactive', color: 'red', border: 'border-red-500/10', text: 'text-red-400' }
-        ]
-      }
-    },
-    year: {
-      overview: {
-        totalUsers: 380,
-        activeSessions: 145,
-        examsToday: 1205,
-        avgScore: '86%'
-      },
-      users: {
-        distribution: [
-          { label: 'Students', count: 275, percentage: 72, color: 'emerald', icon: FiAward, iconBg: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', barBg: 'bg-emerald-500', textColor: 'text-emerald-400' },
-          { label: 'Teachers', count: 48, percentage: 13, color: 'blue', icon: FiTv, iconBg: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', barBg: 'bg-blue-500', textColor: 'text-blue-400' },
-          { label: 'Parents', count: 45, percentage: 12, color: 'purple', icon: FiUsers, iconBg: 'bg-purple-500/10 border border-purple-500/20 text-purple-400', barBg: 'bg-purple-500', textColor: 'text-purple-400' },
-          { label: 'Admins', count: 12, percentage: 3, color: 'red', icon: FiShield, iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400', barBg: 'bg-red-500', textColor: 'text-red-400' }
-        ],
-        cards: [
-          { value: '54', label: 'New This Week', color: 'emerald', border: 'border-emerald-500/20', text: 'text-emerald-400' },
-          { value: '380', label: 'New This Month', color: 'blue', border: 'border-blue-500/20', text: 'text-blue-400' },
-          { value: '145', label: 'Active Today', color: 'yellow', border: 'border-yellow-500/20', text: 'text-yellow-400' },
-          { value: '18', label: 'Inactive', color: 'red', border: 'border-red-500/20', text: 'text-red-400' }
-        ]
-      }
-    }
+  // Helper to map timeframe selector to backend period parameter
+  const getMappedPeriod = (tf) => {
+    if (tf === 'today') return 'week';
+    if (tf === 'week') return 'week';
+    if (tf === 'month') return 'month';
+    if (tf === 'year') return 'all';
+    return 'all';
   };
 
-  const activeStats = statsData[timeframe];
+  // Fetch reports when activeTab or timeframe changes
+  useEffect(() => {
+    dispatch(fetchReports({
+      type: activeTab,
+      period: getMappedPeriod(timeframe)
+    }));
+  }, [dispatch, activeTab, timeframe]);
 
   // Export handlers
   const handleExportOption = (option) => {
@@ -166,6 +97,23 @@ const Reports = () => {
       successMsg: 'Link copied to clipboard!'
     }
   ];
+
+  const reportsData = reports || {};
+  const isBlurred = isExportOpen;
+
+  if (isLoading && (!reports || Object.keys(reports).length === 0)) {
+    return (
+      <DashboardLayout
+        role="admin"
+        activeTab="reports"
+        title="Platform Reports"
+        subtitle="Loading analytics..."
+        disableScroll={true}
+      >
+        <ReportsSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout 
@@ -243,133 +191,193 @@ const Reports = () => {
         <div className="flex-1 overflow-y-auto pr-1 pb-36">
           {activeTab === 'overview' ? (
             /* Overview Tab layout */
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              
-              {/* Card 1: Total Users */}
-              <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-emerald-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-                  <FiUsers size={22} />
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Card 1: New Students */}
+                <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-emerald-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                    <FiUsers size={22} />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-2xl font-black text-emerald-400 leading-tight">
+                      {reportsData.overview?.newStudents || 0}
+                    </span>
+                    <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
+                      New Students
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-2xl font-black text-emerald-400 leading-tight">
-                    {activeStats.overview.totalUsers}
-                  </span>
-                  <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                    Total Users
-                  </span>
+
+                {/* Card 2: New Teachers */}
+                <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-blue-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                    <FiTv size={22} />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-2xl font-black text-blue-400 leading-tight">
+                      {reportsData.overview?.newTeachers || 0}
+                    </span>
+                    <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
+                      New Teachers
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card 3: Exams Completed */}
+                <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-cyan-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                    <FiFileText size={22} />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-2xl font-black text-cyan-400 leading-tight">
+                      {reportsData.overview?.completedExams || 0}
+                    </span>
+                    <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
+                      Exams Completed
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card 4: Coupons Redeemed */}
+                <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-yellow-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
+                  <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
+                    <FiTag size={22} />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-2xl font-black text-yellow-400 leading-tight">
+                      {reportsData.overview?.couponsUsed || 0}
+                    </span>
+                    <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
+                      Coupons Redeemed
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Card 2: Active Sessions */}
-              <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-blue-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
-                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-                  <FiWifi size={22} />
+              {/* Subject Performance Section */}
+              <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-5 text-left">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
+                    <FiTrendingUp size={18} />
+                  </div>
+                  <h3 className="text-base font-extrabold text-white">Subject Performance</h3>
                 </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-2xl font-black text-blue-400 leading-tight">
-                    {activeStats.overview.activeSessions}
-                  </span>
-                  <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                    Active Sessions
-                  </span>
-                </div>
-              </div>
 
-              {/* Card 3: Exams Today */}
-              <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-cyan-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
-                <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-                  <FiFileText size={22} />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-2xl font-black text-cyan-400 leading-tight">
-                    {activeStats.overview.examsToday}
-                  </span>
-                  <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                    Exams Today
-                  </span>
-                </div>
+                {(!reportsData.subjectPerformance || reportsData.subjectPerformance.length === 0) ? (
+                  <div className="py-8 text-center border border-dashed border-gray-800 rounded-2xl">
+                    <span className="text-xs text-gray-500 font-semibold">No performance data recorded for this period</span>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-800 text-xs font-bold text-gray-400">
+                          <th className="py-3 px-4">Subject</th>
+                          <th className="py-3 px-4">Attempts</th>
+                          <th className="py-3 px-4">Average Score</th>
+                          <th className="py-3 px-4">Pass Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-800/50 text-xs font-semibold">
+                        {reportsData.subjectPerformance.map((item, idx) => (
+                          <tr key={idx} className="hover:bg-gray-850/20 text-gray-300">
+                            <td className="py-3.5 px-4 font-bold text-white capitalize">{item.subjectName}</td>
+                            <td className="py-3.5 px-4">{item.totalAttempts}</td>
+                            <td className="py-3.5 px-4 text-yellow-400 font-extrabold">{item.avgScore}%</td>
+                            <td className="py-3.5 px-4 text-emerald-400 font-black">{item.passRate}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-
-              {/* Card 4: Avg Score */}
-              <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-yellow-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
-                <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
-                  <FiStar size={22} />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-2xl font-black text-yellow-400 leading-tight">
-                    {activeStats.overview.avgScore}
-                  </span>
-                  <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                    Avg Score
-                  </span>
-                </div>
-              </div>
-
             </div>
           ) : (
             /* Users Tab Layout */
-            <div className="flex flex-col gap-5">
-              
-              {/* Role Distribution Container Card */}
-              <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-6">
-                
-                {/* Card Header */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-                    <FiPieChart size={18} />
-                  </div>
-                  <h3 className="text-base font-extrabold text-white">Role Distribution</h3>
-                </div>
+            (() => {
+              const roleBreakdown = reportsData.roleBreakdown || [];
+              const studentData = roleBreakdown.find(r => r._id === 'student') || { count: 0, active: 0, verified: 0 };
+              const teacherData = roleBreakdown.find(r => r._id === 'teacher') || { count: 0, active: 0, verified: 0 };
+              const parentData = roleBreakdown.find(r => r._id === 'parent') || { count: 0, active: 0, verified: 0 };
+              const adminData = roleBreakdown.find(r => r._id === 'admin') || { count: 0, active: 0, verified: 0 };
+              const totalCount = (studentData.count + teacherData.count + parentData.count + adminData.count) || 1;
 
-                {/* Progress bars list */}
+              const distribution = [
+                { label: 'Students', count: studentData.count, percentage: Math.round((studentData.count / totalCount) * 100), icon: FiAward, iconBg: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', barBg: 'bg-emerald-500', textColor: 'text-emerald-400' },
+                { label: 'Teachers', count: teacherData.count, percentage: Math.round((teacherData.count / totalCount) * 100), icon: FiTv, iconBg: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', barBg: 'bg-blue-500', textColor: 'text-blue-400' },
+                { label: 'Parents', count: parentData.count, percentage: Math.round((parentData.count / totalCount) * 100), icon: FiUsers, iconBg: 'bg-purple-500/10 border border-purple-500/20 text-purple-400', barBg: 'bg-purple-500', textColor: 'text-purple-400' },
+                { label: 'Admins', count: adminData.count, percentage: Math.round((adminData.count / totalCount) * 100), icon: FiShield, iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400', barBg: 'bg-red-500', textColor: 'text-red-400' }
+              ];
+
+              const cards = [
+                { value: studentData.count, label: 'Total Students', border: 'border-emerald-500/20', text: 'text-emerald-400' },
+                { value: teacherData.count, label: 'Total Teachers', border: 'border-blue-500/20', text: 'text-blue-400' },
+                { value: studentData.active + teacherData.active + parentData.active + adminData.active, label: 'Active Accounts', border: 'border-yellow-500/20', text: 'text-yellow-400' },
+                { value: studentData.verified + teacherData.verified + parentData.verified + adminData.verified, label: 'Verified Accounts', border: 'border-purple-500/20', text: 'text-purple-400' }
+              ];
+
+              return (
                 <div className="flex flex-col gap-5">
-                  {activeStats.users.distribution.map((role, idx) => {
-                    const Icon = role.icon;
-                    return (
-                      <div key={idx} className="flex flex-col gap-2">
-                        <div className="flex justify-between items-center text-sm font-bold">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-xl ${role.iconBg} flex items-center justify-center`}>
-                              <Icon className="text-base" />
-                            </div>
-                            <span className="text-gray-300 font-bold">{role.label}</span>
-                          </div>
-                          <span className={`${role.textColor} font-black`}>
-                            {role.count} ({role.percentage}%)
-                          </span>
-                        </div>
-                        {/* Progress Bar Track */}
-                        <div className="w-full h-2.5 bg-gray-950 rounded-full overflow-hidden border border-gray-800/80">
-                          <div 
-                            className={`h-full ${role.barBg} rounded-full transition-all duration-700 ease-out`} 
-                            style={{ width: `${role.percentage}%` }} 
-                          />
-                        </div>
+                  {/* Role Distribution Container Card */}
+                  <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-6">
+                    {/* Card Header */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                        <FiPieChart size={18} />
                       </div>
-                    );
-                  })}
-                </div>
+                      <h3 className="text-base font-extrabold text-white">Role Distribution</h3>
+                    </div>
 
-              </div>
-
-              {/* Bottom 4 Grid Metric Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {activeStats.users.cards.map((card, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`p-5 bg-[#0c0d19]/40 border ${card.border} rounded-3xl flex flex-col gap-1 text-left hover:scale-[1.02] transition-all duration-300`}
-                  >
-                    <span className={`text-3xl font-black ${card.text}`}>
-                      {card.value}
-                    </span>
-                    <span className={`text-xs font-bold ${card.text}/80 mt-1`}>
-                      {card.label}
-                    </span>
+                    {/* Progress bars list */}
+                    <div className="flex flex-col gap-5">
+                      {distribution.map((role, idx) => {
+                        const Icon = role.icon;
+                        return (
+                          <div key={idx} className="flex flex-col gap-2">
+                            <div className="flex justify-between items-center text-sm font-bold">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-xl ${role.iconBg} flex items-center justify-center`}>
+                                  <Icon className="text-base" />
+                                </div>
+                                <span className="text-gray-300 font-bold">{role.label}</span>
+                              </div>
+                              <span className={`${role.textColor} font-black`}>
+                                {role.count} ({role.percentage}%)
+                              </span>
+                            </div>
+                            {/* Progress Bar Track */}
+                            <div className="w-full h-2.5 bg-gray-950 rounded-full overflow-hidden border border-gray-800/80">
+                              <div 
+                                className={`h-full ${role.barBg} rounded-full transition-all duration-700 ease-out`} 
+                                style={{ width: `${role.percentage}%` }} 
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                ))}
-              </div>
 
-            </div>
+                  {/* Bottom 4 Grid Metric Cards */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {cards.map((card, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`p-5 bg-[#0c0d19]/40 border ${card.border} rounded-3xl flex flex-col gap-1 text-left hover:scale-[1.02] transition-all duration-300`}
+                      >
+                        <span className={`text-3xl font-black ${card.text}`}>
+                          {card.value}
+                        </span>
+                        <span className={`text-xs font-bold ${card.text}/80 mt-1`}>
+                          {card.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()
           )}
         </div>
 

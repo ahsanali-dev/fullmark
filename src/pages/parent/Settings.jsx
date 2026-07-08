@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { logoutUser } from '../../redux/slices/authSlice';
 import {
   FiEdit3,
   FiX,
@@ -67,6 +69,7 @@ const Toggle = ({ value, onChange, activeColor = 'bg-purple-500' }) => (
 /* ═══════════════════════════════════════════════════════════════ */
 const ParentSettings = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [profile, setProfile] = useState(() => getStoredParentProfile());
   const [children] = useState(() => getStoredChildren());
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -347,7 +350,11 @@ const ParentSettings = () => {
 
           {/* ── Sign Out ── */}
           <button
-            onClick={() => { toast.success('Signed out successfully!'); navigate('/login'); }}
+            onClick={() => {
+              dispatch(logoutUser());
+              toast.success('Signed out successfully!');
+              navigate('/login');
+            }}
             className="w-full py-4 mt-2 border border-red-500/40 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all duration-300 active:scale-95 cursor-pointer"
           >
             <FiLogOut size={18} />

@@ -19,6 +19,8 @@ import {
 import { Formik, Form } from 'formik';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser, changePassword, updateProfile } from '../../redux/slices/authSlice';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
@@ -34,12 +36,29 @@ import {
 
 const TeacherSettings = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
 
   const [profileData, setProfileData] = useState(() => getStoredProfile());
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+
+  // Sync with Redux user state
+  useEffect(() => {
+    if (user) {
+      const updated = {
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        bio: user.bio || '',
+        avatarText: user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+      };
+      setProfileData(updated);
+      setStoredProfile(updated);
+    }
+  }, [user]);
 
   // Sync theme
   useEffect(() => {
@@ -72,31 +91,42 @@ const TeacherSettings = () => {
     return () => window.removeEventListener('storage', handleSync);
   }, []);
 
-  const handleProfileSave = (values) => {
-    const updated = {
-      ...profileData,
-      name: values.name,
-      phone: values.phone || '',
-      bio: values.bio || '',
-      avatarText: values.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
-    };
-    setProfileData(updated);
-    setStoredProfile(updated);
-    toast.success('Profile settings updated!');
-    setIsEditProfileOpen(false);
+  const handleProfileSave = async (values, { setSubmitting }) => {
+    try {
+      await dispatch(updateProfile({
+        name: values.name,
+        phone: values.phone
+      })).unwrap();
+      toast.success('Profile settings updated!');
+      setIsEditProfileOpen(false);
+    } catch (err) {
+      toast.error(err || 'Failed to update profile settings.');
+    } finally {
+      if (setSubmitting) setSubmitting(false);
+    }
   };
 
-  const handleUpdatePassword = (values, { resetForm }) => {
+  const handleUpdatePassword = async (values, { resetForm, setSubmitting }) => {
     const loadToast = toast.loading('Updating password...');
-    setTimeout(() => {
+    try {
+      await dispatch(changePassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword
+      })).unwrap();
       toast.dismiss(loadToast);
       toast.success('Password updated successfully!');
       setIsChangePasswordOpen(false);
       resetForm();
-    }, 1200);
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to update password.');
+    } finally {
+      if (setSubmitting) setSubmitting(false);
+    }
   };
 
   const handleLogout = () => {
+    dispatch(logoutUser());
     toast.success('Logged out successfully!');
     navigate('/login');
   };

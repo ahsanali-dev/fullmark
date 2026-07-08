@@ -23,6 +23,8 @@ import {
 import { MdPalette } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { Formik, Form } from 'formik';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser, changePassword, updateProfile } from '../../redux/slices/authSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import ModalWrapper from '../../components/shared/ModalWrapper';
@@ -32,6 +34,8 @@ import { EditProfileSchema, ChangePasswordSchema } from '../../schemas/authSchem
 
 const Settings = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
 
   // App Theme State
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -63,38 +67,63 @@ const Settings = () => {
 
   // User Profile State
   const [profileData, setProfileData] = useState({
-    name: 'super admin',
-    email: 'admin@gmail.com',
-    phone: '6629694'
+    name: user?.name || 'super admin',
+    email: user?.email || 'admin@gmail.com',
+    phone: user?.phone || '6629694'
   });
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name,
+        email: user.email,
+        phone: user.phone || ''
+      });
+    }
+  }, [user]);
 
   // Modal / Bottom Sheet States
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   // Handle Edit Profile Save
-  const handleSaveProfile = (values) => {
-    setProfileData({
-      name: values.name,
-      email: values.email,
-      phone: values.phone
-    });
-    setIsEditProfileOpen(false);
-    toast.success('Profile updated successfully!');
+  const handleSaveProfile = async (values, { setSubmitting }) => {
+    try {
+      await dispatch(updateProfile({
+        name: values.name,
+        phone: values.phone
+      })).unwrap();
+      setIsEditProfileOpen(false);
+      toast.success('Profile updated successfully!');
+    } catch (err) {
+      toast.error(err || 'Failed to update profile.');
+    } finally {
+      if (setSubmitting) setSubmitting(false);
+    }
   };
 
   // Handle Change Password Save
-  const handleUpdatePassword = (values, { resetForm }) => {
+  const handleUpdatePassword = async (values, { resetForm, setSubmitting }) => {
     const loadToast = toast.loading('Updating password...');
-    setTimeout(() => {
+    try {
+      await dispatch(changePassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword
+      })).unwrap();
       toast.dismiss(loadToast);
       toast.success('Password updated successfully!');
       setIsChangePasswordOpen(false);
       resetForm();
-    }, 1200);
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to update password.');
+    } finally {
+      if (setSubmitting) setSubmitting(false);
+    }
   };
 
   const handleLogout = () => {
+    dispatch(logoutUser());
     toast.success('Logged out successfully!');
     navigate('/login');
   };
