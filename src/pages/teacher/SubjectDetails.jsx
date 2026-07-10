@@ -12,54 +12,96 @@ import {
   FiClock
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Button from '../../components/ui/Button';
+import { useDispatch, useSelector } from 'react-redux';
 import {
-  getStoredSubjects,
-  getStoredQuestions,
-  getStoredExams,
-  setStoredExams,
-  getStoredLessons
-} from './store';
+  fetchTeacherSubjects,
+  fetchQuestions,
+  fetchExams,
+  fetchLessons,
+  deleteExam
+} from '../../redux/slices/teacherSlice';
+import { ContentSkeleton } from '../../components/shared/SkeletonLoading';
 
 const SubjectDetails = () => {
   const navigate = useNavigate();
   const { subjectId } = useParams();
+  const dispatch = useDispatch();
 
-  const [subjects] = useState(() => getStoredSubjects());
-  const [questions] = useState(() => getStoredQuestions());
-  const [examsList, setExamsList] = useState(() => getStoredExams());
-  const [lessons, setLessons] = useState(() => getStoredLessons());
+  const { subjects = [], questions = [], exams: examsList = [], lessons = [], isLoading } = useSelector((state) => state.teacher);
 
   const [activeTab, setActiveTab] = useState('lessons'); // 'lessons' | 'questions' | 'exams'
+  const [isDeletingId, setIsDeletingId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingExam, setDeletingExam] = useState(null);
 
-  const subject = subjects.find((sub) => sub.id === subjectId) || {
+  useEffect(() => {
+    dispatch(fetchTeacherSubjects());
+    dispatch(fetchQuestions());
+    dispatch(fetchExams());
+    dispatch(fetchLessons(subjectId));
+  }, [dispatch, subjectId]);
+
+  const foundSubject = subjects.find((sub) => (sub._id || sub.id) === subjectId);
+  const subject = foundSubject ? {
+    ...foundSubject,
+    id: foundSubject._id || foundSubject.id,
+    title: foundSubject.name || foundSubject.title,
+    description: foundSubject.description || ''
+  } : {
     id: subjectId,
     title: 'Unknown Subject',
     description: 'No description available'
   };
 
-  const subjectQuestions = questions.filter((q) => q.subjectId === subjectId);
-  const subjectExams = examsList.filter((ex) => ex.subjectId === subjectId);
-  const subjectLessons = lessons.filter((les) => les.subjectId === subjectId);
+  const subjectQuestions = questions.filter(
+    (q) => (q.subject?._id || q.subject || q.subjectId) === subjectId
+  );
+  const subjectExams = examsList.filter(
+    (ex) => (ex.subject?._id || ex.subject || ex.subjectId) === subjectId
+  );
+  const subjectLessons = lessons.filter(
+    (les) => (les.subject?._id || les.subject || les.subjectId) === subjectId
+  );
 
-  // Sync state from storage
-  useEffect(() => {
-    const handleSync = () => {
-      setExamsList(getStoredExams());
-      setLessons(getStoredLessons());
-    };
-    window.addEventListener('storage', handleSync);
-    return () => window.removeEventListener('storage', handleSync);
-  }, []);
-
-  const handleDeleteExam = (id) => {
-    const updated = examsList.filter(ex => ex.id !== id);
-    setExamsList(updated);
-    setStoredExams(updated);
-    toast.success('Exam cancelled successfully!');
+  const handleDeleteClick = (exam) => {
+    setDeletingExam(exam);
+    setShowDeleteConfirm(true);
   };
+
+  const confirmDelete = async () => {
+    if (!deletingExam) return;
+    const id = deletingExam._id || deletingExam.id;
+    setIsDeletingId(id);
+    setShowDeleteConfirm(false);
+    const loadingToast = toast.loading('Cancelling exam...');
+    try {
+      await dispatch(deleteExam(id)).unwrap();
+      toast.success('Exam cancelled successfully!', { id: loadingToast });
+      dispatch(fetchExams());
+      setDeletingExam(null);
+    } catch (err) {
+      toast.error(err || 'Failed to cancel exam', { id: loadingToast });
+    } finally {
+      setIsDeletingId(null);
+    }
+  };
+
+  if (isLoading && !lessons.length && !questions.length && !examsList.length) {
+    return (
+      <DashboardLayout
+        role="teacher"
+        activeTab="subjects"
+        title={subject.title}
+        subtitle="Loading Subject Hub..."
+      >
+        <ContentSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout
@@ -67,6 +109,7 @@ const SubjectDetails = () => {
       activeTab="subjects"
       title={subject.title}
       subtitle="Subject Hub"
+      isModalOpen={showDeleteConfirm}
     >
       <div className="w-full max-w-full p-6 md:p-8 pb-32 text-left flex flex-col gap-6 animate-fade-in relative">
 
@@ -185,8 +228,8 @@ const SubjectDetails = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {subjectLessons.map((les) => (
                     <div
-                      key={les.id}
-                      className="p-5 bg-[#0e101a] border border-gray-805 rounded-3xl flex items-center gap-4 relative hover:border-gray-700 transition-all group duration-300"
+                      key={les._id || les.id}
+                      className="p-5 bg-[#0e101a] border border-gray-850 rounded-3xl flex items-center gap-4 relative hover:border-gray-700 transition-all group duration-300"
                     >
                       <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-inner shrink-0 animate-fade-in">
                         <FiBookOpen size={20} />
@@ -216,7 +259,7 @@ const SubjectDetails = () => {
                       </div>
 
                       <button
-                        onClick={() => navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les.id}`)}
+                        onClick={() => navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les._id || les.id}`)}
                         className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-500 hover:text-white hover:border-gray-700 transition-all cursor-pointer"
                         title="Edit Lesson"
                       >
@@ -255,7 +298,7 @@ const SubjectDetails = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {subjectQuestions.map((q) => (
                     <div
-                      key={q.id}
+                      key={q._id || q.id}
                       className="p-5 bg-[#0e101a] border border-gray-805 rounded-3xl flex items-center gap-4 relative hover:border-gray-700 transition-all group duration-300"
                     >
                       <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-inner shrink-0">
@@ -280,7 +323,7 @@ const SubjectDetails = () => {
                       </div>
 
                       <button
-                        onClick={() => navigate(`/teacher/subjects/${subjectId}/edit-question/${q.id}`)}
+                        onClick={() => navigate(`/teacher/subjects/${subjectId}/edit-question/${q._id || q.id}`)}
                         className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-500 hover:text-white hover:border-gray-700 transition-all cursor-pointer"
                         title="Edit Question"
                       >
@@ -318,7 +361,7 @@ const SubjectDetails = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {subjectExams.map((ex) => (
                     <div
-                      key={ex.id}
+                      key={ex._id || ex.id}
                       className="p-5 bg-[#0e101a] border border-gray-805 rounded-[2rem] shadow-lg flex flex-col justify-between gap-4 transition-all duration-300 hover:border-gray-700 text-left animate-fade-in"
                     >
                       <div className="flex items-center justify-between">
@@ -331,18 +374,19 @@ const SubjectDetails = () => {
                               {ex.title}
                             </h4>
                             <span className="text-sm text-gray-500 font-bold mt-1 block uppercase">
-                              {ex.date}
+                              {ex.date || (ex.createdAt ? new Date(ex.createdAt).toLocaleDateString() : 'N/A')}
                             </span>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-black uppercase bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full">
-                            Published
+                            {ex.status || 'Published'}
                           </span>
                           <button
-                            onClick={() => handleDeleteExam(ex.id)}
-                            className="p-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-500 hover:text-red-400 hover:border-red-500/30 transition-all cursor-pointer shrink-0"
+                            onClick={() => handleDeleteClick(ex)}
+                            disabled={isDeletingId === (ex._id || ex.id)}
+                            className="p-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-500 hover:text-red-400 hover:border-red-500/30 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Cancel Assessment"
                           >
                             <FiTrash2 size={13} />
@@ -354,15 +398,15 @@ const SubjectDetails = () => {
 
                       <div className="flex justify-between items-center text-sm font-black uppercase text-gray-500 tracking-wider pt-1">
                         <div className="flex items-center gap-1.5">
-                          <FiHelpCircle className="text-gray-650" size={14} />
-                          <span>{ex.questionsCount} questions</span>
+                          <FiHelpCircle className="text-gray-655" size={14} />
+                          <span>{ex.questions?.length || ex.questionsCount || 0} questions</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <FiClock className="text-gray-650" size={14} />
-                          <span>{ex.duration} min</span>
+                          <FiClock className="text-gray-655" size={14} />
+                          <span>{ex.duration || 0} min</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <FiUsers className="text-gray-650" size={14} />
+                          <FiUsers className="text-gray-655" size={14} />
                           <span>0 students</span>
                         </div>
                       </div>
@@ -375,6 +419,50 @@ const SubjectDetails = () => {
         </div>
 
       </div>
+      {/* MODAL: DELETE CONFIRMATION */}
+      <AnimatePresence>
+        {showDeleteConfirm && deletingExam && (
+          <div
+            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+            onClick={() => {
+              setShowDeleteConfirm(false);
+              setDeletingExam(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 100, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 100, opacity: 0 }}
+              className="w-full sm:max-w-md bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-black text-white mb-4">Cancel Exam</h3>
+              <p className="text-sm text-gray-400 leading-relaxed font-semibold mb-6">
+                Are you sure you want to cancel the exam <span className="text-red-400 font-extrabold">"{deletingExam.title}"</span>? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeletingExam(null);
+                  }}
+                  className="flex-1 py-4 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center shadow-[0_4px_15px_rgba(239,68,68,0.3)]"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 };

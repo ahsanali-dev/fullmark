@@ -20,26 +20,25 @@ import { Formik, Form } from 'formik';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
-import { logoutUser, changePassword, updateProfile } from '../../redux/slices/authSlice';
+import { logoutUser, changePassword, updateProfile, updateTeacherProfile } from '../../redux/slices/authSlice';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import ModalWrapper from '../../components/shared/ModalWrapper';
 import { TeacherProfileSchema, ChangePasswordSchema } from '../../schemas/authSchemas';
 
-import {
-  getStoredProfile,
-  setStoredProfile
-} from './store';
-
-// Schemas imported from src/schemas/authSchemas.js
-
 const TeacherSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
 
-  const [profileData, setProfileData] = useState(() => getStoredProfile());
+  const [profileData, setProfileData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    bio: user?.bio || '',
+    avatarText: (user?.name || '').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+  });
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -49,14 +48,13 @@ const TeacherSettings = () => {
   useEffect(() => {
     if (user) {
       const updated = {
-        name: user.name,
-        email: user.email,
+        name: user.name || '',
+        email: user.email || '',
         phone: user.phone || '',
         bio: user.bio || '',
-        avatarText: user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+        avatarText: (user.name || '').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
       };
       setProfileData(updated);
-      setStoredProfile(updated);
     }
   }, [user]);
 
@@ -82,14 +80,7 @@ const TeacherSettings = () => {
     return () => window.removeEventListener('themeChange', handleThemeChange);
   }, [theme]);
 
-  // Sync profile details
-  useEffect(() => {
-    const handleSync = () => {
-      setProfileData(getStoredProfile());
-    };
-    window.addEventListener('storage', handleSync);
-    return () => window.removeEventListener('storage', handleSync);
-  }, []);
+
 
   const handleProfileSave = async (values, { setSubmitting }) => {
     try {
@@ -97,6 +88,11 @@ const TeacherSettings = () => {
         name: values.name,
         phone: values.phone
       })).unwrap();
+
+      await dispatch(updateTeacherProfile({
+        bio: values.bio
+      })).unwrap();
+
       toast.success('Profile settings updated!');
       setIsEditProfileOpen(false);
     } catch (err) {

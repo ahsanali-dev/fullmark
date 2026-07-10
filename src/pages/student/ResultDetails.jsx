@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   FiCheckCircle,
   FiXCircle,
@@ -8,95 +9,85 @@ import {
   FiBarChart2,
   FiHome
 } from 'react-icons/fi';
-import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { defaultResultsData } from '../../data/resultsData';
-import { examsData } from '../../data/examsData';
+import { fetchAttemptDetail } from '../../redux/slices/studentSlice';
+
+const getImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('data:') || path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const baseUrl = import.meta.env.VITE_IMAGE_URL || 'http://146.190.18.35:3008/uploads';
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return `${cleanBase}/${cleanPath}`;
+};
 
 const ResultDetails = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
-  const [attempt, setAttempt] = useState(null);
+  const dispatch = useDispatch();
+
+  const { resultDetail: attempt, isLoading } = useSelector((state) => state.student);
 
   useEffect(() => {
-    let history = [];
-    const stored = localStorage.getItem('student_exams');
-    if (stored) {
-      history = JSON.parse(stored);
-    } else {
-      history = defaultResultsData;
-      localStorage.setItem('student_exams', JSON.stringify(defaultResultsData));
-    }
+    dispatch(fetchAttemptDetail(attemptId));
+  }, [dispatch, attemptId]);
 
-    // Find attempt by attemptId or index fallback
-    let found = history.find(h => h.attemptId === attemptId);
-    
-    if (!found && attemptId) {
-      if (attemptId.startsWith('mock-')) {
-        const idx = parseInt(attemptId.split('-')[1]);
-        found = history[idx];
-      } else if (attemptId.startsWith('attempt-mock-')) {
-        const idx = parseInt(attemptId.split('attempt-mock-')[1]) - 1;
-        found = history[idx];
-      } else if (!isNaN(attemptId)) {
-        const idx = parseInt(attemptId);
-        found = history[idx];
-      }
-    }
-
-    if (found) {
-      setAttempt(found);
-    } else {
-      toast.error('Result attempt not found!');
-      navigate('/student/results');
-    }
-  }, [attemptId, navigate]);
-
-  if (!attempt) return null;
-
-  // Resolve questions from attempt, or search examsData database as fallback
-  const examDbItem = examsData.find(e => e.id === attempt.id);
-  const questions = attempt.questions || (examDbItem ? examDbItem.questions : []);
-
-  // Resolve selectedAnswers fallback if not stored
-  let selectedAnswers = attempt.selectedAnswers;
-  if (!selectedAnswers || Object.keys(selectedAnswers).length === 0) {
-    selectedAnswers = {};
-    if (attempt.score === 100) {
-      questions.forEach((q, idx) => {
-        selectedAnswers[idx] = q.correctOption;
-      });
-    } else {
-      questions.forEach((q, idx) => {
-        if (idx === 0) {
-          selectedAnswers[idx] = q.correctOption;
-        } else {
-          const wrongOpt = q.options.find(o => o.key !== q.correctOption);
-          selectedAnswers[idx] = wrongOpt ? wrongOpt.key : 'A';
-        }
-      });
-    }
+  if (isLoading && !attempt) {
+    return (
+      <DashboardLayout
+        role="student"
+        activeTab="results"
+        title="Loading Result Details..."
+        showBackButton={true}
+        onBackClick={() => navigate('/student/results')}
+      >
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="w-12 h-12 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
   }
 
-  const isPassed = attempt.status === 'Passed';
-  const totalQs = questions.length || 2;
-  const correctCount = Math.round((attempt.score / 100) * totalQs);
-  const wrongCount = totalQs - correctCount;
+  if (!attempt) {
+    return (
+      <DashboardLayout
+        role="student"
+        activeTab="results"
+        title="Result Not Found"
+        showBackButton={true}
+        onBackClick={() => navigate('/student/results')}
+      >
+        <div className="p-8 text-center text-gray-500 font-bold">
+          Failed to load attempt result details.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const isPassed = attempt.passed;
+  const totalQs = attempt.totalQuestions || 0;
+  const correctCount = attempt.correctAnswers || 0;
+  const wrongCount = attempt.wrongAnswers || 0;
 
   // Grade calculator
+  const score = attempt.score || 0;
   let grade = 'F';
-  if (attempt.score === 100) grade = 'A+';
-  else if (attempt.score >= 80) grade = 'A';
-  else if (attempt.score >= 60) grade = 'B';
-  else if (attempt.score >= 40) grade = 'C';
+  if (score === 100) grade = 'A+';
+  else if (score >= 80) grade = 'A';
+  else if (score >= 60) grade = 'B';
+  else if (score >= 40) grade = 'C';
   else grade = 'D';
+
+  const answers = attempt.answers || [];
 
   return (
     <DashboardLayout
       role="student"
       activeTab="results"
       title="Exam Result"
-      subtitle={attempt.name}
+      subtitle={attempt.exam?.title || 'Practice Exam'}
       showBackButton={true}
       onBackClick={() => navigate('/student/results')}
     >
@@ -108,9 +99,11 @@ const ResultDetails = () => {
             : 'from-pink-950/40 to-[#0c0d19]/90 border-pink-500/20 shadow-pink-500/5'
           }`}>
           {/* Subject tag */}
-          <span className="px-4 py-1.5 rounded-full bg-gray-950/65 border border-gray-800 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-            {attempt.subject}
-          </span>
+          {attempt.subject && (
+            <span className="px-4 py-1.5 rounded-full bg-gray-950/65 border border-gray-800 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              {attempt.subject.name}
+            </span>
+          )}
 
           {/* Large circular gauge with grade inside */}
           <div className="relative w-36 h-36 flex items-center justify-center">
@@ -131,12 +124,12 @@ const ResultDetails = () => {
                 strokeWidth="6"
                 fill="transparent"
                 strokeDasharray={2 * Math.PI * 62}
-                strokeDashoffset={2 * Math.PI * 62 * (1 - attempt.score / 100)}
+                strokeDashoffset={2 * Math.PI * 62 * (1 - score / 100)}
                 strokeLinecap="round"
               />
             </svg>
             <div className="absolute flex flex-col items-center justify-center">
-              <span className="text-3xl font-black text-white">{attempt.score}%</span>
+              <span className="text-3xl font-black text-white">{score}%</span>
               <span className={`w-8 h-6 rounded-lg flex items-center justify-center text-xs font-black text-white mt-1 border ${isPassed ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-pink-500/20 border-pink-500/30'
                 }`}>
                 {grade}
@@ -151,7 +144,7 @@ const ResultDetails = () => {
 
           {/* Status pill action representation */}
           {isPassed ? (
-            <span className="px-6 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-sm font-black text-emerald-400 flex items-center gap-1.5 shadow-sm">
+            <span className="px-6 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-sm font-black text-emerald-400 flex items-center gap-1.5 shadow-sm animate-pulse">
               <FiCheckCircle /> Passed ✓
             </span>
           ) : (
@@ -177,13 +170,13 @@ const ResultDetails = () => {
 
           <div className="p-3.5 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
             <FiStar className="text-yellow-500 text-base mb-1.5" />
-            <span className="text-base font-black text-white leading-none mb-1">{attempt.score}%</span>
+            <span className="text-base font-black text-white leading-none mb-1">{score}%</span>
             <span className="text-[10px] font-extrabold text-yellow-500/80 uppercase tracking-wider">Score</span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
             <FiClock className="text-blue-400 text-base mb-1.5" />
-            <span className="text-base font-black text-white leading-none mb-1">{attempt.timeSpentSeconds || 10}s</span>
+            <span className="text-base font-black text-white leading-none mb-1">{attempt.timeTaken || 0}s</span>
             <span className="text-[10px] font-extrabold text-blue-400/80 uppercase tracking-wider">Time</span>
           </div>
         </div>
@@ -197,20 +190,24 @@ const ResultDetails = () => {
             <h3 className="text-base font-black text-white uppercase tracking-wider">Performance Breakdown</h3>
           </div>
 
-          {questions && questions.map((q, idx) => {
-            const userAns = selectedAnswers ? selectedAnswers[idx] : null;
+          {answers.map((ans, idx) => {
+            const q = ans.question;
+            if (!q) return null;
+
+            const userAns = ans.selectedOption;
+            const isCorrectAnswer = ans.isCorrect;
 
             return (
               <div
-                key={q.id || idx}
+                key={ans._id || idx}
                 className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 shadow-md flex flex-col gap-4 text-left"
               >
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded-xl bg-gray-900 border border-gray-800 text-xs font-black text-gray-400">
                     Q{idx + 1}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-black text-emerald-400">
-                    {q.difficulty || 'Easy'}
+                  <span className="px-2.5 py-0.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-black text-emerald-400 capitalize">
+                    {q.difficulty || 'medium'}
                   </span>
                 </div>
 
@@ -222,7 +219,7 @@ const ResultDetails = () => {
                 {q.image && (
                   <div className="w-full rounded-2xl overflow-hidden border border-gray-800 max-h-56 mt-1 flex items-center justify-center bg-black/40">
                     <img
-                      src={q.image}
+                      src={getImageUrl(q.image)}
                       alt="question-banner"
                       className="w-full h-full object-cover max-h-56"
                     />
@@ -231,7 +228,7 @@ const ResultDetails = () => {
 
                 {/* Options list showing right/wrong badges */}
                 <div className="flex flex-col gap-2.5 mt-2">
-                  {q.options && q.options.map((opt) => {
+                  {(q.options || []).map((opt) => {
                     const isCorrectOpt = opt.key === q.correctOption;
                     const isUserChoice = opt.key === userAns;
 
@@ -284,7 +281,7 @@ const ResultDetails = () => {
                         {opt.image && (
                           <div className="w-full rounded-lg overflow-hidden border border-gray-800/80 max-h-32 mt-1 bg-black/20 flex items-center justify-center">
                             <img
-                              src={opt.image}
+                              src={getImageUrl(opt.image)}
                               alt={`option-${opt.key}`}
                               className="w-full h-full object-cover max-h-32"
                             />

@@ -25,25 +25,39 @@ import Input from '../../components/ui/Input';
 import ModalWrapper from '../../components/shared/ModalWrapper';
 import { QuestionSchema } from '../../schemas/questionSchema';
 
+import { useDispatch, useSelector } from 'react-redux';
 import {
-  getStoredSubjects,
-  getStoredQuestions,
-  setStoredQuestions
-} from './store';
+  fetchTeacherSubjects,
+  fetchQuestions,
+  createQuestion,
+  deleteQuestion
+} from '../../redux/slices/teacherSlice';
+import { ContentSkeleton } from '../../components/shared/SkeletonLoading';
 
-// QuestionSchema imported from src/schemas/questionSchema.js
+const getImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('data:') || path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const baseUrl = import.meta.env.VITE_IMAGE_URL || 'http://146.190.18.35:3008/uploads';
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return `${cleanBase}/${cleanPath}`;
+};
 
 const TeacherQuestions = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const urlSubjectId = searchParams.get('subject');
 
-  const [subjects, setSubjects] = useState(() => getStoredSubjects());
-  const [questions, setQuestions] = useState(() => getStoredQuestions());
+  const { subjects = [], questions = [], isLoading } = useSelector((state) => state.teacher);
 
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
+  const [isDeletingId, setIsDeletingId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingQuestion, setDeletingQuestion] = useState(null);
 
   // pre-select subject if passed in URL
   useEffect(() => {
@@ -52,44 +66,70 @@ const TeacherQuestions = () => {
     }
   }, [urlSubjectId]);
 
-  // Sync state from store
   useEffect(() => {
-    const handleSync = () => {
-      setSubjects(getStoredSubjects());
-      setQuestions(getStoredQuestions());
-    };
-    window.addEventListener('storage', handleSync);
-    return () => window.removeEventListener('storage', handleSync);
-  }, []);
+    dispatch(fetchTeacherSubjects());
+    dispatch(fetchQuestions());
+  }, [dispatch]);
 
-  const handleAddQuestion = (values, { resetForm }) => {
-    const newQ = {
-      id: `q-${Date.now()}`,
-      subjectId: values.subjectId,
-      text: values.text,
-      optionA: values.optionA,
-      optionB: values.optionB,
-      optionC: values.optionC,
-      optionD: values.optionD,
-      correctOption: values.correctOption
-    };
-    const updated = [newQ, ...questions];
-    setQuestions(updated);
-    setStoredQuestions(updated);
-    toast.success('Question added successfully!');
-    setIsAddQuestionOpen(false);
-    resetForm();
+  const handleAddQuestion = (values, { setSubmitting, resetForm }) => {
+    const optionMap = { A: 0, B: 1, C: 2, D: 3 };
+    const correctIdx = optionMap[values.correctOption] ?? 0;
+    
+    toast.promise(
+      dispatch(createQuestion({
+        subjectId: values.subjectId,
+        text: values.text,
+        options: [values.optionA, values.optionB, values.optionC, values.optionD],
+        correctOption: correctIdx,
+      })).unwrap(),
+      {
+        loading: 'Creating question...',
+        success: () => {
+          resetForm();
+          dispatch(fetchTeacherSubjects());
+          dispatch(fetchQuestions());
+          return 'Question added successfully!';
+        },
+        error: (err) => err || 'Failed to add question',
+      }
+    );
   };
 
-  const handleDeleteQuestion = (id) => {
-    const updated = questions.filter(q => q.id !== id);
-    setQuestions(updated);
-    setStoredQuestions(updated);
-    toast.success('Question deleted successfully!');
+  const handleDeleteClick = (question) => {
+    setDeletingQuestion(question);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingQuestion) return;
+    const id = deletingQuestion._id || deletingQuestion.id;
+    setIsDeletingId(id);
+    setShowDeleteConfirm(false);
+    const loadingToast = toast.loading('Deleting question...');
+    try {
+      await dispatch(deleteQuestion(id)).unwrap();
+      toast.success('Question deleted successfully!', { id: loadingToast });
+      dispatch(fetchQuestions());
+      setDeletingQuestion(null);
+    } catch (err) {
+      toast.error(err || 'Failed to delete question', { id: loadingToast });
+    } finally {
+      setIsDeletingId(null);
+    }
   };
 
   // Filter logic
-  const filteredQuestions = questions.filter(q => {
+  const filteredQuestions = questions.map(q => {
+    const qSubjectId = q.subject?._id || q.subject || q.subjectId;
+    const rawDiff = q.difficulty || 'easy';
+    return {
+      ...q,
+      id: q._id || q.id,
+      subjectId: qSubjectId,
+      text: q.text,
+      difficulty: rawDiff.charAt(0).toUpperCase() + rawDiff.slice(1).toLowerCase()
+    };
+  }).filter(q => {
     const matchesSubject = selectedSubjectFilter === 'all' || q.subjectId === selectedSubjectFilter;
     const matchesQuery = q.text.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSubject && matchesQuery;
@@ -98,19 +138,29 @@ const TeacherQuestions = () => {
   const [activeMenuId, setActiveMenuId] = useState(null);
 
   const totalCount = questions.length;
-  const easyCount = questions.filter(q => q.difficulty === 'Easy' || !q.difficulty || q.difficulty === '').length;
-  const mediumCount = questions.filter(q => q.difficulty === 'Medium').length;
-  const hardCount = questions.filter(q => q.difficulty === 'Hard').length;
+  const easyCount = questions.filter(q => (q.difficulty || 'Easy').toLowerCase() === 'easy').length;
+  const mediumCount = questions.filter(q => (q.difficulty || '').toLowerCase() === 'medium').length;
+  const hardCount = questions.filter(q => (q.difficulty || '').toLowerCase() === 'hard').length;
 
-  const isModalActive = isAddQuestionOpen;
-
+  if (isLoading && !questions.length) {
+    return (
+      <DashboardLayout
+        role="teacher"
+        activeTab="questions"
+        title="Questions Bank"
+        subtitle="Loading questions..."
+      >
+        <ContentSkeleton />
+      </DashboardLayout>
+    );
+  }
   return (
     <DashboardLayout
       role="teacher"
       activeTab="questions"
       title="Questions Bank"
       subtitle="Configure assessment questions and multiple options"
-      isModalOpen={isModalActive}
+      isModalOpen={showDeleteConfirm}
     >
       <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-36">
 
@@ -157,7 +207,7 @@ const TeacherQuestions = () => {
             >
               <option value="all">All Subjects</option>
               {subjects.map(s => (
-                <option key={s.id} value={s.id}>{s.title}</option>
+                <option key={s._id || s.id} value={s._id || s.id}>{s.title || s.name}</option>
               ))}
             </select>
             <FiChevronDown className="text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -203,14 +253,17 @@ const TeacherQuestions = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filteredQuestions.map((q) => {
-              const subObj = subjects.find(s => s.id === q.subjectId);
+              const subObj = subjects.find(s => (s._id || s.id) === q.subjectId);
 
               const optionsList = [
-                { key: 'A', val: q.optionA },
-                { key: 'B', val: q.optionB },
-                { key: 'C', val: q.optionC },
-                { key: 'D', val: q.optionD }
-              ].filter(opt => opt.val && opt.val.trim() !== '');
+                { key: 'A', val: q.options?.[0] || q.optionA, img: q.optionImages?.[0] },
+                { key: 'B', val: q.options?.[1] || q.optionB, img: q.optionImages?.[1] },
+                { key: 'C', val: q.options?.[2] || q.optionC, img: q.optionImages?.[2] },
+                { key: 'D', val: q.options?.[3] || q.optionD, img: q.optionImages?.[3] }
+              ].filter(opt => opt.val && typeof opt.val === 'string' && opt.val.trim() !== '');
+
+              const optionKeys = ['A', 'B', 'C', 'D'];
+              const correctKey = typeof q.correctOption === 'number' ? optionKeys[q.correctOption] : q.correctOption;
 
               return (
                 <div
@@ -227,8 +280,8 @@ const TeacherQuestions = () => {
                         <h4 className="text-lg font-extrabold text-white leading-tight capitalize max-w-[140px] md:max-w-[280px] truncate">
                           {q.text}
                         </h4>
-                        <span className="text-sm text-gray-500 font-bold mt-1 block uppercase">
-                          {subObj ? subObj.title : 'Unassigned'}
+                        <span className="text-sm text-gray-500 font-bold mt-1 block uppercase font-semibold">
+                          {subObj ? subObj.title || subObj.name : 'Unassigned'}
                         </span>
                       </div>
                     </div>
@@ -259,10 +312,11 @@ const TeacherQuestions = () => {
                           </button>
                           <button
                             onClick={() => {
-                              handleDeleteQuestion(q.id);
+                              handleDeleteClick(q);
                               setActiveMenuId(null);
                             }}
-                            className="flex items-center gap-2 px-3 py-2 text-red-500 hover:bg-red-500/10 rounded-xl cursor-pointer w-full text-left"
+                            disabled={isDeletingId === q.id}
+                            className="flex items-center gap-2 px-3 py-2 text-red-500 hover:bg-red-500/10 rounded-xl cursor-pointer w-full text-left disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <FiTrash2 size={13} />
                             <span>Delete</span>
@@ -272,23 +326,45 @@ const TeacherQuestions = () => {
                     </div>
                   </div>
 
+                  {/* Optional Question Image */}
+                  {q.image && (
+                    <div className="w-full rounded-2xl overflow-hidden border border-gray-800/80 max-h-48 mt-1 flex items-center justify-center bg-black/40">
+                      <img 
+                        src={getImageUrl(q.image)} 
+                        alt="Question Visual" 
+                        className="max-h-48 object-contain"
+                      />
+                    </div>
+                  )}
+
                   {/* Options Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                     {optionsList.map((opt) => {
-                      const isCorrect = q.correctOption === opt.key;
+                      const isCorrect = correctKey === opt.key;
                       return (
                         <div
                           key={opt.key}
-                          className={`text-base font-semibold px-4 py-3 rounded-2xl border flex items-center gap-2.5 transition-all ${isCorrect
+                          className={`text-base font-semibold px-4 py-3 rounded-2xl border flex flex-col gap-2 transition-all ${isCorrect
                             ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold'
                             : 'bg-gray-950/20 border-gray-800 text-gray-400'
                             }`}
                         >
-                          <span className={`text-base font-black mr-0.5 ${isCorrect ? 'text-emerald-400' : 'text-gray-500'
-                            }`}>
-                            {opt.key}.
-                          </span>
-                          <span>{opt.val}</span>
+                          <div className="flex items-center gap-2.5">
+                            <span className={`text-base font-black mr-0.5 ${isCorrect ? 'text-emerald-400' : 'text-gray-500'
+                              }`}>
+                              {opt.key}.
+                            </span>
+                            <span>{opt.val}</span>
+                          </div>
+                          {opt.img && (
+                            <div className="w-full rounded-xl overflow-hidden border border-gray-800/60 max-h-24 bg-black/10 flex items-center justify-center mt-1">
+                              <img 
+                                src={getImageUrl(opt.img)} 
+                                alt={`Option ${opt.key} Visual`} 
+                                className="max-h-24 object-contain"
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -307,7 +383,7 @@ const TeacherQuestions = () => {
                         q.difficulty === 'Medium' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
                           'bg-red-500/10 border-red-500/20 text-red-400'
                         }`}>
-                        {q.difficulty || 'Easy'}
+                        {(() => { const d = q.difficulty || 'easy'; return d.charAt(0).toUpperCase() + d.slice(1).toLowerCase(); })()}
                       </span>
                     </div>
 
@@ -322,7 +398,7 @@ const TeacherQuestions = () => {
                         <FiInfo size={13} />
                       </button>
                       <button
-                        onClick={() => handleDeleteQuestion(q.id)}
+                        onClick={() => handleDeleteClick(q)}
                         className="p-1.5 rounded-lg bg-gray-900 border border-gray-800 text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
                         title="Delete Question"
                       >
@@ -338,123 +414,46 @@ const TeacherQuestions = () => {
         )}
       </div>
 
-      {/* MODAL: ADD QUESTION */}
+      {/* MODAL: DELETE CONFIRMATION */}
       <AnimatePresence>
-        {isAddQuestionOpen && (
+        {showDeleteConfirm && deletingQuestion && (
           <div
-            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
-            onClick={() => setIsAddQuestionOpen(false)}
+            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+            onClick={() => {
+              setShowDeleteConfirm(false);
+              setDeletingQuestion(null);
+            }}
           >
             <motion.div
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-lg bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              className="w-full sm:max-w-md bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
-
-              <button
-                onClick={() => setIsAddQuestionOpen(false)}
-                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
-              >
-                <FiX size={20} />
-              </button>
-
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
-                Add Question
-              </h3>
-              <p className="text-xs text-gray-500 mb-6 font-semibold">Create a new assessment question manually</p>
-
-              <Formik
-                initialValues={{
-                  subjectId: selectedSubjectFilter !== 'all' ? selectedSubjectFilter : '',
-                  text: '',
-                  optionA: '',
-                  optionB: '',
-                  optionC: '',
-                  optionD: '',
-                  correctOption: ''
-                }}
-                validationSchema={QuestionSchema}
-                onSubmit={handleAddQuestion}
-              >
-                {({ values, handleChange, handleBlur, isSubmitting }) => (
-                  <Form className="flex flex-col gap-4 mt-2 max-h-[70vh] overflow-y-auto pr-1">
-                    <div className="w-full flex flex-col relative">
-                      <div className="w-full flex items-center relative rounded-2xl px-4 h-15 input-3d-teacher">
-                        <div className="flex-1 relative h-full flex items-center">
-                          <span className="absolute left-3 top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider">
-                            Subject
-                          </span>
-                          <select
-                            name="subjectId"
-                            value={values.subjectId}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer focus:outline-none"
-                          >
-                            <option value="" className="bg-[#0b0c16] text-gray-500">Select Subject</option>
-                            {subjects.map(s => (
-                              <option key={s.id} value={s.id} className="bg-[#0b0c16] text-white">{s.title}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <FiChevronDown className="text-gray-400 absolute right-4 pointer-events-none" />
-                      </div>
-                    </div>
-
-                    <Input
-                      name="text"
-                      type="text"
-                      label="Question Text"
-                      placeholder="e.g. What is the sum of 2 and 2?"
-                      icon={FiHelpCircle}
-                      roleColor="teacher"
-                    />
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input name="optionA" type="text" label="Option A" placeholder="Option A" icon={FiPlus} roleColor="teacher" />
-                      <Input name="optionB" type="text" label="Option B" placeholder="Option B" icon={FiPlus} roleColor="teacher" />
-                      <Input name="optionC" type="text" label="Option C" placeholder="Option C" icon={FiPlus} roleColor="teacher" />
-                      <Input name="optionD" type="text" label="Option D" placeholder="Option D" icon={FiPlus} roleColor="teacher" />
-                    </div>
-
-                    <div className="w-full flex flex-col relative">
-                      <div className="w-full flex items-center relative rounded-2xl px-4 h-15 input-3d-teacher">
-                        <div className="flex-1 relative h-full flex items-center">
-                          <span className="absolute left-3 top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider">
-                            Correct Option
-                          </span>
-                          <select
-                            name="correctOption"
-                            value={values.correctOption}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer focus:outline-none"
-                          >
-                            <option value="" className="bg-[#0b0c16] text-gray-500">Select Correct Option</option>
-                            <option value="A" className="bg-[#0b0c16] text-white">Option A</option>
-                            <option value="B" className="bg-[#0b0c16] text-white">Option B</option>
-                            <option value="C" className="bg-[#0b0c16] text-white">Option C</option>
-                            <option value="D" className="bg-[#0b0c16] text-white">Option D</option>
-                          </select>
-                        </div>
-                        <FiChevronDown className="text-gray-400 absolute right-4 pointer-events-none" />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full py-4 mt-2 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer disabled:opacity-55"
-                    >
-                      <span>Create Question</span>
-                      <FiCheck className="text-base" />
-                    </button>
-                  </Form>
-                )}
-              </Formik>
+              <h3 className="text-xl font-black text-white mb-4">Delete Question</h3>
+              <p className="text-sm text-gray-400 leading-relaxed font-semibold mb-6">
+                Are you sure you want to delete this question? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeletingQuestion(null);
+                  }}
+                  className="flex-1 py-4 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center shadow-[0_4px_15px_rgba(239,68,68,0.3)]"
+                >
+                  Delete
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

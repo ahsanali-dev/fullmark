@@ -22,12 +22,31 @@ import {
   FiTag
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../../redux/slices/authSlice';
+import {
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  deleteNotification,
+} from '../../redux/slices/notificationsSlice';
 
 const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', title, subtitle, disableScroll, isModalOpen = false, showBackButton = false, onBackClick, headerActions }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  const formatTime = (dateStr) => {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Recently';
+    const diff = new Date() - d;
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
 
   // Get color theme based on role
   const getRoleConfig = () => {
@@ -112,11 +131,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
     return localStorage.getItem('theme') || 'dark';
   });
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: 'New Student registered: Ahmad', time: '5m ago', read: false, type: 'student' },
-    { id: 2, text: 'System update completed successfully.', time: '2h ago', read: false, type: 'system' },
-    { id: 3, text: 'New subject added to curriculum', time: '1d ago', read: true, type: 'content' }
-  ]);
+  const { notifications } = useSelector((state) => state.notifications);
   const desktopUserMenuRef = useRef(null);
   const mobileUserMenuRef = useRef(null);
   const notificationsRef = useRef(null);
@@ -178,6 +193,10 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
       window.removeEventListener('profileUpdate', loadProfile);
     };
   }, [role, config.avatarText]);
+
+  useEffect(() => {
+    dispatch(fetchNotifications());
+  }, [dispatch]);
 
   useEffect(() => {
     if (theme === 'light') {
@@ -379,7 +398,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                 className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 relative cursor-pointer"
               >
                 <FiBell className="text-base sm:text-lg" />
-                {notifications.some(n => !n.read) && (
+                {notifications.some(n => !n.isRead) && (
                   <span className="absolute top-3 right-3 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500 shadow-[0_0_6px_#ef4444]" />
                 )}
               </button>
@@ -388,10 +407,10 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                 <div className="absolute right-0 mt-3 w-80 bg-[#111222] border border-gray-800 rounded-3xl p-4 shadow-[0_10px_45px_rgba(0,0,0,0.6)] backdrop-blur-xl z-50 animate-fade-in">
                   <div className="flex items-center justify-between pb-3 border-b border-gray-800/50 mb-2">
                     <h4 className="text-sm font-black text-white">Notifications</h4>
-                    {notifications.some(n => !n.read) && (
+                    {notifications.some(n => !n.isRead) && (
                       <button 
                         onClick={() => {
-                          setNotifications(notifications.map(n => ({ ...n, read: true })));
+                          dispatch(markAllNotificationsRead());
                           toast.success('All notifications marked as read!');
                         }}
                         className="text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors cursor-pointer"
@@ -402,30 +421,52 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                   </div>
                   <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
                     {notifications.length > 0 ? (
-                      notifications.map((n) => (
-                        <div 
-                          key={n.id}
-                          className={`p-3 rounded-2xl border flex gap-3 text-left transition-all ${
-                            n.read 
-                              ? 'bg-transparent border-gray-800/40 opacity-60' 
-                              : 'bg-[#16172b]/60 border-gray-800'
-                          }`}
+                      <>
+                        {notifications.map((n) => {
+                          const isStudent = n.type === 'student' || n.type === 'enrollment';
+                          const isSystem = n.type === 'system';
+                          const isExam = n.type === 'exam_result';
+                          return (
+                            <div 
+                              key={n._id}
+                              onClick={() => {
+                                if (!n.isRead) {
+                                  dispatch(markNotificationRead(n._id));
+                                }
+                              }}
+                              className={`p-3 rounded-2xl border flex gap-3 text-left transition-all cursor-pointer ${
+                                n.isRead 
+                                  ? 'bg-transparent border-gray-800/40 opacity-60' 
+                                  : 'bg-[#16172b]/60 border-gray-800'
+                              }`}
+                            >
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                                isStudent 
+                                  ? 'bg-emerald-500/10 text-emerald-400' 
+                                  : isSystem 
+                                  ? 'bg-blue-500/10 text-blue-400' 
+                                  : 'bg-purple-500/10 text-purple-400'
+                              }`}>
+                                {isStudent ? <FiUser size={14} /> : isSystem ? <FiShield size={14} /> : isExam ? <FiClipboard size={14} /> : <FiBookOpen size={14} />}
+                              </div>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <p className="text-xs font-bold text-white leading-snug truncate">{n.title}</p>
+                                <p className="text-[10px] font-semibold text-gray-400 truncate mt-0.5">{n.body}</p>
+                                <span className="text-[8px] font-semibold text-gray-500 mt-1">{formatTime(n.createdAt)}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <button
+                          onClick={() => {
+                            setShowNotifications(false);
+                            navigate(`/${role}/notifications`);
+                          }}
+                          className="w-full text-center py-2 mt-1 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors border-t border-gray-800/40 cursor-pointer"
                         >
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                            n.type === 'student' 
-                              ? 'bg-emerald-500/10 text-emerald-400' 
-                              : n.type === 'system' 
-                              ? 'bg-blue-500/10 text-blue-400' 
-                              : 'bg-purple-500/10 text-purple-400'
-                          }`}>
-                            {n.type === 'student' ? <FiUser size={14} /> : n.type === 'system' ? <FiShield size={14} /> : <FiBookOpen size={14} />}
-                          </div>
-                          <div className="flex flex-col">
-                            <p className="text-xs font-bold text-white leading-snug">{n.text}</p>
-                            <span className="text-[9px] font-semibold text-gray-500 mt-1">{n.time}</span>
-                          </div>
-                        </div>
-                      ))
+                          View all notifications
+                        </button>
+                      </>
                     ) : (
                       <p className="text-xs text-gray-500 text-center py-4 font-bold">No notifications</p>
                     )}

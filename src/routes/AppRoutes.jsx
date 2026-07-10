@@ -43,6 +43,7 @@ import ParentChildren from '../pages/parent/Children';
 import ParentAnalysis from '../pages/parent/Analysis';
 import ParentReports from '../pages/parent/Reports';
 import ParentSettings from '../pages/parent/Settings';
+import Notifications from '../pages/Notifications';
 
 const router = createBrowserRouter([
   {
@@ -109,6 +110,10 @@ const router = createBrowserRouter([
         path: '/admin/settings',
         element: <Settings />,
       },
+      {
+        path: '/admin/notifications',
+        element: <Notifications />,
+      },
     ],
   },
 
@@ -145,6 +150,10 @@ const router = createBrowserRouter([
         element: <TeacherCreateExam />,
       },
       {
+        path: '/teacher/subjects/select/create-exam',
+        element: <TeacherCreateExam />,
+      },
+      {
         path: '/teacher/subjects/:subjectId/add-lesson',
         element: <TeacherAddLesson />,
       },
@@ -163,6 +172,10 @@ const router = createBrowserRouter([
       {
         path: '/teacher/settings',
         element: <TeacherSettings />,
+      },
+      {
+        path: '/teacher/notifications',
+        element: <Notifications />,
       },
     ],
   },
@@ -211,6 +224,10 @@ const router = createBrowserRouter([
         path: '/student/profile',
         element: <StudentProfile />,
       },
+      {
+        path: '/student/notifications',
+        element: <Notifications />,
+      },
     ],
   },
 
@@ -237,6 +254,10 @@ const router = createBrowserRouter([
       {
         path: '/parent/settings',
         element: <ParentSettings />,
+      },
+      {
+        path: '/parent/notifications',
+        element: <Notifications />,
       },
     ],
   },

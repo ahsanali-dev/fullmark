@@ -7,43 +7,57 @@ import {
   FiChevronRight,
   FiSearch
 } from 'react-icons/fi';
+import { useDispatch, useSelector } from 'react-redux';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { getStoredSubjects, getStoredQuestions, getStoredExams } from './store';
+import { fetchTeacherSubjects, fetchQuestions, fetchExams } from '../../redux/slices/teacherSlice';
+import { ContentSkeleton } from '../../components/shared/SkeletonLoading';
 
 const TeacherSubjects = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // Core Store States
-  const [subjects, setSubjects] = useState(() => getStoredSubjects());
-  const [questions, setQuestions] = useState(() => getStoredQuestions());
-  const [exams, setExams] = useState(() => getStoredExams());
+  const { subjects = [], questions = [], exams = [], isLoading } = useSelector((state) => state.teacher);
 
   // Search
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sync state from store
   useEffect(() => {
-    const handleSync = () => {
-      setSubjects(getStoredSubjects());
-      setQuestions(getStoredQuestions());
-      setExams(getStoredExams());
-    };
-    window.addEventListener('storage', handleSync);
-    return () => window.removeEventListener('storage', handleSync);
-  }, []);
+    dispatch(fetchTeacherSubjects());
+    dispatch(fetchQuestions());
+    dispatch(fetchExams());
+  }, [dispatch]);
 
   // Counts mapping
-  const subjectsWithCounts = subjects.map(sub => ({
-    ...sub,
-    questionsCount: questions.filter(q => q.subjectId === sub.id).length,
-    examsCount: exams.filter(ex => ex.subjectId === sub.id).length,
-    studentsCount: sub.title === 'test 2' ? 0 : 0
-  }));
+  const subjectsWithCounts = subjects.map(sub => {
+    const subId = sub._id || sub.id;
+    return {
+      ...sub,
+      id: subId,
+      title: sub.name || sub.title,
+      questionsCount: sub.questionsCount ?? questions.filter(q => (q.subject?._id || q.subject || q.subjectId) === subId).length,
+      examsCount: sub.examsCount ?? exams.filter(ex => (ex.subject?._id || ex.subject || ex.subjectId) === subId).length,
+      studentsCount: sub.studentsCount ?? 0
+    };
+  });
 
   const filteredSubjects = subjectsWithCounts.filter(
     s => s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.description.toLowerCase().includes(searchQuery.toLowerCase())
+      (s.description || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isLoading && !subjects.length) {
+    return (
+      <DashboardLayout
+        role="teacher"
+        activeTab="subjects"
+        title="My Subjects"
+        subtitle="Loading subjects..."
+      >
+        <ContentSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout

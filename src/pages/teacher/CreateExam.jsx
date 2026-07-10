@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
   FiChevronLeft,
@@ -17,25 +17,46 @@ import toast from 'react-hot-toast';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
-import { getStoredSubjects, getStoredQuestions, getStoredExams, setStoredExams } from './store';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTeacherSubjects, fetchQuestions, createExam } from '../../redux/slices/teacherSlice';
 
 const CreateExam = () => {
   const navigate = useNavigate();
   const { subjectId } = useParams();
+  const dispatch = useDispatch();
 
   // Load store data
-  const [subjects] = useState(() => getStoredSubjects());
-  const [allQuestions] = useState(() => getStoredQuestions());
-  const [examsList, setExamsList] = useState(() => getStoredExams());
+  const { subjects = [], questions = [], isLoading } = useSelector((state) => state.teacher);
+
+  useEffect(() => {
+    dispatch(fetchTeacherSubjects());
+    dispatch(fetchQuestions());
+  }, [dispatch]);
+
+  const allQuestions = questions.map(q => {
+    const qSubjectId = q.subject?._id || q.subject || q.subjectId;
+    return {
+      ...q,
+      id: q._id || q.id,
+      subjectId: qSubjectId,
+    };
+  });
 
   // Wizard state
   const [step, setStep] = useState(1);
 
   // Step 1 states
   const [examTitle, setExamTitle] = useState('');
-  const [selectedSubjectId, setSelectedSubjectId] = useState(subjectId || (subjects[0]?.id || ''));
+  const [selectedSubjectId, setSelectedSubjectId] = useState(subjectId === 'select' ? '' : subjectId);
   const [difficultyMix, setDifficultyMix] = useState('Mixed');
   const [questionCount, setQuestionCount] = useState(20);
+
+  // Set default subject if select
+  useEffect(() => {
+    if (!selectedSubjectId && subjects.length > 0 && subjectId === 'select') {
+      setSelectedSubjectId(subjects[0]?._id || subjects[0]?.id || '');
+    }
+  }, [subjects, selectedSubjectId, subjectId]);
 
   // Step 2 states
   const filteredQuestions = allQuestions.filter(q => q.subjectId === selectedSubjectId);
@@ -64,7 +85,9 @@ const CreateExam = () => {
     setSelectedQuestionIds([]);
   };
 
-  const handlePublishExam = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handlePublishExam = async () => {
     if (!examTitle.trim()) {
       toast.error('Please enter an exam title');
       setStep(1);
@@ -76,28 +99,31 @@ const CreateExam = () => {
       return;
     }
 
-    const newExam = {
-      id: `ex-${Date.now()}`,
+    setIsSubmitting(true);
+
+    const payload = {
       title: examTitle,
       subjectId: selectedSubjectId,
       duration: enableTimer ? duration : 0,
-      date: new Date().toISOString().split('T')[0],
-      questionsCount: selectedQuestionIds.length,
-      status: 'upcoming',
+      questions: selectedQuestionIds,
       difficultyMix: difficultyMix,
       showExplanations: showExplanations,
-      allowRetake: allowRetake,
-      questionIds: selectedQuestionIds
+      allowRetake: allowRetake
     };
 
-    const updated = [newExam, ...examsList];
-    setExamsList(updated);
-    setStoredExams(updated);
-    toast.success('Exam published successfully!');
-    navigate(`/teacher/subjects/${subjectId}`);
+    const loadingToast = toast.loading('Publishing exam...');
+    try {
+      await dispatch(createExam(payload)).unwrap();
+      toast.success('Exam published successfully!', { id: loadingToast });
+      setIsSubmitting(false);
+      navigate(`/teacher/subjects/${selectedSubjectId}`);
+    } catch (err) {
+      setIsSubmitting(false);
+      toast.error(err || 'Failed to publish exam', { id: loadingToast });
+    }
   };
 
-  const currentSubjectObj = subjects.find(s => s.id === selectedSubjectId) || { title: 'Unknown Subject' };
+  const currentSubjectObj = subjects.find(s => (s._id || s.id) === selectedSubjectId) || { title: 'Unknown Subject' };
 
   return (
     <DashboardLayout
@@ -114,7 +140,10 @@ const CreateExam = () => {
             <button 
               onClick={() => {
                 if (step > 1) setStep(step - 1);
-                else navigate(`/teacher/subjects/${subjectId}`);
+                else {
+                  const targetId = (subjectId === 'select' ? selectedSubjectId : subjectId) || '';
+                  navigate(targetId ? `/teacher/subjects/${targetId}` : '/teacher/subjects');
+                }
               }}
               className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer mr-3"
             >
@@ -129,7 +158,8 @@ const CreateExam = () => {
           <button 
             onClick={() => {
               toast.success('Draft saved successfully!');
-              navigate(`/teacher/subjects/${subjectId}`);
+              const targetId = (subjectId === 'select' ? selectedSubjectId : subjectId) || '';
+              navigate(targetId ? `/teacher/subjects/${targetId}` : '/teacher/subjects');
             }}
             className="px-4 py-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-400 hover:text-white transition-all text-sm font-bold flex items-center gap-1.5 cursor-pointer"
           >
@@ -217,18 +247,19 @@ const CreateExam = () => {
                 </span>
                 <div className="flex flex-wrap gap-2.5">
                   {subjects.map((sub) => {
-                    const isSelected = selectedSubjectId === sub.id;
+                    const subId = sub._id || sub.id;
+                    const isSelected = selectedSubjectId === subId;
                     return (
                       <button
-                        key={sub.id}
-                        onClick={() => setSelectedSubjectId(sub.id)}
+                        key={subId}
+                        onClick={() => setSelectedSubjectId(subId)}
                         className={`px-5 py-3 rounded-2xl font-bold text-base border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/10'
                             : 'bg-[#0e101a] border-gray-800 text-gray-400 hover:border-gray-700'
                         }`}
                       >
-                        {sub.title}
+                        {sub.title || sub.name}
                       </button>
                     );
                   })}
@@ -579,9 +610,10 @@ const CreateExam = () => {
                 </button>
                 <button
                   onClick={handlePublishExam}
-                  className="px-8 py-3.5 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer text-base"
+                  disabled={isSubmitting}
+                  className="px-8 py-3.5 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span>Publish Exam</span>
+                  <span>{isSubmitting ? 'Publishing...' : 'Publish Exam'}</span>
                   <FiCheck size={16} />
                 </button>
               </div>

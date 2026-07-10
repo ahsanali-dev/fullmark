@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   FiBarChart2,
   FiUsers,
@@ -11,47 +12,48 @@ import {
 } from 'react-icons/fi';
 import { FaFire, FaTrophy, FaLightbulb } from 'react-icons/fa';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { getStoredChildren } from '../../data/parentData';
-
+import { TableRowSkeleton } from '../../components/ui/Skeleton';
+import { 
+  fetchChildrenList, 
+  fetchChildOverview, 
+  fetchChildSubjects, 
+  fetchChildResults 
+} from '../../redux/slices/parentsSlice';
 
 // ─── Score Trend Chart ─────────────────────────────────────────
-// isLight passed as prop instead of reading DOM directly
-const ScoreTrendChart = ({ exams, isLight }) => {
-  if (!exams || exams.length === 0) {
+const ScoreTrendChart = ({ attempts, isLight }) => {
+  if (!attempts || attempts.length === 0) {
     return (
       <p className="text-sm font-semibold text-gray-500 text-center py-6">
         Not enough exam data yet.
       </p>
     );
   }
+  
+  // Sort attempts chronologically
+  const sorted = [...attempts].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   const maxScore = 100;
   const chartH = 120;
 
   return (
     <div className="flex items-end gap-3 pt-4 pb-1 overflow-x-auto">
-      {exams.map((exam, idx) => {
-        const isPassed = exam.status === 'Passed';
-        const barH = Math.max(12, (exam.score / maxScore) * chartH);
-        const parts = exam.date.split(' ');
-        const day = parts[1]?.replace(',', '') || '';
-        const monthMap = {
-          Jan: '1', Feb: '2', Mar: '3', Apr: '4', May: '5', Jun: '6',
-          Jul: '7', Aug: '8', Sep: '9', Oct: '10', Nov: '11', Dec: '12',
-        };
-        const mon = monthMap[parts[0]] || '';
-        const label = `${day}/${mon}`;
+      {sorted.map((exam, idx) => {
+        const isPassed = exam.passed;
+        const barH = Math.max(12, ((exam.score || 0) / maxScore) * chartH);
+        const formattedDate = exam.createdAt 
+          ? new Date(exam.createdAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+          : '';
 
         return (
-          <div key={exam.id || idx} className="flex flex-col items-center gap-1 shrink-0 min-w-[52px]">
+          <div key={exam._id || idx} className="flex flex-col items-center gap-1 shrink-0 min-w-[52px]">
             <span className={`text-[11px] font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>
-              {exam.score}
+              {exam.score || 0}
             </span>
             <div
-              className={`w-full rounded-t-lg transition-all duration-700 ${isPassed ? 'bg-emerald-500' : 'bg-red-500/80'
-                }`}
+              className={`w-full rounded-t-lg transition-all duration-700 ${isPassed ? 'bg-emerald-500' : 'bg-red-500/80'}`}
               style={{ height: barH, minWidth: 48 }}
             />
-            <span className="text-[10px] text-gray-500 font-semibold mt-0.5">{label}</span>
+            <span className="text-[10px] text-gray-500 font-semibold mt-0.5">{formattedDate}</span>
           </div>
         );
       })}
@@ -71,19 +73,17 @@ const CompareBar = ({ label, valA = 0, valB = 0, displayA, displayB }) => {
   const labelB = displayB !== undefined ? displayB : String(numB);
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5 text-left">
       <span className="text-xs font-bold text-gray-400">{label}</span>
       <div className="flex w-full h-10 rounded-2xl overflow-hidden">
         <div
-          className={`flex items-center justify-center font-black text-sm text-white transition-all duration-700 ${bothZero ? 'bg-emerald-700/50' : 'bg-emerald-500'
-            }`}
+          className={`flex items-center justify-center font-black text-sm text-white transition-all duration-700 ${bothZero ? 'bg-emerald-700/50' : 'bg-emerald-500'}`}
           style={{ width: `${pctA}%` }}
         >
           {pctA >= 20 && labelA}
         </div>
         <div
-          className={`flex items-center justify-center font-black text-sm text-white transition-all duration-700 ${bothZero ? 'bg-emerald-900/50' : 'bg-emerald-700/60'
-            }`}
+          className={`flex items-center justify-center font-black text-sm text-white transition-all duration-700 ${bothZero ? 'bg-emerald-900/50' : 'bg-emerald-700/60'}`}
           style={{ width: `${pctB}%` }}
         >
           {pctB >= 20 && labelB}
@@ -93,13 +93,11 @@ const CompareBar = ({ label, valA = 0, valB = 0, displayA, displayB }) => {
   );
 };
 
-
-// ═══════════════════════════════════════════════════════════════
 const ParentReports = () => {
   const navigate = useNavigate();
-  const [isLight, setIsLight] = useState(
-    () => document.documentElement.classList.contains('light')
-  );
+  const dispatch = useDispatch();
+
+  const [isLight, setIsLight] = useState(() => document.documentElement.classList.contains('light'));
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -109,46 +107,73 @@ const ParentReports = () => {
     return () => window.removeEventListener('themeChange', handleThemeChange);
   }, []);
 
-  const [children] = useState(() => getStoredChildren());
-  const [selectedChildId, setSelectedChildId] = useState(children[0]?.id || null);
+  const { 
+    children, 
+    childOverview, 
+    childSubjects, 
+    childResultsData, 
+    isLoading 
+  } = useSelector((state) => state.parent);
+
+  const [selectedChildId, setSelectedChildId] = useState(null);
   const [viewMode, setViewMode] = useState('Performance'); // 'Performance' | 'Comparison'
 
-  const child = children.find(c => c.id === selectedChildId) || children[0];
-  const otherChild = children.find(c => c.id !== selectedChildId) || children[1];
+  // Load children list on mount
+  useEffect(() => {
+    dispatch(fetchChildrenList())
+      .unwrap()
+      .then((kids) => {
+        if (kids && kids.length > 0) {
+          setSelectedChildId(kids[0]._id);
+        }
+      });
+  }, [dispatch]);
 
-  const exams = child?.exams || [];
-  const subjects = child?.subjects || [];
-  const streak = child?.streak || 0;
+  // Load selected child dependencies
+  useEffect(() => {
+    if (selectedChildId) {
+      dispatch(fetchChildOverview(selectedChildId));
+      dispatch(fetchChildSubjects(selectedChildId));
+      dispatch(fetchChildResults({ childId: selectedChildId }));
+    }
+  }, [dispatch, selectedChildId]);
 
-  const totalExams = exams.length;
-  const passedExams = exams.filter(e => e.status === 'Passed');
-  const avgScore = totalExams > 0
-    ? Math.round(exams.reduce((s, e) => s + e.score, 0) / totalExams)
-    : 0;
+  const child = children.find(c => c._id === selectedChildId);
+  const otherChild = children.find(c => c._id !== selectedChildId);
 
-  const trend = exams.length >= 2
-    ? exams[exams.length - 1].score - exams[0].score
+  // Performance calculations
+  const stats = childOverview?.stats || { averageScore: 0, totalExamsTaken: 0, totalExamsPassed: 0, streakDays: 0 };
+  const totalExamsCalculated = childSubjects.reduce((sum, subj) => sum + (subj.totalExamsTaken || 0), 0);
+  const avgScore = totalExamsCalculated > 0
+    ? Math.round(childSubjects.reduce((sum, subj) => sum + ((subj.averageScore || 0) * (subj.totalExamsTaken || 0)), 0) / totalExamsCalculated)
+    : Math.round(stats.averageScore || 0);
+
+  const totalExams = stats.totalExamsTaken || 0;
+  const attempts = childResultsData?.attempts || [];
+  const passedExams = attempts.filter(e => e.passed) || [];
+
+  // Compute trend from attempts chronologically
+  const sortedAttempts = [...attempts].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const trend = sortedAttempts.length >= 2
+    ? (sortedAttempts[sortedAttempts.length - 1].score || 0) - (sortedAttempts[0].score || 0)
     : 0;
   const trendLabel = trend > 0 ? 'Improving' : trend < 0 ? 'Declining' : 'Stable';
 
-  // Other child stats
-  const otherExams = otherChild?.exams || [];
-  const otherAvg = otherExams.length > 0
-    ? Math.round(otherExams.reduce((s, e) => s + e.score, 0) / otherExams.length)
-    : 0;
-  const otherPassed = otherExams.filter(e => e.status === 'Passed').length;
+  // Other child stats (for comparison)
+  const otherAvg = otherChild ? otherChild.avgScore : 0;
+  const otherPassed = otherChild ? otherChild.passed : 0;
+  const otherExamsCount = otherChild ? otherChild.totalExams : 0;
   const leadingName = avgScore >= otherAvg ? child?.name : otherChild?.name;
 
-  // Recommendations
-  const recommendations = subjects
-    .filter(s => s.avgScore < 70)
+  // Recommendations: subjects with average score below 70
+  const recommendations = childSubjects
+    .filter(s => (s.averageScore || 0) < 70)
     .map(s => ({
-      subject: s.name,
-      score: s.avgScore,
-      tip: `Score: ${s.avgScore}% — Consider scheduling extra practice sessions or tutoring for this subject.`,
+      subject: s.subject?.name || 'Subject',
+      score: Math.round(s.averageScore || 0),
+      tip: `Score: ${Math.round(s.averageScore || 0)}% — Recommend scheduling practice sessions or reviewing lesson completion.`,
     }));
 
-  // ── shared card class helpers ──────────────────────────────
   const card = isLight
     ? 'bg-white border-gray-200 shadow-sm'
     : 'bg-[#111520] border-gray-800/60';
@@ -169,15 +194,12 @@ const ParentReports = () => {
         {/* ── 1. CHILD SELECTOR CARDS ─────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
           {children.map((c) => {
-            const cExams = c.exams || [];
-            const cAvg = cExams.length > 0
-              ? Math.round(cExams.reduce((s, e) => s + e.score, 0) / cExams.length)
-              : 0;
-            const isSelected = c.id === selectedChildId;
+            const isSelected = c._id === selectedChildId;
+            const initials = c.name ? c.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'ST';
             return (
               <button
-                key={c.id}
-                onClick={() => setSelectedChildId(c.id)}
+                key={c._id}
+                onClick={() => setSelectedChildId(c._id)}
                 className={`flex items-center gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${isSelected
                     ? 'bg-emerald-500/10 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)]'
                     : isLight
@@ -189,13 +211,13 @@ const ParentReports = () => {
                     ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
                     : 'bg-gradient-to-br from-emerald-600/70 to-teal-700/70'
                   }`}>
-                  {c.initials}
+                  {initials}
                 </div>
                 <div className="text-left min-w-0">
                   <p className={`text-sm font-black capitalize truncate ${textPrimary}`}>{c.name}</p>
-                  <p className="text-[11px] text-gray-400 font-semibold">{cExams.length} exams</p>
+                  <p className="text-[11px] text-gray-400 font-semibold">{c.totalExams || 0} exams</p>
                   {isSelected && (
-                    <p className="text-[11px] text-emerald-400 font-black">{cAvg}% avg</p>
+                    <p className="text-[11px] text-emerald-400 font-black">{avgScore}% avg</p>
                   )}
                 </div>
               </button>
@@ -204,26 +226,28 @@ const ParentReports = () => {
         </div>
 
         {/* ── 2. VIEW MODE TOGGLE ──────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-3">
-          {['Performance', 'Comparison'].map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl border transition-all cursor-pointer ${viewMode === mode
-                  ? 'bg-purple-600 border-purple-500 text-white shadow-[0_4px_20px_rgba(168,85,247,0.3)]'
-                  : isLight
-                    ? 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
-                    : 'bg-[#0e101a] border-gray-800/60 text-gray-500 hover:border-gray-700'
-                }`}
-            >
-              {mode === 'Performance' ? <FiBarChart2 size={22} /> : <FiUsers size={22} />}
-              <span className="text-sm font-black">{mode}</span>
-            </button>
-          ))}
-        </div>
+        {selectedChildId && children.length > 1 && (
+          <div className="grid grid-cols-2 gap-3">
+            {['Performance', 'Comparison'].map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl border transition-all cursor-pointer ${viewMode === mode
+                    ? 'bg-purple-600 border-purple-500 text-white shadow-[0_4px_20px_rgba(168,85,247,0.3)]'
+                    : isLight
+                      ? 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+                      : 'bg-[#0e101a] border-gray-800/60 text-gray-500 hover:border-gray-700'
+                  }`}
+              >
+                {mode === 'Performance' ? <FiBarChart2 size={22} /> : <FiUsers size={22} />}
+                <span className="text-sm font-black">{mode}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* ══════════════ PERFORMANCE VIEW ══════════════════════ */}
-        {viewMode === 'Performance' && (
+        {selectedChildId && viewMode === 'Performance' && (
           <div className="flex flex-col gap-5 animate-fade-in">
 
             {/* 4 stat mini-cards */}
@@ -231,22 +255,22 @@ const ParentReports = () => {
               <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-yellow-500/5 border border-yellow-500/20 text-center">
                 <FiStar className="text-yellow-400" size={18} />
                 <span className="text-base font-black text-yellow-400">{avgScore}%</span>
-                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide leading-tight">Avg Score</span>
+                <span className="text-[9px] font-bold text-gray-505 uppercase tracking-wide leading-tight">Avg Score</span>
               </div>
               <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-purple-500/5 border border-purple-500/20 text-center">
                 <FaFire className="text-purple-400" size={18} />
-                <span className="text-base font-black text-purple-400">{streak}d</span>
-                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide leading-tight">Streak</span>
+                <span className="text-base font-black text-purple-400">{stats.streakDays || 0}d</span>
+                <span className="text-[9px] font-bold text-gray-505 uppercase tracking-wide leading-tight">Streak</span>
               </div>
               <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-center">
                 <FiCheckCircle className="text-emerald-400" size={18} />
                 <span className="text-base font-black text-emerald-400">{passedExams.length}/{totalExams}</span>
-                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide leading-tight">Passed</span>
+                <span className="text-[9px] font-bold text-gray-505 uppercase tracking-wide leading-tight">Passed</span>
               </div>
               <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-center">
                 <FiTrendingUp className="text-emerald-400" size={18} />
                 <span className="text-base font-black text-emerald-400">{trend >= 0 ? '+' : ''}{trend}</span>
-                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide leading-tight">Trend</span>
+                <span className="text-[9px] font-bold text-gray-505 uppercase tracking-wide leading-tight">Trend</span>
               </div>
             </div>
 
@@ -259,7 +283,7 @@ const ParentReports = () => {
                   </div>
                   <span className={`text-base font-black ${textPrimary}`}>Score Trend</span>
                 </div>
-                {exams.length > 0 && (
+                {attempts.length > 0 && (
                   <span className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black border ${trend >= 0
                       ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
                       : 'text-red-400 bg-red-500/10 border-red-500/20'
@@ -268,8 +292,11 @@ const ParentReports = () => {
                   </span>
                 )}
               </div>
-              {/* isLight passed as prop — no more direct DOM read inside child */}
-              <ScoreTrendChart exams={exams} isLight={isLight} />
+              {isLoading && attempts.length === 0 ? (
+                <TableRowSkeleton />
+              ) : (
+                <ScoreTrendChart attempts={attempts} isLight={isLight} />
+              )}
             </div>
 
             {/* Subject Breakdown card */}
@@ -280,32 +307,36 @@ const ParentReports = () => {
                 </div>
                 <span className={`text-base font-black ${textPrimary}`}>Subject Breakdown</span>
               </div>
-              {subjects.length === 0 ? (
+              {isLoading && childSubjects.length === 0 ? (
+                <TableRowSkeleton />
+              ) : childSubjects.length === 0 ? (
                 <p className="text-sm text-gray-500 font-semibold text-center py-2">
                   No subjects enrolled yet.
                 </p>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {subjects.map((subj) => (
-                    <div key={subj.name}>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center shrink-0">
-                          <FiBookOpen className="text-amber-400" size={14} />
+                  {childSubjects.map((subj) => {
+                    const subAvg = Math.round(subj.averageScore || 0);
+                    return (
+                      <div key={subj._id} className="text-left">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center shrink-0">
+                            <FiBookOpen className="text-amber-400" size={14} />
+                          </div>
+                          <span className={`text-sm font-extrabold capitalize flex-1 ${textPrimary}`}>
+                            {subj.subject?.name}
+                          </span>
+                          <span className="text-sm font-black text-yellow-400">{subAvg}%</span>
                         </div>
-                        <span className={`text-sm font-extrabold capitalize flex-1 ${textPrimary}`}>
-                          {subj.name}
-                        </span>
-                        <span className="text-sm font-black text-yellow-400">{subj.avgScore}%</span>
+                        <div className={`h-2 w-full rounded-full overflow-hidden ${isLight ? 'bg-gray-200' : 'bg-gray-900'}`}>
+                          <div
+                            className="h-full bg-yellow-400 rounded-full transition-all duration-700"
+                            style={{ width: `${subAvg}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className={`h-2 w-full rounded-full overflow-hidden ${isLight ? 'bg-gray-200' : 'bg-gray-900'
-                        }`}>
-                        <div
-                          className="h-full bg-yellow-400 rounded-full transition-all duration-700"
-                          style={{ width: `${subj.avgScore}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -328,8 +359,7 @@ const ParentReports = () => {
                   {recommendations.map((rec, i) => (
                     <div
                       key={i}
-                      className={`flex items-start gap-3 p-3.5 rounded-xl border ${isLight ? 'bg-gray-50 border-gray-200' : 'bg-[#0e101a] border-gray-800/60'
-                        }`}
+                      className={`flex items-start gap-3 p-3.5 rounded-xl border text-left ${isLight ? 'bg-gray-50 border-gray-200' : 'bg-[#0e101a] border-gray-800/60'}`}
                     >
                       <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
                         <FiBookOpen className="text-amber-400" size={14} />
@@ -352,7 +382,7 @@ const ParentReports = () => {
         )}
 
         {/* ══════════════ COMPARISON VIEW ═══════════════════════ */}
-        {viewMode === 'Comparison' && (
+        {selectedChildId && viewMode === 'Comparison' && otherChild && (
           <div className="flex flex-col gap-5 animate-fade-in">
 
             {/* Head-to-head card */}
@@ -372,7 +402,7 @@ const ParentReports = () => {
                       ? 'bg-gradient-to-br from-yellow-500 to-amber-600 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.4)]'
                       : 'bg-gradient-to-br from-emerald-500 to-teal-600 border-emerald-400/30'
                     }`}>
-                    {child?.initials}
+                    {child?.name ? child.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'ST'}
                   </div>
                   <p className={`text-sm font-black capitalize ${textPrimary}`}>{child?.name}</p>
                   <p className="text-base font-black text-emerald-400">{avgScore}%</p>
@@ -380,8 +410,7 @@ const ParentReports = () => {
 
                 {/* VS badge */}
                 <div className="flex flex-col items-center gap-1 shrink-0">
-                  <div className={`w-12 h-12 rounded-full border flex items-center justify-center ${isLight ? 'border-gray-300 bg-white' : 'border-gray-600 bg-transparent'
-                    }`}>
+                  <div className={`w-12 h-12 rounded-full border flex items-center justify-center ${isLight ? 'border-gray-300 bg-white' : 'border-gray-600 bg-transparent'}`}>
                     <span className={`text-sm font-black ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>vs</span>
                   </div>
                   <p className={`text-[10px] font-bold capitalize ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -391,16 +420,16 @@ const ParentReports = () => {
 
                 {/* Child B */}
                 <div className="flex flex-col items-center gap-2 flex-1">
-                  {leadingName === otherChild?.name && (
+                  {leadingName === otherChild.name && (
                     <FaTrophy className="text-yellow-400 mb-1" size={20} />
                   )}
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white border-2 ${leadingName === otherChild?.name
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white border-2 ${leadingName === otherChild.name
                       ? 'bg-gradient-to-br from-yellow-500 to-amber-600 border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.4)]'
                       : 'bg-gradient-to-br from-emerald-500 to-teal-600 border-emerald-400/30'
                     }`}>
-                    {otherChild?.initials}
+                    {otherChild.name ? otherChild.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'ST'}
                   </div>
-                  <p className={`text-sm font-black capitalize ${textPrimary}`}>{otherChild?.name}</p>
+                  <p className={`text-sm font-black capitalize ${textPrimary}`}>{otherChild.name}</p>
                   <p className="text-base font-black text-emerald-400">{otherAvg}%</p>
                 </div>
 
@@ -425,13 +454,13 @@ const ParentReports = () => {
                 />
                 <CompareBar
                   label="Streak (days)"
-                  valA={child?.streak || 0}
-                  valB={otherChild?.streak || 0}
+                  valA={stats.streakDays || 0}
+                  valB={otherChild.streak || 0}
                 />
                 <CompareBar
                   label="Exams Taken"
-                  valA={exams.length}
-                  valB={otherExams.length}
+                  valA={totalExams}
+                  valB={otherExamsCount}
                 />
                 <CompareBar
                   label="Passed"
@@ -440,15 +469,14 @@ const ParentReports = () => {
                 />
               </div>
               {/* Legend */}
-              <div className={`flex items-center gap-4 mt-4 pt-3 border-t ${isLight ? 'border-gray-200' : 'border-gray-800/50'
-                }`}>
+              <div className={`flex items-center gap-4 mt-4 pt-3 border-t ${isLight ? 'border-gray-200' : 'border-gray-800/50'}`}>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                   <span className="text-xs font-bold text-gray-500 capitalize">{child?.name}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-600/60" />
-                  <span className="text-xs font-bold text-gray-500 capitalize">{otherChild?.name}</span>
+                  <span className="text-xs font-bold text-gray-500 capitalize">{otherChild.name}</span>
                 </div>
               </div>
             </div>
@@ -461,22 +489,22 @@ const ParentReports = () => {
                 </div>
                 <span className={`text-base font-black ${textPrimary}`}>Subject Scores</span>
               </div>
-              {subjects.length === 0 ? (
+              {childSubjects.length === 0 ? (
                 <p className="text-sm text-gray-500 font-semibold text-center py-2">
                   No subjects enrolled.
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {subjects.map((subj) => (
+                <div className="flex flex-wrap gap-2 justify-start">
+                  {childSubjects.map((subj) => (
                     <div
-                      key={subj.name}
+                      key={subj._id}
                       className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl"
                     >
                       <FiBookOpen className="text-amber-400" size={13} />
                       <span className={`text-xs font-extrabold capitalize ${textPrimary}`}>
-                        {subj.name}
+                        {subj.subject?.name}
                       </span>
-                      <span className="text-xs font-black text-yellow-400">{subj.avgScore}%</span>
+                      <span className="text-xs font-black text-yellow-400">{Math.round(subj.averageScore || 0)}%</span>
                     </div>
                   ))}
                 </div>

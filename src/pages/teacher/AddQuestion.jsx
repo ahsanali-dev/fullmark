@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+  import { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   FiChevronLeft,
@@ -19,7 +19,20 @@ import {
 import toast from 'react-hot-toast';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { getStoredSubjects, getStoredQuestions, setStoredQuestions } from './store';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTeacherSubjects, createQuestion, uploadQuestionImage } from '../../redux/slices/teacherSlice';
+import { useEffect } from 'react';
+
+const getImageUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('data:') || path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const baseUrl = import.meta.env.VITE_IMAGE_URL || 'http://146.190.18.35:3008/uploads';
+  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return `${cleanBase}/${cleanPath}`;
+};
 
 const AddQuestion = () => {
   const navigate = useNavigate();
@@ -27,26 +40,37 @@ const AddQuestion = () => {
 
   const fileInputRef = useRef(null);
   const optionFileInputRef = useRef(null);
+  // image = base64 preview string; imageFile = actual File for upload
   const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [uploadingForOption, setUploadingForOption] = useState(null);
-  const [optionImages, setOptionImages] = useState({
-    A: null,
-    B: null,
-    C: null,
-    D: null
-  });
+  // optionImages = base64 previews; optionImageFiles = actual Files
+  const [optionImages, setOptionImages] = useState({ A: null, B: null, C: null, D: null });
+  const [optionImageFiles, setOptionImageFiles] = useState({ A: null, B: null, C: null, D: null });
 
-  const [subjects] = useState(() => getStoredSubjects());
-  const [questions, setQuestions] = useState(() => getStoredQuestions());
+  const dispatch = useDispatch();
+  const { subjects = [], isLoading } = useSelector((state) => state.teacher);
 
   const [selectedSubjectId, setSelectedSubjectId] = useState(() => {
     if (subjectId === 'select') {
-      return subjects[0]?.id || '';
+      return '';
     }
     return subjectId;
   });
 
-  const subject = subjects.find((sub) => sub.id === selectedSubjectId) || { title: 'Unknown Subject' };
+  // Fetch subjects on mount
+  useEffect(() => {
+    dispatch(fetchTeacherSubjects());
+  }, [dispatch]);
+
+  // Set default subject when subjects are loaded
+  useEffect(() => {
+    if (!selectedSubjectId && subjects.length > 0 && subjectId === 'select') {
+      setSelectedSubjectId(subjects[0]?._id || subjects[0]?.id || '');
+    }
+  }, [subjects, selectedSubjectId, subjectId]);
+
+  const subject = subjects.find((sub) => (sub._id || sub.id) === selectedSubjectId) || { name: 'Unknown Subject' };
 
   // Add Question State
   const [difficulty, setDifficulty] = useState('Easy');
@@ -61,25 +85,24 @@ const AddQuestion = () => {
   const [correctOption, setCorrectOption] = useState('B'); // Default matches mockup
   const [explanation, setExplanation] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Image Upload Handlers
+  // Image Upload Handlers — store File + generate preview
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result);
-        toast.success('Image uploaded successfully!');
-      };
+      reader.onloadend = () => { setImage(reader.result); };
       reader.readAsDataURL(file);
+      toast.success('Image selected!');
     }
   };
 
   const handleRemoveImage = () => {
     setImage(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    setImageFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     toast.success('Image removed successfully!');
   };
 
@@ -87,13 +110,12 @@ const AddQuestion = () => {
   const handleOptionImageChange = (e) => {
     const file = e.target.files[0];
     if (file && uploadingForOption) {
+      const letter = uploadingForOption;
+      setOptionImageFiles(prev => ({ ...prev, [letter]: file }));
       const reader = new FileReader();
       reader.onloadend = () => {
-        setOptionImages(prev => ({
-          ...prev,
-          [uploadingForOption]: reader.result
-        }));
-        toast.success(`Image added to Option ${uploadingForOption}!`);
+        setOptionImages(prev => ({ ...prev, [letter]: reader.result }));
+        toast.success(`Image added to Option ${letter}!`);
         setUploadingForOption(null);
       };
       reader.readAsDataURL(file);
@@ -102,21 +124,17 @@ const AddQuestion = () => {
 
   const handleOptionImageClick = (letter) => {
     setUploadingForOption(letter);
-    setTimeout(() => {
-      optionFileInputRef.current?.click();
-    }, 50);
+    setTimeout(() => { optionFileInputRef.current?.click(); }, 50);
   };
 
   const handleRemoveOptionImage = (letter) => {
-    setOptionImages(prev => ({
-      ...prev,
-      [letter]: null
-    }));
+    setOptionImages(prev => ({ ...prev, [letter]: null }));
+    setOptionImageFiles(prev => ({ ...prev, [letter]: null }));
     toast.success(`Image removed from Option ${letter}`);
   };
 
   // Add Question Handler
-  const handleSaveQuestion = () => {
+  const handleSaveQuestion = async () => {
     if (!selectedSubjectId || selectedSubjectId === 'select') {
       toast.error('Please select a subject');
       return;
@@ -137,34 +155,65 @@ const AddQuestion = () => {
       return;
     }
 
-    const newQuestion = {
-      id: `q-${Date.now()}`,
-      subjectId: selectedSubjectId,
-      text: questionText,
-      optionA: optionsData.optionA,
-      optionB: optionsData.optionB,
-      optionC: optionsData.optionC,
-      optionD: optionsData.optionD,
-      optionAImage: optionImages.A,
-      optionBImage: optionImages.B,
-      optionCImage: optionImages.C,
-      optionDImage: optionImages.D,
-      correctOption: correctOption,
-      difficulty: difficulty,
-      explanation: explanation,
-      videoUrl: videoUrl,
-      image: image
-    };
+    setIsSubmitting(true);
+    const loadingToast = toast.loading('Uploading images...');
 
-    const updated = [...questions, newQuestion];
-    setQuestions(updated);
-    setStoredQuestions(updated);
-    toast.success('Question added successfully!');
+    try {
+      // Upload main question image if a new file was selected
+      let uploadedImagePath = null;
+      if (imageFile) {
+        try {
+          uploadedImagePath = await dispatch(uploadQuestionImage(imageFile)).unwrap();
+        } catch (uploadErr) {
+          toast.error('Failed to upload question image', { id: loadingToast });
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
-    if (subjectId === 'select') {
-      navigate('/teacher/questions');
-    } else {
-      navigate(`/teacher/subjects/${subjectId}`);
+      // Upload option images
+      const uploadedOptionPaths = ['', '', '', ''];
+      const optionLetters = ['A', 'B', 'C', 'D'];
+      for (let i = 0; i < optionLetters.length; i++) {
+        const letter = optionLetters[i];
+        if (optionImageFiles[letter]) {
+          try {
+            uploadedOptionPaths[i] = await dispatch(uploadQuestionImage(optionImageFiles[letter])).unwrap() || '';
+          } catch {
+            uploadedOptionPaths[i] = '';
+          }
+        }
+      }
+
+      toast.loading('Adding question...', { id: loadingToast });
+
+      const optionMap = { A: 0, B: 1, C: 2, D: 3 };
+      const correctIdx = optionMap[correctOption] ?? 0;
+
+      const payload = {
+        subjectId: selectedSubjectId,
+        text: questionText,
+        options: [
+          optionsData.optionA,
+          optionsData.optionB,
+          optionsData.optionC,
+          optionsData.optionD
+        ],
+        correctOption: correctIdx,
+        difficulty: difficulty.toLowerCase(),
+        explanation: explanation,
+        videoUrl: videoUrl,
+        image: uploadedImagePath || null,
+        optionImages: uploadedOptionPaths,
+      };
+
+      await dispatch(createQuestion(payload)).unwrap();
+      toast.success('Question added successfully!', { id: loadingToast });
+      setIsSubmitting(false);
+      navigate(`/teacher/subjects/${selectedSubjectId}`);
+    } catch (err) {
+      setIsSubmitting(false);
+      toast.error(err || 'Failed to add question', { id: loadingToast });
     }
   };
 
@@ -173,7 +222,7 @@ const AddQuestion = () => {
       role="teacher"
       activeTab={subjectId === 'select' ? 'questions' : 'subjects'}
       title="Add Question"
-      subtitle={subjectId === 'select' ? 'Choose subject and details' : `Subject: ${subject.title}`}
+      subtitle={subjectId === 'select' ? 'Choose subject and details' : `Subject: ${subject.name || subject.title}`}
     >
       <div className="w-full max-w-full p-6 md:p-8 pb-32 text-left flex flex-col gap-6 animate-fade-in">
 
@@ -199,11 +248,8 @@ const AddQuestion = () => {
           <div className="flex items-center">
             <button
               onClick={() => {
-                if (subjectId === 'select') {
-                  navigate('/teacher/questions');
-                } else {
-                  navigate(`/teacher/subjects/${subjectId}`);
-                }
+                const targetId = (subjectId === 'select' ? selectedSubjectId : subjectId) || '';
+                navigate(targetId ? `/teacher/subjects/${targetId}` : '/teacher/subjects');
               }}
               className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer mr-3"
             >
@@ -237,9 +283,13 @@ const AddQuestion = () => {
               className="w-full pl-12 pr-10 py-4 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0 text-base"
             >
               <option value="" disabled>Select Subject</option>
-              {subjects.map(s => (
-                <option key={s.id} value={s.id}>{s.title}</option>
-              ))}
+              {subjects.map(s => {
+                const subId = s._id || s.id;
+                const subTitle = s.name || s.title;
+                return (
+                  <option key={subId} value={subId}>{subTitle}</option>
+                );
+              })}
             </select>
             <FiChevronDown className="text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -329,7 +379,7 @@ const AddQuestion = () => {
                 ) : (
                   <div className="relative rounded-2xl border border-gray-800 bg-[#0c0d19] overflow-hidden group max-w-full flex flex-col items-center p-4">
                     <img
-                      src={image}
+                      src={getImageUrl(image)}
                       alt="Uploaded Question Visual"
                       className="max-h-64 rounded-xl object-contain border border-gray-900 bg-black/20"
                     />
@@ -428,7 +478,7 @@ const AddQuestion = () => {
                         {hasImage && (
                           <div className="ml-11 relative rounded-xl border border-gray-800 bg-[#0c0d19] overflow-hidden group max-w-full flex items-center p-2 self-start gap-3">
                             <img
-                              src={optionImages[letter]}
+                              src={getImageUrl(optionImages[letter])}
                               alt={`Option ${letter} Visual`}
                               className="max-h-20 rounded-lg object-contain bg-black/20"
                             />
@@ -499,9 +549,10 @@ const AddQuestion = () => {
         {/* Submit Button */}
         <button
           onClick={handleSaveQuestion}
-          className="w-full py-4 mt-6 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black text-base shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer shadow-md"
+          disabled={isSubmitting}
+          className="w-full py-4 mt-6 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black text-base shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span>Add Question</span>
+          <span>{isSubmitting ? 'Adding...' : 'Add Question'}</span>
           <FiPlus className="text-base" />
         </button>
 

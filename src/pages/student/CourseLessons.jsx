@@ -1,56 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { 
   FiPlay, 
   FiCheckCircle 
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { coursesData } from '../../data/coursesData';
+import { TableRowSkeleton } from '../../components/ui/Skeleton';
+import { fetchSubjectLessons } from '../../redux/slices/studentSlice';
 
 const CourseLessons = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const [course, setCourse] = useState(null);
-  const [completedLessons, setCompletedLessons] = useState([]);
-  const [watchProgress, setWatchProgress] = useState({});
+  const { lessonsData, isLoading } = useSelector((state) => state.student);
 
   useEffect(() => {
-    const found = coursesData.find(c => c.id === courseId);
-    if (!found) {
-      toast.error('Course not found!');
-      navigate('/student/courses');
-      return;
-    }
-    setCourse(found);
+    dispatch(fetchSubjectLessons(courseId));
+  }, [dispatch, courseId]);
 
-    const storedLessons = localStorage.getItem('student_completed_lessons');
-    if (storedLessons) {
-      setCompletedLessons(JSON.parse(storedLessons));
-    }
+  const lessons = lessonsData?.lessons || [];
+  const progress = lessonsData?.progress || { completed: 0, total: 0, percent: 0 };
 
-    // Load watch progress object
-    const storedWatch = localStorage.getItem('student_watch_progress');
-    if (storedWatch) {
-      setWatchProgress(JSON.parse(storedWatch));
-    }
-  }, [courseId, navigate]);
-
-  if (!course) return null;
-
-  const totalLessons = course.lessons.length;
-  const completedCount = course.lessons.filter(l => completedLessons.includes(l.id)).length;
-  const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+  const totalLessons = progress.total || lessons.length;
+  const completedCount = progress.completed || 0;
+  const progressPercent = progress.percent || 0;
 
   return (
     <DashboardLayout
       role="student"
       activeTab="courses"
-      title={course.title}
+      title="Course Lessons"
       subtitle={`${completedCount} of ${totalLessons} lessons completed`}
       showBackButton={true}
-      onBackClick={() => navigate(`/student/courses/${course.id}`)}
+      onBackClick={() => navigate(`/student/courses/${courseId}`)}
     >
       <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
         {/* Overall Course Progress Box */}
@@ -73,16 +58,20 @@ const CourseLessons = () => {
             Lesson Modules
           </h4>
 
-          {course.lessons.length > 0 ? (
+          {isLoading ? (
             <div className="flex flex-col gap-4">
-              {course.lessons.map((lesson) => {
-                const isDone = completedLessons.includes(lesson.id);
-                const lessonProgress = watchProgress[lesson.id] || (isDone ? 100 : 0);
+              {Array(3).fill(0).map((_, idx) => <TableRowSkeleton key={idx} />)}
+            </div>
+          ) : lessons.length > 0 ? (
+            <div className="flex flex-col gap-4">
+              {lessons.map((lesson) => {
+                const isDone = lesson.isCompleted;
+                const lessonProgress = lesson.progressPercent || 0;
 
                 return (
                   <div
-                    key={lesson.id}
-                    onClick={() => navigate(`/student/courses/${course.id}/lessons/${lesson.id}`)}
+                    key={lesson._id}
+                    onClick={() => navigate(`/student/courses/${courseId}/lessons/${lesson._id}`)}
                     className={`p-4 rounded-[2rem] border transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 ${
                       isDone 
                         ? 'bg-emerald-500/5 border-emerald-500/20 shadow-md' 
@@ -97,13 +86,13 @@ const CourseLessons = () => {
                       
                       <div className="flex flex-col items-start">
                         <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                          {lesson.label}
+                          Module {lesson.order || 1}
                         </span>
                         <h5 className="text-base font-bold text-white mt-0.5 leading-snug">
                           {lesson.title}
                         </h5>
                         <span className="text-xs text-gray-500 font-semibold mt-1">
-                          Duration: {lesson.duration} mins
+                          Duration: {lesson.duration || 0} mins
                         </span>
                       </div>
                     </div>

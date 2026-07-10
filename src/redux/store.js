@@ -11,6 +11,10 @@ import {
 } from 'redux-persist';
 import authReducer from './slices/authSlice';
 import adminReducer from './slices/adminSlice';
+import teacherReducer from './slices/teacherSlice';
+import studentReducer from './slices/studentSlice';
+import parentReducer from './slices/parentsSlice';
+import notificationsReducer from './slices/notificationsSlice';
 
 // Custom localStorage storage adapter to bypass Vite/redux-persist ESM/CJS import mismatch
 const storage = {
@@ -39,6 +43,10 @@ export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     admin: adminReducer,
+    teacher: teacherReducer,
+    student: studentReducer,
+    parent: parentReducer,
+    notifications: notificationsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

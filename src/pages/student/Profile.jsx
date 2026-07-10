@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FiUser, 
-  FiMail, 
-  FiPhone, 
-  FiAward, 
-  FiStar, 
-  FiBookOpen, 
-  FiBell, 
-  FiSun, 
-  FiMoon, 
-  FiLogOut, 
-  FiChevronRight, 
+import {
+  FiUser,
+  FiMail,
+  FiPhone,
+  FiAward,
+  FiStar,
+  FiBookOpen,
+  FiBell,
+  FiSun,
+  FiMoon,
+  FiLogOut,
+  FiChevronRight,
   FiChevronLeft,
-  FiCamera, 
+  FiCamera,
   FiLock,
-  FiGlobe, 
-  FiUsers, 
-  FiCopy, 
+  FiGlobe,
+  FiUsers,
+  FiCopy,
   FiCheck,
   FiX,
   FiCheckCircle,
@@ -32,6 +32,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser, changePassword, updateProfile } from '../../redux/slices/authSlice';
+import { fetchStudentProfile, fetchLinkCode, fetchMySubjects } from '../../redux/slices/studentSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import { ChangePasswordSchema } from '../../schemas/authSchemas';
@@ -45,29 +46,31 @@ const StudentProfileSchema = Yup.object().shape({
 const Profile = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  // Select state from redux thunks
   const user = useSelector((state) => state.auth.user);
+  const { profile: studentProfile, linkCode, mySubjects } = useSelector((state) => state.student);
 
   // Profile fields state
-  const [name, setName] = useState(user?.name || 'ali');
-  const [email, setEmail] = useState(user?.email || 'ali@fullmark.edu');
-  const [phone, setPhone] = useState(user?.phone || '+966 50 123 4567');
-  const [bio, setBio] = useState(user?.bio || 'I am a passionate chemistry student striving to hit a perfect full score!');
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [bio, setBio] = useState(user?.bio || 'I am a passionate student striving to hit a perfect full score!');
+
+  useEffect(() => {
+    dispatch(fetchStudentProfile());
+    dispatch(fetchLinkCode());
+    dispatch(fetchMySubjects());
+  }, [dispatch]);
 
   useEffect(() => {
     if (user) {
-      setName(user.name);
-      setEmail(user.email);
+      setName(user.name || '');
+      setEmail(user.email || '');
       setPhone(user.phone || '');
-      setBio(user.bio || 'I am a passionate chemistry student striving to hit a perfect full score!');
+      setBio(user.bio || 'I am a passionate student striving to hit a perfect full score!');
     }
   }, [user]);
-  
-  // Stats counters
-  const [points, setPoints] = useState(40);
-  const [streak, setStreak] = useState(8);
-  const [completedLessonsCount, setCompletedLessonsCount] = useState(0);
-  const [enrolledCoursesCount, setEnrolledCoursesCount] = useState(1);
-  const [exams, setExams] = useState([]);
 
   // Modals state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -83,39 +86,6 @@ const Profile = () => {
   const [soundEffects, setSoundEffects] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
-  useEffect(() => {
-    const loadProfileData = () => {
-      const storedName = localStorage.getItem('student_profile_name') || 'ali';
-      setName(storedName);
-      
-      const storedPoints = parseInt(localStorage.getItem('student_points') || '40');
-      setPoints(storedPoints);
-      
-      const storedStreak = parseInt(localStorage.getItem('student_streak') || '8');
-      setStreak(storedStreak);
-      
-      const storedCompleted = JSON.parse(localStorage.getItem('student_completed_lessons') || '[]');
-      setCompletedLessonsCount(storedCompleted.length);
-
-      const storedEnrolled = JSON.parse(localStorage.getItem('student_enrolled_courses') || '["chem-1"]');
-      setEnrolledCoursesCount(storedEnrolled.length);
-
-      const storedExams = localStorage.getItem('student_exams');
-      if (storedExams) {
-        setExams(JSON.parse(storedExams));
-      } else {
-        const defaults = [
-          { id: 'exam-2', name: 'exam 2', subject: 'chemistry', score: 100, status: 'Passed', date: 'Jun 14, 2026' },
-          { id: 'chem-test-1', name: 'chemistry test 1', subject: 'chemistry', score: 50, status: 'Failed', date: 'Jun 14, 2026' }
-        ];
-        setExams(defaults);
-      }
-    };
-    loadProfileData();
-    window.addEventListener('profileUpdate', loadProfileData);
-    return () => window.removeEventListener('profileUpdate', loadProfileData);
-  }, []);
-
   // Theme Sync
   useEffect(() => {
     if (theme === 'light') {
@@ -127,14 +97,13 @@ const Profile = () => {
     window.dispatchEvent(new Event('themeChange'));
   }, [theme]);
 
-  // Metric computations
-  const totalExams = exams.length;
-  const passedExams = exams.filter(e => e.status === 'Passed').length;
-  const averageScore = totalExams > 0 ? Math.round(exams.reduce((sum, e) => sum + e.score, 0) / totalExams) : 0;
-
   // Copy Parent Code logic
   const handleCopyCode = () => {
-    navigator.clipboard.writeText('FM-8UTT2N');
+    if (!linkCode) {
+      toast.error('Invite code is not ready yet');
+      return;
+    }
+    navigator.clipboard.writeText(linkCode);
     toast.success('Parent invite code copied! 📋');
   };
 
@@ -143,11 +112,11 @@ const Profile = () => {
     try {
       await dispatch(updateProfile({
         name: values.name,
-        phone: values.phone
+        phone: values.phone,
+        bio: values.bio
       })).unwrap();
       toast.success('Profile settings updated!');
       setIsEditProfileOpen(false);
-      window.dispatchEvent(new Event('profileUpdate'));
     } catch (err) {
       toast.error(err || 'Failed to update profile settings.');
     } finally {
@@ -189,9 +158,18 @@ const Profile = () => {
   };
 
   // Initials for avatar
-  const avatarInitials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  const avatarInitials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'ST';
 
   const isModalActive = isEditProfileOpen || isChangePasswordOpen || isLanguageOpen;
+
+  // Gamification metrics from studentProfile
+  const points = studentProfile?.totalPoints || 0;
+  const streak = studentProfile?.streakDays || 0;
+  const averageScore = studentProfile?.averageScore || 0;
+  const totalExams = studentProfile?.totalExamsTaken || 0;
+  const passedExams = studentProfile?.totalExamsPassed || 0;
+  const enrolledCoursesCount = mySubjects?.length || 0;
+  const badgesCount = studentProfile?.badges?.length || 0;
 
   return (
     <DashboardLayout
@@ -204,7 +182,7 @@ const Profile = () => {
     >
       {/* Main Container - Full Width layout matching teacher settings */}
       <div className="h-full flex flex-col px-4 md:px-8 py-4 overflow-hidden gap-5 animate-fade-in relative transition-all duration-300">
-        
+
         {/* Scrollable Panel */}
         <div className="flex-1 overflow-y-auto pr-1 pb-36 flex flex-col gap-6">
 
@@ -310,19 +288,19 @@ const Profile = () => {
 
               <div className="flex flex-col gap-2.5 my-2">
                 <div className="flex items-center justify-between text-xs font-bold text-gray-400">
-                  <span>Overall Completed Lessons</span>
-                  <span className="text-emerald-400 font-extrabold">{completedLessonsCount} / 12</span>
+                  <span>Enrolled Courses</span>
+                  <span className="text-emerald-400 font-extrabold">{enrolledCoursesCount}</span>
                 </div>
                 <div className="w-full h-2.5 bg-gray-950/60 rounded-full overflow-hidden border border-gray-900">
-                  <div 
-                    className="h-full bg-emerald-500 rounded-full transition-all duration-500 shadow-[0_0_10px_#10b981]" 
-                    style={{ width: `${Math.max(5, Math.round((completedLessonsCount / 12) * 100))}%` }}
+                  <div
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-500 shadow-[0_0_10px_#10b981]"
+                    style={{ width: `${Math.min(100, Math.max(5, enrolledCoursesCount * 25))}%` }}
                   />
                 </div>
               </div>
 
               <div className="flex items-center justify-between text-xs font-bold text-gray-500 border-t border-gray-800/40 pt-2.5 mt-1">
-                <span>Streak Reward Points</span>
+                <span>Total Accumulated Points</span>
                 <span className="text-yellow-500 font-black">{points} Points</span>
               </div>
             </div>
@@ -364,7 +342,7 @@ const Profile = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Edit Profile */}
-              <div 
+              <div
                 onClick={() => setIsEditProfileOpen(true)}
                 className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-left"
               >
@@ -374,14 +352,14 @@ const Profile = () => {
                   </div>
                   <div>
                     <h5 className="text-sm font-bold text-white leading-none">Edit Profile</h5>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Name, bio, photo</span>
+                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Name, bio, phone</span>
                   </div>
                 </div>
                 <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />
               </div>
 
               {/* Change Password */}
-              <div 
+              <div
                 onClick={() => setIsChangePasswordOpen(true)}
                 className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-left"
               >
@@ -398,7 +376,7 @@ const Profile = () => {
               </div>
 
               {/* Language Selection */}
-              <div 
+              <div
                 onClick={() => { setTempLanguage(selectedLanguage); setIsLanguageOpen(true); }}
                 className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-left"
               >
@@ -432,8 +410,8 @@ const Profile = () => {
               </p>
 
               <div className="flex items-center justify-between gap-3 bg-gray-950/65 border border-gray-800 p-3 rounded-2xl mt-1">
-                <span className="text-xs font-black text-white tracking-widest pl-1"># FM-8UTT2N</span>
-                <button 
+                <span className="text-xs font-black text-white tracking-widest pl-1"># {linkCode || 'FM-8UTT2N'}</span>
+                <button
                   onClick={handleCopyCode}
                   className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer transition-all shadow-[0_4px_15px_rgba(139,92,246,0.3)]"
                 >
@@ -452,29 +430,42 @@ const Profile = () => {
                   <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">My Badges</h4>
                 </div>
                 <span className="px-2.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-[9px] font-black text-yellow-500">
-                  3 earned
+                  {badgesCount} earned
                 </span>
               </div>
 
               <div className="grid grid-cols-3 gap-3.5 mt-2">
-                <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
-                  <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-400">
-                    <FiBookOpen size={13} />
-                  </div>
-                  <span className="text-[8.5px] font-black text-gray-400">First Exam</span>
-                </div>
-                <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
-                  <div className="w-8 h-8 rounded-full bg-pink-500/15 border border-pink-500/25 flex items-center justify-center text-pink-400">
-                    <FiStar size={13} />
-                  </div>
-                  <span className="text-[8.5px] font-black text-gray-400">Perfect Score</span>
-                </div>
-                <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
-                  <div className="w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-400">
-                    <FaFire size={13} />
-                  </div>
-                  <span className="text-[8.5px] font-black text-gray-400">7-Day Streak</span>
-                </div>
+                {studentProfile?.badges && studentProfile.badges.length > 0 ? (
+                  studentProfile.badges.slice(0, 3).map((b, idx) => (
+                    <div key={idx} className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
+                      <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-400">
+                        <FiAward size={13} />
+                      </div>
+                      <span className="text-[8.5px] font-black text-gray-400 capitalize truncate w-full">{b.label}</span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
+                      <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-400">
+                        <FiBookOpen size={13} />
+                      </div>
+                      <span className="text-[8.5px] font-black text-gray-400">First Exam</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
+                      <div className="w-8 h-8 rounded-full bg-pink-500/15 border border-pink-500/25 flex items-center justify-center text-pink-400">
+                        <FiStar size={13} />
+                      </div>
+                      <span className="text-[8.5px] font-black text-gray-400">Perfect Score</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
+                      <div className="w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-400">
+                        <FaFire size={13} />
+                      </div>
+                      <span className="text-[8.5px] font-black text-gray-400">7-Day Streak</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -495,7 +486,7 @@ const Profile = () => {
                   <h5 className="text-xs font-bold text-white leading-none">Push</h5>
                   <span className="text-[9px] text-gray-500 font-semibold mt-1 block">Receive app alerts</span>
                 </div>
-                <button 
+                <button
                   onClick={() => setPushNotifications(!pushNotifications)}
                   className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${pushNotifications ? 'bg-purple-600 justify-end' : 'bg-gray-800 justify-start'}`}
                 >
@@ -509,7 +500,7 @@ const Profile = () => {
                   <h5 className="text-xs font-bold text-white leading-none">Reminders</h5>
                   <span className="text-[9px] text-gray-500 font-semibold mt-1 block">Get warned before exams</span>
                 </div>
-                <button 
+                <button
                   onClick={() => setExamReminders(!examReminders)}
                   className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${examReminders ? 'bg-blue-600 justify-end' : 'bg-gray-800 justify-start'}`}
                 >
@@ -523,7 +514,7 @@ const Profile = () => {
                   <h5 className="text-xs font-bold text-white leading-none">Result Alerts</h5>
                   <span className="text-[9px] text-gray-500 font-semibold mt-1 block">Notify when scored</span>
                 </div>
-                <button 
+                <button
                   onClick={() => setResultAlerts(!resultAlerts)}
                   className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${resultAlerts ? 'bg-emerald-500 justify-end' : 'bg-gray-800 justify-start'}`}
                 >
@@ -537,7 +528,7 @@ const Profile = () => {
                   <h5 className="text-xs font-bold text-white leading-none">Sounds</h5>
                   <span className="text-[9px] text-gray-500 font-semibold mt-1 block">Play audio cues</span>
                 </div>
-                <button 
+                <button
                   onClick={() => setSoundEffects(!soundEffects)}
                   className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${soundEffects ? 'bg-gray-400 justify-end' : 'bg-gray-800 justify-start'}`}
                 >
@@ -566,7 +557,7 @@ const Profile = () => {
                   <p className="text-xs text-gray-500 font-semibold mt-1">Switch app appearance theme</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-800 justify-start'}`}
               >
@@ -647,7 +638,7 @@ const Profile = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
-              
+
               <button
                 onClick={() => setIsEditProfileOpen(false)}
                 className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
@@ -787,7 +778,7 @@ const Profile = () => {
                       showPasswordToggle={true}
                       roleColor="student"
                     />
-                    
+
                     <button
                       type="submit"
                       disabled={isSubmitting}
@@ -834,13 +825,12 @@ const Profile = () => {
 
               <div className="flex flex-col gap-3 mt-4">
                 {/* English choice */}
-                <button 
+                <button
                   onClick={() => setTempLanguage('English')}
-                  className={`w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
-                    tempLanguage === 'English' 
-                      ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5' 
+                  className={`w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${tempLanguage === 'English'
+                      ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5'
                       : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">🇬🇧</span>
@@ -854,16 +844,15 @@ const Profile = () => {
                 </button>
 
                 {/* Arabic choice */}
-                <button 
+                <button
                   onClick={() => setTempLanguage('Arabic')}
-                  className={`w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
-                    tempLanguage === 'Arabic' 
-                      ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5' 
+                  className={`w-full p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${tempLanguage === 'Arabic'
+                      ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5'
                       : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">🇯🇴</span>
+                    <span className="text-xl">🇸🇦</span>
                     <span className="text-xs sm:text-sm font-bold text-white">Arabic — العربية</span>
                   </div>
                   {tempLanguage === 'Arabic' && (

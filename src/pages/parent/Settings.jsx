@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { logoutUser } from '../../redux/slices/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser, updateProfile } from '../../redux/slices/authSlice';
+import { 
+  fetchParentProfile, 
+  fetchChildrenList, 
+  unlinkChild 
+} from '../../redux/slices/parentsSlice';
 import {
   FiEdit3,
   FiX,
@@ -23,36 +28,8 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { getStoredParentProfile, setStoredParentProfile, getStoredChildren } from '../../data/parentData';
-
-/* ─── Section Header ────────────────────────────────────────── */
-const SectionHeader = ({ icon: Icon, label, iconBg }) => (
-  <div className="flex items-center gap-3 mb-3 mt-2">
-    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white ${iconBg}`}>
-      <Icon size={16} />
-    </div>
-    <span className="text-base font-black text-white">{label}</span>
-  </div>
-);
-
-/* ─── Settings Row ───────────────────────────────────────────── */
-const SettingsRow = ({ icon: Icon, iconBg, label, subtitle, rightEl, onClick, danger }) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center gap-4 p-4 bg-[#111520] border border-gray-800/60 rounded-2xl text-left transition-all cursor-pointer ${
-      onClick ? 'hover:border-gray-700 active:scale-[0.99]' : 'cursor-default'
-    }`}
-  >
-    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
-      <Icon size={16} className="text-white" />
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className={`text-sm font-extrabold leading-tight ${danger ? 'text-red-400' : 'text-white'}`}>{label}</p>
-      {subtitle && <p className="text-[11px] text-gray-500 font-semibold mt-0.5">{subtitle}</p>}
-    </div>
-    {rightEl}
-  </button>
-);
+import { TableRowSkeleton } from '../../components/ui/Skeleton';
+import ConfirmationModal from '../../components/ui/ConfirmationModal';
 
 /* ─── Toggle Switch ─────────────────────────────────────────── */
 const Toggle = ({ value, onChange, activeColor = 'bg-purple-500' }) => (
@@ -66,16 +43,40 @@ const Toggle = ({ value, onChange, activeColor = 'bg-purple-500' }) => (
   </button>
 );
 
-/* ═══════════════════════════════════════════════════════════════ */
 const ParentSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [profile, setProfile] = useState(() => getStoredParentProfile());
-  const [children] = useState(() => getStoredChildren());
+
+  const user = useSelector((state) => state.auth.user);
+  const { children, isLoading, isActionLoading } = useSelector((state) => state.parent);
+
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ ...profile });
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  
   const [pushNotifs, setPushNotifs] = useState(true);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
+  // Confirmation modal states
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [childToUnlink, setChildToUnlink] = useState(null);
+  const [isUnlinking, setIsUnlinking] = useState(false);
+
+  // Load parent stats and children on mount
+  useEffect(() => {
+    dispatch(fetchParentProfile());
+    dispatch(fetchChildrenList());
+  }, [dispatch]);
+
+  // Sync state values when user object changes
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setPhone(user.phone || '');
+    }
+  }, [user]);
 
   // Sync theme with the rest of the app
   useEffect(() => {
@@ -88,40 +89,49 @@ const ParentSettings = () => {
     window.dispatchEvent(new Event('themeChange'));
   }, [theme]);
 
-  useEffect(() => {
-    const sync = () => {
-      const t = localStorage.getItem('theme') || 'dark';
-      if (t !== theme) setTheme(t);
-    };
-    window.addEventListener('themeChange', sync);
-    return () => window.removeEventListener('themeChange', sync);
-  }, [theme]);
-
   // Stats derived from children
-  const allExams = children.flatMap(c => c.exams || []);
-  const totalExams = allExams.length;
-  const avgScore = totalExams > 0
-    ? Math.round(allExams.reduce((s, e) => s + e.score, 0) / totalExams)
+  const totalExams = children.reduce((acc, c) => acc + (c.totalExams || 0), 0);
+  const avgScore = children.length > 0
+    ? Math.round(children.reduce((acc, c) => acc + (c.avgScore || 0), 0) / children.length)
     : 0;
 
-  const handleSave = () => {
-    const updated = {
-      ...editForm,
-      initials: editForm.name
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .substring(0, 2),
-    };
-    setStoredParentProfile(updated);
-    setProfile(updated);
-    setIsEditOpen(false);
-    toast.success('Profile updated successfully!');
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    try {
+      await dispatch(updateProfile({ name, email, phone })).unwrap();
+      setIsEditOpen(false);
+      toast.success('Profile updated successfully!');
+    } catch (err) {
+      toast.error(err || 'Failed to update profile settings');
+    }
   };
 
+  const handleUnlink = (childId) => {
+    setChildToUnlink(childId);
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmUnlink = async () => {
+    if (!childToUnlink) return;
+    setIsUnlinking(true);
+    try {
+      const res = await dispatch(unlinkChild(childToUnlink)).unwrap();
+      toast.success(res?.message || 'Child unlinked successfully');
+      setIsConfirmOpen(false);
+      setChildToUnlink(null);
+    } catch (err) {
+      toast.error(err || 'Failed to unlink child');
+    } finally {
+      setIsUnlinking(false);
+    }
+  };
+
+  const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'PA';
   const isDark = theme === 'dark';
-  const isModalOpen = isEditOpen;
+  const isModalOpen = isEditOpen || isConfirmOpen;
 
   return (
     <DashboardLayout
@@ -133,7 +143,7 @@ const ParentSettings = () => {
     >
       <div className={`flex flex-col pb-36 lg:pb-16 transition-all duration-300 ${isModalOpen ? 'blur-sm pointer-events-none' : ''}`}>
 
-        {/* ── PURPLE GRADIENT HERO (with stats inside) ── */}
+        {/* ── HERO BANNER ── */}
         <div className="relative bg-gradient-to-br from-purple-700/90 to-indigo-600/90 mx-5 mt-4 rounded-3xl overflow-hidden shadow-[0_15px_30px_rgba(139,92,246,0.2)]">
           {/* Decorative circles */}
           <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5 border border-white/10 pointer-events-none" />
@@ -141,7 +151,14 @@ const ParentSettings = () => {
 
           {/* Edit button */}
           <button
-            onClick={() => { setEditForm({ ...profile }); setIsEditOpen(true); }}
+            onClick={() => {
+              if (user) {
+                setName(user.name || '');
+                setEmail(user.email || '');
+                setPhone(user.phone || '');
+              }
+              setIsEditOpen(true);
+            }}
             className="absolute top-4 right-4 w-10 h-10 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 flex items-center justify-center text-white transition-all cursor-pointer z-10"
           >
             <FiEdit3 size={16} />
@@ -150,11 +167,11 @@ const ParentSettings = () => {
           {/* Avatar + Info */}
           <div className="flex flex-col items-center gap-3 pt-6 px-6 pb-5 relative z-10 text-center">
             <div className="w-24 h-24 rounded-[2rem] bg-white/15 border-2 border-white/30 flex items-center justify-center font-black text-3xl text-white shadow-[0_0_25px_rgba(139,92,246,0.3)]">
-              {profile.initials || 'AF'}
+              {initials}
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white capitalize">{profile.name}</h2>
-              <p className="text-white/70 text-sm font-semibold mt-0.5">{profile.email || 'p@gmail.com'}</p>
+              <h2 className="text-2xl font-black text-white capitalize">{user?.name}</h2>
+              <p className="text-white/70 text-sm font-semibold mt-0.5">{user?.email}</p>
             </div>
 
             {/* Badges */}
@@ -163,10 +180,10 @@ const ParentSettings = () => {
                 <FiUsers size={11} /> Parent
               </span>
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-white text-[10px] font-extrabold tracking-wide uppercase">
-                <FiCalendar size={11} /> Since June 2026
+                <FiCalendar size={11} /> Active Account
               </span>
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-white text-[10px] font-extrabold tracking-wide uppercase">
-                <FiEye size={11} /> {children.length} children
+                <FiEye size={11} /> {children.length} Children Linked
               </span>
             </div>
           </div>
@@ -175,7 +192,7 @@ const ParentSettings = () => {
           <div className="grid grid-cols-3 divide-x divide-white/10 border-t border-white/15 relative z-10">
             {[
               { label: 'Children', value: children.length, icon: FiEye, iconBg: 'bg-white/15', iconColor: 'text-emerald-300' },
-              { label: 'Exams', value: totalExams, icon: FiCalendar, iconBg: 'bg-white/15', iconColor: 'text-blue-300' },
+              { label: 'Exams Taken', value: totalExams, icon: FiCalendar, iconBg: 'bg-white/15', iconColor: 'text-blue-300' },
               { label: 'Avg Score', value: `${avgScore}%`, icon: FiStar, iconBg: 'bg-white/15', iconColor: 'text-yellow-300' },
             ].map((s) => {
               const Icon = s.icon;
@@ -201,64 +218,79 @@ const ParentSettings = () => {
               <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
                 <FiUsers size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">My Children</h3>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider text-left">My Children</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {children.map((c) => {
-                const cExams = c.exams || [];
-                const cAvg = cExams.length > 0
-                  ? Math.round(cExams.reduce((s, e) => s + e.score, 0) / cExams.length)
-                  : 0;
-                return (
-                  <div
-                    key={c.id}
-                    className="flex items-center gap-4 p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl transition-all"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-base text-white shrink-0">
-                      {c.initials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black text-white capitalize">{c.name}</p>
-                      <p className="text-[11px] text-gray-500 font-semibold">{cExams.length} exams taken</p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <span className="px-2 py-0.5 rounded-md bg-orange-500/15 border border-orange-500/20 text-orange-400 text-[10px] font-black">
-                          {cAvg}% avg
-                        </span>
-                        <span className="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/20 text-amber-400 text-[10px] font-black">
-                          {c.streak || 0}d streak
-                        </span>
+            {isLoading && children.length === 0 ? (
+              <TableRowSkeleton />
+            ) : children.length === 0 ? (
+              <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl">
+                <p className="text-sm font-bold text-gray-500">No children linked yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {children.map((c) => {
+                  const childInitials = c.name ? c.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'ST';
+                  return (
+                    <div
+                      key={c._id}
+                      className="flex items-center gap-4 p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl transition-all"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-base text-white shrink-0">
+                        {childInitials}
+                      </div>
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-sm font-black text-white capitalize">{c.name}</p>
+                        <p className="text-[11px] text-gray-500 font-semibold">{c.totalExams || 0} exams taken</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="px-2 py-0.5 rounded-md bg-orange-500/15 border border-orange-500/20 text-orange-400 text-[10px] font-black">
+                            {c.avgScore || 0}% avg
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/20 text-amber-400 text-[10px] font-black">
+                            {c.streak || 0}d streak
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => navigate('/parent/children')}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black hover:bg-emerald-500/20 transition-all cursor-pointer"
+                        >
+                          View
+                        </button>
+                        <button
+                          disabled={isActionLoading}
+                          onClick={() => handleUnlink(c._id)}
+                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 transition-all cursor-pointer disabled:opacity-55"
+                          title="Unlink child"
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={() => navigate('/parent/attendance')}
-                      className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black hover:bg-emerald-500/20 transition-all cursor-pointer shrink-0"
-                    >
-                      View
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* ── Notifications & Appearance ── */}
+          {/* ── Preferences ── */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2 pl-1">
               <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
                 <FiBell size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Preferences</h3>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider text-left">Preferences</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Push Notifications */}
               <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl">
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3.5 text-left">
                   <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-400">
                     <FiBell size={16} />
                   </div>
-                  <div className="text-left">
+                  <div>
                     <h5 className="text-sm font-bold text-white leading-none">Push Notifications</h5>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Receive app notifications</span>
+                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Receive sibling reports</span>
                   </div>
                 </div>
                 <Toggle value={pushNotifs} onChange={setPushNotifs} activeColor="bg-purple-500" />
@@ -266,13 +298,13 @@ const ParentSettings = () => {
 
               {/* Dark Mode */}
               <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl">
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3.5 text-left">
                   <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400">
                     {isDark ? <FiMoon size={18} /> : <FiSun size={18} />}
                   </div>
-                  <div className="text-left">
+                  <div>
                     <h4 className="text-sm font-black text-white leading-tight">Dark Mode</h4>
-                    <p className="text-[10px] text-gray-500 font-semibold mt-1">Switch app appearance</p>
+                    <p className="text-[10px] text-gray-500 font-semibold mt-1">Switch dashboard theme</p>
                   </div>
                 </div>
                 <Toggle value={isDark} onChange={(val) => setTheme(val ? 'dark' : 'light')} activeColor="bg-yellow-500" />
@@ -281,7 +313,7 @@ const ParentSettings = () => {
           </div>
 
           {/* ── About ── */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 text-left">
             <div className="flex items-center gap-2 pl-1">
               <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
                 <FiShield size={13} />
@@ -299,14 +331,14 @@ const ParentSettings = () => {
                   </div>
                   <div>
                     <h5 className="text-sm font-bold text-white leading-none">Rate the App</h5>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Share your feedback</span>
+                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Share feedback</span>
                   </div>
                 </div>
                 <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
               </button>
 
               <button
-                onClick={() => toast('FullMark — Academic Management Platform v1.0.0')}
+                onClick={() => toast('FullMark — Sibling Tracker Platform v1.0.0')}
                 className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-left"
               >
                 <div className="flex items-center gap-4">
@@ -323,31 +355,6 @@ const ParentSettings = () => {
             </div>
           </div>
 
-          {/* ── Account ── */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-                <FiShield size={13} />
-              </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Account</h3>
-            </div>
-            <button
-              onClick={() => toast.error('Account deletion requires admin confirmation.')}
-              className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-left"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center text-red-400">
-                  <FiTrash2 size={18} />
-                </div>
-                <div>
-                  <h5 className="text-sm font-bold text-red-400 leading-none">Delete Account</h5>
-                  <span className="text-[10px] text-gray-500 font-semibold mt-1 block">Permanently remove your account</span>
-                </div>
-              </div>
-              <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
-            </button>
-          </div>
-
           {/* ── Sign Out ── */}
           <button
             onClick={() => {
@@ -355,7 +362,7 @@ const ParentSettings = () => {
               toast.success('Signed out successfully!');
               navigate('/login');
             }}
-            className="w-full py-4 mt-2 border border-red-500/40 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all duration-300 active:scale-95 cursor-pointer"
+            className="w-full py-4 mt-2 border border-red-500/40 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all duration-300 active:scale-95 cursor-pointer shadow-sm"
           >
             <FiLogOut size={18} />
             <span>Sign Out</span>
@@ -387,25 +394,25 @@ const ParentSettings = () => {
 
             <div className="flex flex-col gap-4">
               {[
-                { key: 'name', label: 'Full Name', icon: FiUser, type: 'text', placeholder: 'ali faraz' },
-                { key: 'email', label: 'Email Address', icon: FiMail, type: 'email', placeholder: 'p@gmail.com' },
-                { key: 'phone', label: 'Phone Number', icon: FiPhone, type: 'tel', placeholder: '+92 300 0000000' },
+                { key: 'name', label: 'Full Name', icon: FiUser, type: 'text', value: name, setter: setName },
+                { key: 'email', label: 'Email Address', icon: FiMail, type: 'email', value: email, setter: setEmail, disabled: true },
+                { key: 'phone', label: 'Phone Number', icon: FiPhone, type: 'tel', value: phone, setter: setPhone },
               ].map((f) => {
                 const Icon = f.icon;
                 return (
                   <div
                     key={f.key}
-                    className="flex items-center gap-3 px-4 py-3.5 bg-[#0c0d19] border border-gray-700 rounded-2xl focus-within:border-purple-500/60 transition-colors"
+                    className={`flex items-center gap-3 px-4 py-3.5 bg-[#0c0d19] border border-gray-700 rounded-2xl focus-within:border-purple-500/60 transition-colors ${f.disabled ? 'opacity-60' : ''}`}
                   >
                     <Icon className="text-purple-400 shrink-0" size={15} />
                     <div className="flex flex-col flex-1 min-w-0">
                       <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-0.5">{f.label}</span>
                       <input
                         type={f.type}
-                        value={editForm[f.key] || ''}
-                        onChange={e => setEditForm({ ...editForm, [f.key]: e.target.value })}
-                        placeholder={f.placeholder}
-                        className="bg-transparent border-none outline-none text-white text-sm font-semibold placeholder:text-gray-700 focus:ring-0 w-full"
+                        value={f.value}
+                        onChange={e => f.setter(e.target.value)}
+                        disabled={f.disabled}
+                        className="bg-transparent border-none outline-none text-white text-sm font-semibold placeholder:text-gray-700 focus:ring-0 w-full focus:outline-none"
                       />
                     </div>
                   </div>
@@ -430,6 +437,21 @@ const ParentSettings = () => {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={isConfirmOpen}
+        onClose={() => {
+          setIsConfirmOpen(false);
+          setChildToUnlink(null);
+        }}
+        onConfirm={handleConfirmUnlink}
+        title="Unlink Sibling"
+        message="Are you sure you want to unlink this child? This will remove access to their performance and exam reports."
+        confirmText="Unlink"
+        cancelText="Cancel"
+        isDanger={true}
+        isLoading={isUnlinking}
+      />
     </DashboardLayout>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   FiStar,
   FiClipboard,
@@ -9,22 +10,57 @@ import {
   FiLink,
   FiHash,
   FiChevronRight,
-  FiTrendingUp,
   FiUserPlus,
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { getStoredChildren, setStoredChildren, getStoredParentProfile } from '../../data/parentData';
+import { CardSkeleton, TableRowSkeleton } from '../../components/ui/Skeleton';
+import { 
+  fetchParentProfile, 
+  fetchChildrenList, 
+  linkChild, 
+  fetchChildOverview, 
+  fetchChildSubjects 
+} from '../../redux/slices/parentsSlice';
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const [children, setChildren] = useState(() => getStoredChildren());
-  const [selectedChildId, setSelectedChildId] = useState(() => getStoredChildren()[0]?.id || null);
+  // Select parent data from parentsSlice
+  const { 
+    profile, 
+    children, 
+    childOverview, 
+    childSubjects, 
+    isLoading, 
+    isActionLoading 
+  } = useSelector((state) => state.parent);
+
+  const [selectedChildId, setSelectedChildId] = useState(null);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkCode, setLinkCode] = useState('');
-  const [parentName, setParentName] = useState('ali faraz');
   const [isLight, setIsLight] = useState(() => document.documentElement.classList.contains('light'));
+
+  // Load initial parent profile and linked children
+  useEffect(() => {
+    dispatch(fetchParentProfile());
+    dispatch(fetchChildrenList())
+      .unwrap()
+      .then((kids) => {
+        if (kids && kids.length > 0) {
+          setSelectedChildId(kids[0]._id);
+        }
+      });
+  }, [dispatch]);
+
+  // Load details whenever selected child changes
+  useEffect(() => {
+    if (selectedChildId) {
+      dispatch(fetchChildOverview(selectedChildId));
+      dispatch(fetchChildSubjects(selectedChildId));
+    }
+  }, [dispatch, selectedChildId]);
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -34,13 +70,7 @@ const ParentDashboard = () => {
     return () => window.removeEventListener('themeChange', handleThemeChange);
   }, []);
 
-  // Load parent profile name
-  useEffect(() => {
-    const profile = getStoredParentProfile();
-    setParentName(profile.name || 'ali faraz');
-  }, []);
-
-  const selectedChild = children.find(c => c.id === selectedChildId) || children[0];
+  const selectedChild = children.find(c => c._id === selectedChildId);
 
   // Greeting based on time
   const hour = new Date().getHours();
@@ -51,34 +81,41 @@ const ParentDashboard = () => {
   const greetingEmoji = hour < 12 ? '☀️' : hour < 17 ? '🌤️' : '🌙';
 
   // Stats for selected child
-  const childExams = selectedChild?.exams || [];
-  const avgScore = childExams.length > 0
-    ? Math.round(childExams.reduce((s, e) => s + e.score, 0) / childExams.length)
-    : 0;
-  const childCourses = selectedChild?.courses || [];
-  const childPoints = selectedChild?.points || 0;
-  const childSubjects = selectedChild?.subjects || [];
+  const totalExamsCalculated = childSubjects.reduce((sum, subj) => sum + (subj.totalExamsTaken || 0), 0);
+  const avgScore = totalExamsCalculated > 0
+    ? Math.round(childSubjects.reduce((sum, subj) => sum + ((subj.averageScore || 0) * (subj.totalExamsTaken || 0)), 0) / totalExamsCalculated)
+    : (childOverview?.stats?.averageScore || 0);
+
+  const totalExams = childOverview?.stats?.totalExamsTaken || 0;
+  const childCoursesCount = childOverview?.stats?.enrolledCount || 0;
+  const childPoints = childOverview?.stats?.totalPoints || 0;
+  const recentAttempts = childOverview?.recentAttempts || [];
 
   // Handle link child
-  const handleLinkChild = () => {
+  const handleLinkChild = async () => {
     const code = linkCode.trim().toUpperCase();
     if (!code) {
       toast.error('Please enter a link code');
       return;
     }
-    if (!code.startsWith('FM-')) {
-      toast.error('Invalid code format. Must start with FM-');
-      return;
+    
+    try {
+      const res = await dispatch(linkChild(code)).unwrap();
+      toast.success(res?.message || 'Child linked successfully! 🔗');
+      setIsLinkModalOpen(false);
+      setLinkCode('');
+      
+      // Refresh children list
+      const kids = await dispatch(fetchChildrenList()).unwrap();
+      if (kids && kids.length > 0) {
+        // If no child was selected, select the newly added one
+        if (!selectedChildId) {
+          setSelectedChildId(kids[kids.length - 1]._id);
+        }
+      }
+    } catch (err) {
+      toast.error(err || 'Failed to link child');
     }
-    // Check if already linked
-    const alreadyLinked = children.some(c => c.linkCode === code);
-    if (alreadyLinked) {
-      toast.error('This child is already linked to your account');
-      return;
-    }
-    toast.success('Child linked successfully!');
-    setIsLinkModalOpen(false);
-    setLinkCode('');
   };
 
   const statCards = [
@@ -92,7 +129,7 @@ const ParentDashboard = () => {
     },
     {
       label: 'Exams',
-      value: childExams.length,
+      value: totalExams,
       icon: FiClipboard,
       iconColor: 'text-blue-400',
       bg: 'bg-blue-500/10',
@@ -100,7 +137,7 @@ const ParentDashboard = () => {
     },
     {
       label: 'Courses',
-      value: childCourses.length,
+      value: childCoursesCount,
       icon: FiBookOpen,
       iconColor: 'text-cyan-400',
       bg: 'bg-cyan-500/10',
@@ -135,7 +172,9 @@ const ParentDashboard = () => {
           <p className="text-base font-semibold text-gray-400">
             {greeting} {greetingEmoji}
           </p>
-          <h2 className={`text-2xl md:text-3xl font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{parentName}</h2>
+          <h2 className={`text-2xl md:text-3xl font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>
+            {profile?.user?.name || 'Parent'}
+          </h2>
           <span className="inline-flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full text-xs font-black bg-purple-500/10 border border-purple-500/20 text-purple-400 w-fit">
             <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
             Parent
@@ -145,220 +184,257 @@ const ParentDashboard = () => {
         {/* 2. MY CHILDREN SELECTOR */}
         <div className="flex flex-col gap-3">
           <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>My Children</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {children.map((child) => {
-              const isSelected = child.id === selectedChildId;
-              const childAvg = child.exams.length > 0
-                ? Math.round(child.exams.reduce((s, e) => s + e.score, 0) / child.exams.length)
-                : 0;
-              return (
-                <button
-                  key={child.id}
-                  onClick={() => setSelectedChildId(child.id)}
-                  className={`relative flex flex-col items-center justify-center gap-3 p-5 rounded-3xl border transition-all duration-300 cursor-pointer ${
-                    isSelected
-                      ? 'bg-emerald-500/10 border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.15)]'
-                      : isLight
-                        ? 'bg-white border-gray-200 text-[#0f172a] hover:border-gray-300'
-                        : 'bg-[#0c0d19]/60 border-gray-800/60 hover:border-gray-700 text-white'
-                  }`}
-                >
-                  {/* Avatar Circle */}
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white transition-all ${
-                    isSelected
-                      ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_0_20px_rgba(16,185,129,0.4)]'
-                      : 'bg-gradient-to-br from-gray-700 to-gray-800'
-                  }`}>
-                    {child.initials}
-                  </div>
-                  <span className={`text-sm font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{child.name}</span>
-                  {isSelected && (
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black">
-                      {childAvg}% avg
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 3. STATS GRID */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {statCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.label}
-                className={`flex flex-col items-center justify-center gap-2 p-4 rounded-3xl ${card.bg} border ${card.border} text-center shadow-md`}
+          {isLoading && children.length === 0 ? (
+            <div className="grid grid-cols-2 gap-4">
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+          ) : children.length === 0 ? (
+            <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl">
+              <p className="text-sm font-bold text-gray-500 mb-3">No children linked to your account yet.</p>
+              <button 
+                onClick={() => setIsLinkModalOpen(true)}
+                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-black text-white"
               >
-                <div className={`w-10 h-10 rounded-2xl ${card.bg} border ${card.border} flex items-center justify-center`}>
-                  <Icon className={`text-lg ${card.iconColor}`} />
-                </div>
-                <span className={`text-xl font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{card.value}</span>
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${card.iconColor}`}>{card.label}</span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* 4. SUBJECT PERFORMANCE */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>Subject Performance</h3>
-            <button
-              onClick={() => navigate('/parent/children')}
-              className="text-sm font-extrabold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
-            >
-              Full Report
-            </button>
-          </div>
-
-          {childSubjects.length === 0 ? (
-            <p className="text-sm text-gray-500 font-semibold py-2">No subjects enrolled yet.</p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {childSubjects.map((subj) => (
-                <div
-                  key={subj.name}
-                  className={`p-4 border rounded-2xl flex flex-col gap-3 ${
-                    isLight ? 'bg-white border-gray-200' : 'bg-[#0e101a] border-gray-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
-                      <FiBookOpen size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{subj.name}</span>
-                        <span className="text-sm font-black text-emerald-400">{subj.bestScore}%</span>
-                      </div>
-                      <span className="text-xs text-gray-500 font-semibold">Best score</span>
-                    </div>
-                  </div>
-                  {/* Progress bar */}
-                  <div className={`h-1.5 w-full rounded-full overflow-hidden ${isLight ? 'bg-gray-200' : 'bg-gray-900'}`}>
-                    <div
-                      className="h-full bg-emerald-500 rounded-full transition-all duration-700"
-                      style={{ width: `${subj.progress}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="relative rounded-3xl overflow-hidden p-5 bg-gradient-to-br from-emerald-600 to-teal-600 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between gap-4 relative z-10">
-            <div>
-              <p className="text-white/70 text-sm font-semibold">Overall Performance</p>
-              <h4 className="text-xl font-black text-white capitalize mt-0.5">{selectedChild?.name}</h4>
-              <p className="text-white/80 text-sm font-semibold mt-2 flex items-center gap-1.5">
-                {avgScore >= 70 ? '🏆 Great performance!' :
-                  avgScore >= 50 ? '📈 Improving steadily' : '😔 Needs improvement'}
-              </p>
-            </div>
-            <div className="relative shrink-0">
-              <svg viewBox="0 0 80 80" className="w-20 h-20">
-                <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="6" />
-                <circle
-                  cx="40" cy="40" r="32"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="6"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 32}`}
-                  strokeDashoffset={`${2 * Math.PI * 32 * (1 - avgScore / 100)}`}
-                  transform="rotate(-90 40 40)"
-                  className="transition-all duration-700"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-lg font-black text-white">{avgScore}%</span>
-                <span className="text-[9px] font-bold text-white/70 uppercase tracking-wider">Avg</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 6. RECENT EXAMS */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>Recent Exams</h3>
-            <button
-              onClick={() => navigate('/parent/children')}
-              className="text-sm font-extrabold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
-            >
-              View all
-            </button>
-          </div>
-
-          {childExams.length === 0 ? (
-            <div className={`flex items-center gap-3 p-4 border rounded-2xl ${
-              isLight ? 'bg-white border-gray-200 text-gray-500' : 'bg-[#0e101a] border-gray-800/60 text-gray-500'
-            }`}>
-              <FiClipboard size={18} />
-              <span className="text-sm font-semibold">No exams taken yet.</span>
+                Link a Child now
+              </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              {childExams.slice(0, 3).map((exam) => {
-                const isPassed = exam.status === 'Passed';
+            <div className="grid grid-cols-2 gap-4">
+              {children.map((child) => {
+                const isSelected = child._id === selectedChildId;
+                const initials = child.name ? child.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'ST';
+                
                 return (
-                  <div
-                    key={exam.id}
-                    className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${
-                      isLight ? 'bg-white border-gray-200 hover:border-gray-300' : 'bg-[#0c0d19]/60 border border-gray-800 hover:border-gray-700'
+                  <button
+                    key={child._id}
+                    onClick={() => setSelectedChildId(child._id)}
+                    className={`relative flex flex-col items-center justify-center gap-3 p-5 rounded-3xl border transition-all duration-300 cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-500/10 border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.15)]'
+                        : isLight
+                          ? 'bg-white border-gray-200 text-[#0f172a] hover:border-gray-300'
+                          : 'bg-[#0c0d19]/60 border-gray-800/60 hover:border-gray-700 text-white'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      {/* Score circle */}
-                      <div className={`relative w-12 h-12 shrink-0`}>
-                        <svg viewBox="0 0 48 48" className="w-12 h-12">
-                          <circle cx="24" cy="24" r="18" fill="none"
-                            stroke={isPassed ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}
-                            strokeWidth="4" />
-                          <circle cx="24" cy="24" r="18" fill="none"
-                            stroke={isPassed ? '#10b981' : '#ef4444'}
-                            strokeWidth="4"
-                            strokeLinecap="round"
-                            strokeDasharray={`${2 * Math.PI * 18}`}
-                            strokeDashoffset={`${2 * Math.PI * 18 * (1 - exam.score / 100)}`}
-                            transform="rotate(-90 24 24)"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className={`text-[11px] font-black ${isPassed ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {exam.score}%
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className={`text-sm font-bold capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{exam.subject}</p>
-                        <p className="text-xs text-gray-500 font-semibold">{exam.date}</p>
-                      </div>
+                    {/* Avatar Circle */}
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white transition-all ${
+                      isSelected
+                        ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_0_20px_rgba(16,185,129,0.4)]'
+                        : 'bg-gradient-to-br from-gray-700 to-gray-800'
+                    }`}>
+                      {initials}
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className={`text-sm font-extrabold ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>
-                        {exam.score}/{exam.total || 100}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border flex items-center gap-1 ${
-                        isPassed
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                          : 'bg-red-500/10 border-red-500/20 text-red-400'
-                      }`}>
-                        {isPassed ? '✓' : '✗'} {exam.status}
-                      </span>
-                    </div>
-                  </div>
+                    <span className={`text-sm font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{child.name}</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black">
+                      {isSelected ? avgScore : (child.avgScore || 0)}% avg
+                    </span>
+                  </button>
                 );
               })}
             </div>
           )}
         </div>
+
+        {/* 3. STATS GRID */}
+        {selectedChildId && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {statCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={card.label}
+                  className={`flex flex-col items-center justify-center gap-2 p-4 rounded-3xl ${card.bg} border ${card.border} text-center shadow-md`}
+                >
+                  <div className={`w-10 h-10 rounded-2xl ${card.bg} border ${card.border} flex items-center justify-center`}>
+                    <Icon className={`text-lg ${card.iconColor}`} />
+                  </div>
+                  <span className={`text-xl font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{card.value}</span>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${card.iconColor}`}>{card.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* 4. SUBJECT PERFORMANCE */}
+        {selectedChildId && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>Subject Performance</h3>
+              <button
+                onClick={() => navigate('/parent/children')}
+                className="text-sm font-extrabold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
+              >
+                Full Report
+              </button>
+            </div>
+
+            {isLoading && childSubjects.length === 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <TableRowSkeleton />
+                <TableRowSkeleton />
+              </div>
+            ) : childSubjects.length === 0 ? (
+              <p className="text-sm text-gray-500 font-semibold py-2">No subjects enrolled yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {childSubjects.map((subj) => {
+                  const subjectData = subj.subject || {};
+                  return (
+                    <div
+                      key={subj._id}
+                      className={`p-4 border rounded-2xl flex flex-col gap-3 ${
+                        isLight ? 'bg-white border-gray-200' : 'bg-[#0e101a] border-gray-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                          <FiBookOpen size={16} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-sm font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{subjectData.name}</span>
+                            <span className="text-sm font-black text-emerald-400">{subj.bestScore || 0}%</span>
+                          </div>
+                          <span className="text-xs text-gray-500 font-semibold">Best score</span>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      <div className={`h-1.5 w-full rounded-full overflow-hidden ${isLight ? 'bg-gray-200' : 'bg-gray-900'}`}>
+                        <div
+                          className="h-full bg-emerald-500 rounded-full transition-all duration-700"
+                          style={{ width: `${subj.progressPercent || 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {selectedChildId && (
+          <div className="relative rounded-3xl overflow-hidden p-5 bg-gradient-to-br from-emerald-600 to-teal-600 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full pointer-events-none" />
+            <div className="flex items-center justify-between gap-4 relative z-10">
+              <div>
+                <p className="text-white/70 text-sm font-semibold">Overall Performance</p>
+                <h4 className="text-xl font-black text-white capitalize mt-0.5">{selectedChild?.name}</h4>
+                <p className="text-white/80 text-sm font-semibold mt-2 flex items-center gap-1.5">
+                  {avgScore >= 70 ? '🏆 Great performance!' :
+                    avgScore >= 50 ? '📈 Improving steadily' : '😔 Needs improvement'}
+                </p>
+              </div>
+              <div className="relative shrink-0">
+                <svg viewBox="0 0 80 80" className="w-20 h-20">
+                  <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="6" />
+                  <circle
+                    cx="40" cy="40" r="32"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 32}`}
+                    strokeDashoffset={`${2 * Math.PI * 32 * (1 - avgScore / 100)}`}
+                    transform="rotate(-90 40 40)"
+                    className="transition-all duration-700"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-lg font-black text-white">{avgScore}%</span>
+                  <span className="text-[9px] font-bold text-white/70 uppercase tracking-wider">Avg</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. RECENT EXAMS */}
+        {selectedChildId && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>Recent Exams</h3>
+              <button
+                onClick={() => navigate('/parent/children')}
+                className="text-sm font-extrabold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
+              >
+                View all
+              </button>
+            </div>
+
+            {isLoading && recentAttempts.length === 0 ? (
+              <TableRowSkeleton />
+            ) : recentAttempts.length === 0 ? (
+              <div className={`flex items-center gap-3 p-4 border rounded-2xl ${
+                isLight ? 'bg-white border-gray-200 text-gray-500' : 'bg-[#0e101a] border-gray-800/60 text-gray-500'
+              }`}>
+                <FiClipboard size={18} />
+                <span className="text-sm font-semibold">No exams taken yet.</span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {recentAttempts.map((exam) => {
+                  const isPassed = exam.passed;
+                  const formattedDate = exam.createdAt 
+                    ? new Date(exam.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '';
+                  return (
+                    <div
+                      key={exam._id}
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${
+                        isLight ? 'bg-white border-gray-200 hover:border-gray-300' : 'bg-[#0c0d19]/60 border border-gray-800 hover:border-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Score circle */}
+                        <div className={`relative w-12 h-12 shrink-0`}>
+                          <svg viewBox="0 0 48 48" className="w-12 h-12">
+                            <circle cx="24" cy="24" r="18" fill="none"
+                              stroke={isPassed ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}
+                              strokeWidth="4" />
+                            <circle cx="24" cy="24" r="18" fill="none"
+                              stroke={isPassed ? '#10b981' : '#ef4444'}
+                              strokeWidth="4"
+                              strokeLinecap="round"
+                              strokeDasharray={`${2 * Math.PI * 18}`}
+                              strokeDashoffset={`${2 * Math.PI * 18 * (1 - (exam.score || 0) / 100)}`}
+                              transform="rotate(-90 24 24)"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className={`text-[11px] font-black ${isPassed ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {exam.score || 0}%
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className={`text-sm font-bold capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>
+                            {exam.subject?.name || 'Exam'}
+                          </p>
+                          <p className="text-xs text-gray-500 font-semibold">{formattedDate}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`text-sm font-extrabold ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>
+                          {exam.correctAnswers || 0}/{exam.totalQuestions || 0}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border flex items-center gap-1 ${
+                          isPassed
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                            : 'bg-red-500/10 border-red-500/20 text-red-400'
+                        }`}>
+                          {isPassed ? '✓' : '✗'} {isPassed ? 'Passed' : 'Failed'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* FLOATING LINK CHILD BUTTON */}
@@ -375,6 +451,7 @@ const ParentDashboard = () => {
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
           onClick={() => {
+            if (isActionLoading) return;
             setIsLinkModalOpen(false);
             setLinkCode('');
           }}
@@ -387,6 +464,7 @@ const ParentDashboard = () => {
           >
             {/* Close Button */}
             <button
+              disabled={isActionLoading}
               onClick={() => {
                 setIsLinkModalOpen(false);
                 setLinkCode('');
@@ -420,6 +498,7 @@ const ParentDashboard = () => {
                 <FiHash size={16} className="text-purple-400 shrink-0" />
                 <input
                   type="text"
+                  disabled={isActionLoading}
                   value={linkCode}
                   onChange={(e) => setLinkCode(e.target.value.toUpperCase())}
                   placeholder="FM-XXXXXX"
@@ -435,6 +514,7 @@ const ParentDashboard = () => {
             {/* Buttons */}
             <div className="flex items-center gap-3">
               <button
+                disabled={isActionLoading}
                 onClick={() => {
                   setIsLinkModalOpen(false);
                   setLinkCode('');
@@ -446,10 +526,11 @@ const ParentDashboard = () => {
                 Cancel
               </button>
               <button
+                disabled={isActionLoading}
                 onClick={handleLinkChild}
-                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-black text-sm shadow-[0_4px_20px_rgba(168,85,247,0.3)] active:scale-95 transition-all cursor-pointer"
+                className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-black text-sm shadow-[0_4px_20px_rgba(168,85,247,0.3)] active:scale-95 transition-all cursor-pointer disabled:opacity-55"
               >
-                Link
+                {isActionLoading ? 'Linking...' : 'Link'}
               </button>
             </div>
           </div>

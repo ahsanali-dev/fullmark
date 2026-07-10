@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDispatch, useSelector } from 'react-redux';
 import { 
   FiBookOpen, 
   FiBook, 
@@ -17,79 +18,129 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { coursesData } from '../../data/coursesData';
+import { fetchBrowseSubjects, validateCoupon, enrollWithCoupon } from '../../redux/slices/studentSlice';
 
 const CourseDetails = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { browseSubjects, isLoading, isActionLoading } = useSelector((state) => state.student);
 
   const [course, setCourse] = useState(null);
-  const [enrolledCourses, setEnrolledCourses] = useState([]);
-
-  // Modal enrollment states
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [couponCode, setCouponCode] = useState('');
-  const [isCouponApplied, setIsCouponApplied] = useState(false);
+  const [validatedCouponData, setValidatedCouponData] = useState(null);
 
+  // Fetch subjects if empty
   useEffect(() => {
-    // Lookup course from shared database
-    const found = coursesData.find(c => c.id === courseId);
-    if (!found) {
-      toast.error('Course not found!');
-      navigate('/student/courses');
-      return;
+    if (!browseSubjects || browseSubjects.length === 0) {
+      dispatch(fetchBrowseSubjects());
     }
-    setCourse(found);
+  }, [dispatch, browseSubjects]);
 
-    const storedEnrolled = localStorage.getItem('student_enrolled_courses');
-    if (storedEnrolled) {
-      setEnrolledCourses(JSON.parse(storedEnrolled));
+  // Find the selected course
+  useEffect(() => {
+    if (browseSubjects && browseSubjects.length > 0) {
+      const found = browseSubjects.find(c => c._id === courseId);
+      if (found) {
+        setCourse(found);
+      }
     }
-  }, [courseId, navigate]);
+  }, [courseId, browseSubjects]);
 
   const handleEnrollClick = () => {
     setCouponCode('');
-    setIsCouponApplied(false);
+    setValidatedCouponData(null);
     setIsEnrollModalOpen(true);
   };
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
-      toast.error('Please enter a coupon code first.');
+      toast.error('Please enter a coupon code.');
       return;
     }
-    if (couponCode.toUpperCase().startsWith('FM-')) {
-      setIsCouponApplied(true);
-      toast.success('Coupon Applied! 100% Discount Activated. 🎁');
-    } else {
-      toast.error('Invalid coupon code. Try entering one starting with "FM-"');
+    const myToast = toast.loading('Validating coupon...');
+    try {
+      const res = await dispatch(validateCoupon(couponCode)).unwrap();
+      toast.dismiss(myToast);
+      setValidatedCouponData(res);
+      toast.success('Coupon validation successful! 🎁');
+    } catch (err) {
+      toast.dismiss(myToast);
+      toast.error(err || 'Invalid or expired coupon code.');
+      setValidatedCouponData(null);
     }
   };
 
-  const handleConfirmEnrollment = () => {
+  const handleConfirmEnrollment = async () => {
     if (!course) return;
-    
-    const updated = [...enrolledCourses, course.id];
-    setEnrolledCourses(updated);
-    localStorage.setItem('student_enrolled_courses', JSON.stringify(updated));
-    toast.success(`Successfully enrolled in ${course.title}! 🎉`);
-    
-    setIsEnrollModalOpen(false);
-    
-    // Trigger update
-    window.dispatchEvent(new Event('profileUpdate'));
+
+    const isFree = course.price === 0;
+    if (!isFree && !validatedCouponData) {
+      toast.error('Please validate a coupon first.');
+      return;
+    }
+
+    const myToast = toast.loading(isFree ? 'Enrolling...' : 'Processing purchase...');
+    try {
+      await dispatch(enrollWithCoupon({
+        subjectId: course._id,
+        couponCode: isFree ? '' : couponCode,
+      })).unwrap();
+
+      toast.dismiss(myToast);
+      toast.success(`Successfully enrolled in ${course.name}! 🎉`);
+      setIsEnrollModalOpen(false);
+      setValidatedCouponData(null);
+      // Refresh browse catalog to update status
+      dispatch(fetchBrowseSubjects());
+    } catch (err) {
+      toast.dismiss(myToast);
+      toast.error(err || 'Failed to enroll.');
+    }
   };
 
-  if (!course) return null;
+  if (isLoading && !course) {
+    return (
+      <DashboardLayout
+        role="student"
+        activeTab="courses"
+        title="Loading Course..."
+        showBackButton={true}
+        onBackClick={() => navigate('/student/courses')}
+      >
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="w-12 h-12 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
-  const isEnrolled = enrolledCourses.includes(course.id);
+  if (!course) {
+    return (
+      <DashboardLayout
+        role="student"
+        activeTab="courses"
+        title="Course Not Found"
+        showBackButton={true}
+        onBackClick={() => navigate('/student/courses')}
+      >
+        <div className="p-8 text-center text-gray-500 font-bold">
+          Course not found. It might be unavailable.
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const isEnrolled = course.isEnrolled;
 
   return (
     <DashboardLayout
       role="student"
       activeTab="courses"
-      title={course.title}
-      subtitle={`Instructor: ${course.instructor}`}
+      title={course.name}
+      subtitle={course.teacher ? `Instructor: ${course.teacher.name}` : ''}
       showBackButton={true}
       onBackClick={() => navigate('/student/courses')}
       isModalOpen={isEnrollModalOpen}
@@ -103,7 +154,7 @@ const CourseDetails = () => {
             </div>
             <div className="flex flex-col text-left">
               <h3 className="text-xl font-black text-white capitalize leading-tight">
-                {course.title}
+                {course.name}
               </h3>
               <p className="text-sm text-gray-500 font-semibold mt-1.5 leading-normal">
                 {course.description}
@@ -116,13 +167,13 @@ const CourseDetails = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-5 rounded-2xl bg-gray-900/30 border border-gray-800/80 flex flex-col items-center justify-center text-center gap-2">
             <FiBook className="text-purple-400 text-lg" />
-            <span className="text-base font-black text-white">{course.lessonsCount}</span>
+            <span className="text-base font-black text-white">{course.totalLessons || 0}</span>
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Lessons</span>
           </div>
           
           <div className="p-5 rounded-2xl bg-gray-900/30 border border-gray-800/80 flex flex-col items-center justify-center text-center gap-2">
             <FiHelpCircle className="text-blue-400 text-lg" />
-            <span className="text-base font-black text-white">{course.questionsCount}</span>
+            <span className="text-base font-black text-white">{course.totalQuestions || 0}</span>
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Questions</span>
           </div>
 
@@ -136,25 +187,27 @@ const CourseDetails = () => {
 
           <div className="p-5 rounded-2xl bg-gray-900/30 border border-gray-800/80 flex flex-col items-center justify-center text-center gap-2">
             <FiUsers className="text-emerald-400 text-lg" />
-            <span className="text-base font-black text-white">{course.studentsCount}</span>
+            <span className="text-base font-black text-white">{course.totalStudents || 0}</span>
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Students</span>
           </div>
         </div>
 
         {/* Instructor Section */}
-        <div className="p-5 rounded-2xl bg-gray-900/30 border border-gray-800/80 flex items-center gap-4 text-left">
-          <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
-            <FiUser className="text-lg" />
+        {course.teacher && (
+          <div className="p-5 rounded-2xl bg-gray-900/30 border border-gray-800/80 flex items-center gap-4 text-left">
+            <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+              <FiUser className="text-lg" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-black text-white capitalize leading-tight">
+                {course.teacher.name}
+              </span>
+              <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-0.5">
+                Course Instructor
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-black text-white capitalize leading-tight">
-              {course.instructor}
-            </span>
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-0.5">
-              Course Instructor
-            </span>
-          </div>
-        </div>
+        )}
 
         {/* About Course Section */}
         <div className="flex flex-col gap-2 text-left">
@@ -167,7 +220,7 @@ const CourseDetails = () => {
         {/* Footer CTA Button */}
         {isEnrolled ? (
           <button
-            onClick={() => navigate(`/student/courses/${course.id}/lessons`)}
+            onClick={() => navigate(`/student/courses/${course._id}/lessons`)}
             className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-sm font-black text-white transition-all shadow-[0_4px_15px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 cursor-pointer"
           >
             <FiPlay className="text-sm" />
@@ -188,7 +241,9 @@ const CourseDetails = () => {
         {isEnrollModalOpen && (
           <div 
             className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
-            onClick={() => setIsEnrollModalOpen(false)}
+            onClick={() => {
+              if (!isActionLoading) setIsEnrollModalOpen(false);
+            }}
           >
             <motion.div 
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
@@ -202,8 +257,9 @@ const CourseDetails = () => {
               
               {/* Close Button */}
               <button 
+                disabled={isActionLoading}
                 onClick={() => setIsEnrollModalOpen(false)}
-                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
               >
                 <FiX size={20} />
               </button>
@@ -215,22 +271,22 @@ const CourseDetails = () => {
                 </div>
                 <div className="flex flex-col text-left">
                   <h3 className="text-xl font-black text-white capitalize leading-tight">
-                    {course.title}
+                    {course.name}
                   </h3>
-                  {course.price === 0 || isCouponApplied ? (
+                  {course.price === 0 || validatedCouponData ? (
                     <span className="text-xs font-bold text-emerald-400 mt-1 leading-none">
-                      Free course
+                      Free / Covered by coupon
                     </span>
                   ) : (
                     <span className="text-xs font-bold text-yellow-500 mt-1 leading-none">
-                      Price: {course.price}
+                      Price: {course.price} Points
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Coupon inputs or Free Banners */}
-              {course.price === 0 || isCouponApplied ? (
+              {course.price === 0 ? (
                 <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 flex items-center gap-3 mb-6">
                   <FiLock className="text-lg shrink-0" />
                   <span className="text-xs font-bold">This course is free — no coupon needed.</span>
@@ -247,34 +303,46 @@ const CourseDetails = () => {
                         type="text"
                         placeholder="FM-XXXXXXXXX"
                         value={couponCode}
+                        disabled={isActionLoading || validatedCouponData}
                         onChange={(e) => setCouponCode(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-950/50 border border-gray-800 text-xs font-semibold text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-gray-600 uppercase"
                       />
                     </div>
-                    <button 
-                      onClick={handleApplyCoupon}
-                      className="w-12 h-10 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-gray-950 flex items-center justify-center transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)] hover:scale-105 cursor-pointer shrink-0"
-                    >
-                      <FiSearch size={16} />
-                    </button>
+                    {!validatedCouponData && (
+                      <button 
+                        onClick={handleApplyCoupon}
+                        disabled={isActionLoading}
+                        className="w-12 h-10 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-gray-950 flex items-center justify-center transition-all shadow-[0_0_15px_rgba(234,179,8,0.2)] hover:scale-105 cursor-pointer shrink-0 disabled:opacity-50"
+                      >
+                        <FiSearch size={16} />
+                      </button>
+                    )}
                   </div>
+                  {validatedCouponData && (
+                    <div className="p-3.5 mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex flex-col gap-1">
+                      <div>Coupon Applied successfully!</div>
+                      <div className="text-gray-400 font-semibold mt-1">Remaining Balance: {validatedCouponData.remainingBalance} Pts</div>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Confirm action button */}
-              {course.price === 0 || isCouponApplied ? (
+              {course.price === 0 || validatedCouponData ? (
                 <button
                   onClick={handleConfirmEnrollment}
-                  className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_15px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={isActionLoading}
+                  className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_15px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <span className="text-sm">+</span> Confirm Enrollment
+                  {isActionLoading ? 'Processing...' : 'Confirm Enrollment'}
                 </button>
               ) : (
                 <button
                   onClick={handleConfirmEnrollment}
-                  className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_15px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={true}
+                  className="w-full py-4 rounded-2xl bg-gray-850 text-xs font-black text-gray-500 flex items-center justify-center gap-2 cursor-not-allowed border border-gray-800/80"
                 >
-                  <FiShoppingBag className="text-sm" /> Confirm Purchase
+                  <FiShoppingBag className="text-sm" /> Enter valid coupon to purchase
                 </button>
               )}
             </motion.div>

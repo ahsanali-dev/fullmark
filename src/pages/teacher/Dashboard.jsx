@@ -26,42 +26,45 @@ import ModalWrapper from '../../components/shared/ModalWrapper';
 import { QuestionSchema } from '../../schemas/questionSchema';
 import { ExamSchema } from '../../schemas/examSchema';
 
-import {
-  getStoredSubjects,
-  getStoredQuestions,
-  setStoredQuestions,
-  getStoredExams,
-  setStoredExams
-} from './store';
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+  fetchTeacherStats, 
+  fetchTeacherSubjects, 
+  fetchQuestions, 
+  fetchExams,
+  createQuestion,
+  extractQuestionsFromPdf
+} from '../../redux/slices/teacherSlice';
+import { DashboardSkeleton } from '../../components/shared/SkeletonLoading';
 
 // Schemas imported from src/schemas/
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  // Load from store
-  const [subjects, setSubjects] = useState(() => getStoredSubjects());
-  const [questions, setQuestions] = useState(() => getStoredQuestions());
-  const [exams, setExams] = useState(() => getStoredExams());
+  // Load from Redux
+  const { subjects = [], questions = [], exams = [], stats = null, isLoading } = useSelector((state) => state.teacher);
 
-  // Listen to store updates
   useEffect(() => {
-    const handleSync = () => {
-      setSubjects(getStoredSubjects());
-      setQuestions(getStoredQuestions());
-      setExams(getStoredExams());
-    };
-    window.addEventListener('storage', handleSync);
-    return () => window.removeEventListener('storage', handleSync);
-  }, []);
+    dispatch(fetchTeacherStats());
+    dispatch(fetchTeacherSubjects());
+    dispatch(fetchQuestions());
+    dispatch(fetchExams());
+  }, [dispatch]);
 
   // Update counts in subjects
-  const subjectsWithCounts = subjects.map(sub => ({
-    ...sub,
-    questionsCount: questions.filter(q => q.subjectId === sub.id).length,
-    examsCount: exams.filter(ex => ex.subjectId === sub.id).length,
-    studentsCount: sub.title === 'test 2' ? 0 : 0
-  }));
+  const subjectsWithCounts = subjects.map(sub => {
+    const subId = sub._id || sub.id;
+    return {
+      ...sub,
+      id: subId,
+      title: sub.name || sub.title,
+      questionsCount: sub.questionsCount ?? questions.filter(q => (q.subject?._id || q.subject || q.subjectId) === subId).length,
+      examsCount: sub.examsCount ?? exams.filter(ex => (ex.subject?._id || ex.subject || ex.subjectId) === subId).length,
+      studentsCount: sub.studentsCount ?? 0
+    };
+  });
 
   // Modal States
   const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
@@ -74,44 +77,42 @@ const TeacherDashboard = () => {
   const [selectedPdfSubject, setSelectedPdfSubject] = useState('');
   const [pdfFile, setPdfFile] = useState(null);
 
-  const handleAddQuestion = (values, { resetForm }) => {
-    const newQ = {
-      id: `q-${Date.now()}`,
-      subjectId: values.subjectId,
-      text: values.text,
-      optionA: values.optionA,
-      optionB: values.optionB,
-      optionC: values.optionC,
-      optionD: values.optionD,
-      correctOption: values.correctOption
-    };
-    const updated = [newQ, ...questions];
-    setQuestions(updated);
-    setStoredQuestions(updated);
-    toast.success('Question added successfully!');
-    setIsAddQuestionOpen(false);
-    resetForm();
+  const handleAddQuestion = (values, { setSubmitting, resetForm }) => {
+    const optionMap = { A: 0, B: 1, C: 2, D: 3 };
+    const correctIdx = optionMap[values.correctOption] ?? 0;
+    
+    toast.promise(
+      dispatch(createQuestion({
+        subjectId: values.subjectId,
+        text: values.text,
+        options: [values.optionA, values.optionB, values.optionC, values.optionD],
+        correctOption: correctIdx,
+      })).unwrap(),
+      {
+        loading: 'Creating question...',
+        success: () => {
+          setIsAddQuestionOpen(false);
+          resetForm();
+          dispatch(fetchTeacherSubjects());
+          dispatch(fetchQuestions());
+          return 'Question added successfully!';
+        },
+        error: (err) => err || 'Failed to add question',
+      }
+    );
   };
 
   const handleAddExam = (values, { resetForm }) => {
-    const newExam = {
-      id: `ex-${Date.now()}`,
-      title: values.title,
-      subjectId: values.subjectId,
-      duration: values.duration,
-      date: values.date,
-      questionsCount: values.questionsCount,
-      status: 'upcoming'
-    };
-    const updated = [newExam, ...exams];
-    setExams(updated);
-    setStoredExams(updated);
-    toast.success('Exam scheduled successfully!');
+    if (!values.subjectId) {
+      toast.error('Please select a subject');
+      return;
+    }
     setIsAddExamOpen(false);
     resetForm();
+    navigate(`/teacher/subjects/${values.subjectId}/create-exam`);
   };
 
-  const handlePdfUploadSubmit = (e) => {
+  const handlePdfUploadSubmit = async (e) => {
     e.preventDefault();
     if (!pdfFile) {
       toast.error('Please select a PDF file first');
@@ -123,34 +124,51 @@ const TeacherDashboard = () => {
     }
 
     setPdfUploading(true);
-    setPdfProgress(0);
+    setPdfProgress(10);
 
-    const interval = setInterval(() => {
-      setPdfProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            const generatedQ = [
-              { id: `q-pdf-${Date.now()}-1`, subjectId: selectedPdfSubject, text: 'What is the primary function of DNA replication?', optionA: 'Synthesis of proteins', optionB: 'Copying genetic information', optionC: 'Creating cellular energy', optionD: 'Dividing cells', correctOption: 'B' },
-              { id: `q-pdf-${Date.now()}-2`, subjectId: selectedPdfSubject, text: 'Identify the element with atomic number 1 from the options:', optionA: 'Helium', optionB: 'Oxygen', optionC: 'Hydrogen', optionD: 'Carbon', correctOption: 'C' }
-            ];
-            const updated = [...generatedQ, ...questions];
-            setQuestions(updated);
-            setStoredQuestions(updated);
-            setPdfUploading(false);
-            setIsUploadPDFOpen(false);
-            setPdfFile(null);
-            setSelectedPdfSubject('');
-            toast.success('PDF uploaded and 2 questions extracted successfully!');
-          }, 600);
-          return 100;
-        }
-        return prev + 20;
-      });
-    }, 150);
+    const progressInterval = setInterval(() => {
+      setPdfProgress(prev => (prev < 90 ? prev + 10 : prev));
+    }, 300);
+
+    const loadingToast = toast.loading('Extracting questions from PDF...');
+    try {
+      const res = await dispatch(extractQuestionsFromPdf({
+        subjectId: selectedPdfSubject,
+        pdfFile: pdfFile
+      })).unwrap();
+
+      clearInterval(progressInterval);
+      setPdfProgress(100);
+      
+      toast.success(res.message || 'PDF uploaded and questions extracted successfully!', { id: loadingToast });
+      setPdfUploading(false);
+      setIsUploadPDFOpen(false);
+      setPdfFile(null);
+      setSelectedPdfSubject('');
+      dispatch(fetchQuestions());
+      dispatch(fetchTeacherSubjects());
+    } catch (err) {
+      clearInterval(progressInterval);
+      setPdfUploading(false);
+      toast.error(err || 'Failed to extract questions from PDF', { id: loadingToast });
+    }
   };
 
   const isModalActive = isAddQuestionOpen || isAddExamOpen || isUploadPDFOpen;
+
+  if (isLoading && subjects.length === 0) {
+    return (
+      <DashboardLayout
+        role="teacher"
+        activeTab="dashboard"
+        title="Teacher Panel"
+        subtitle="Teacher Portal Overview 🧑‍🏫"
+        isModalOpen={false}
+      >
+        <DashboardSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout
@@ -227,7 +245,7 @@ const TeacherDashboard = () => {
             </button>
 
             <button 
-              onClick={() => setIsAddQuestionOpen(true)}
+              onClick={() => navigate('/teacher/subjects/select/add-question')}
               className="p-4 bg-[#0e101a] border border-gray-800 rounded-3xl flex flex-col items-center justify-center text-center gap-3 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.3)] hover:bg-[#121324] hover:border-blue-500/20 group cursor-pointer"
             >
               <div className="w-11 h-11 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 transition-transform duration-300 group-hover:scale-110">
@@ -237,7 +255,7 @@ const TeacherDashboard = () => {
             </button>
 
             <button 
-              onClick={() => setIsAddExamOpen(true)}
+              onClick={() => navigate('/teacher/subjects/select/create-exam')}
               className="p-4 bg-[#0e101a] border border-gray-800 rounded-3xl flex flex-col items-center justify-center text-center gap-3 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.3)] hover:bg-[#121324] hover:border-blue-500/20 group cursor-pointer"
             >
               <div className="w-11 h-11 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 transition-transform duration-300 group-hover:scale-110">
@@ -269,7 +287,7 @@ const TeacherDashboard = () => {
               {subjectsWithCounts.map((sub) => (
                 <div
                   key={sub.id}
-                  onClick={() => navigate(`/teacher/questions?subject=${sub.id}`)}
+                  onClick={() => navigate(`/teacher/subjects/${sub.id}`)}
                   className="p-5 bg-[#0e101a]/95 border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:bg-[#121424] hover:border-blue-500/35 hover:translate-y-[-2px] cursor-pointer group"
                 >
                   <div className="flex justify-between items-start">
@@ -363,7 +381,7 @@ const TeacherDashboard = () => {
                           >
                             <option value="" className="bg-[#0b0c16] text-gray-500">Select Subject</option>
                             {subjects.map(s => (
-                              <option key={s.id} value={s.id} className="bg-[#0b0c16] text-white">{s.title}</option>
+                              <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0b0c16] text-white">{s.title || s.name}</option>
                             ))}
                           </select>
                         </div>
@@ -411,14 +429,14 @@ const TeacherDashboard = () => {
                       </div>
                     </div>
 
-                    <button
+                    <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-4 mt-2 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer disabled:opacity-55"
+                      roleColor="teacher"
+                      icon={FiCheck}
                     >
-                      <span>Create Question</span>
-                      <FiCheck className="text-base" />
-                    </button>
+                      Create Question
+                    </Button>
                   </Form>
                 )}
               </Formik>
@@ -492,7 +510,7 @@ const TeacherDashboard = () => {
                           >
                             <option value="" className="bg-[#0b0c16] text-gray-500">Select Subject</option>
                             {subjects.map(s => (
-                              <option key={s.id} value={s.id} className="bg-[#0b0c16] text-white">{s.title}</option>
+                              <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0b0c16] text-white">{s.title || s.name}</option>
                             ))}
                           </select>
                         </div>
@@ -528,14 +546,14 @@ const TeacherDashboard = () => {
                       roleColor="teacher"
                     />
 
-                    <button
+                    <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-4 mt-2 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer disabled:opacity-55"
+                      roleColor="teacher"
+                      icon={FiCheck}
                     >
-                      <span>Schedule Exam</span>
-                      <FiCheck className="text-base" />
-                    </button>
+                      Schedule Exam
+                    </Button>
                   </Form>
                 )}
               </Formik>
@@ -591,7 +609,7 @@ const TeacherDashboard = () => {
                       >
                         <option value="" className="bg-[#0b0c16] text-gray-500">Select Subject</option>
                         {subjects.map(s => (
-                          <option key={s.id} value={s.id} className="bg-[#0b0c16] text-white">{s.title}</option>
+                          <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0b0c16] text-white">{s.title || s.name}</option>
                         ))}
                       </select>
                     </div>

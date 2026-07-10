@@ -26,11 +26,8 @@ import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 
-import {
-  getStoredSubjects,
-  getStoredExams,
-  setStoredExams
-} from './store';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTeacherSubjects, fetchExams, createExam, deleteExam } from '../../redux/slices/teacherSlice';
 
 const ExamSchema = Yup.object().shape({
   title: Yup.string().min(3, 'Title must be at least 3 characters').required('Exam title is required'),
@@ -40,25 +37,129 @@ const ExamSchema = Yup.object().shape({
   questionsCount: Yup.number().min(1, 'Select at least 1 question').required('Number of questions is required')
 });
 
+const SkeletonCard = () => (
+  <div className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] flex flex-col gap-4 animate-pulse">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-xl bg-gray-805 shrink-0" style={{ backgroundColor: '#1d2030' }} />
+        <div className="flex flex-col gap-2">
+          <div className="h-4 w-32 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
+          <div className="h-3 w-20 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
+        </div>
+      </div>
+      <div className="h-6 w-16 bg-gray-805 rounded-full" style={{ backgroundColor: '#1d2030' }} />
+    </div>
+    <div className="flex gap-3 mt-2">
+      <div className="h-3 w-12 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
+      <div className="h-3 w-12 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
+    </div>
+    <div className="grid grid-cols-4 gap-2 mt-2">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="h-12 bg-gray-850 rounded-xl" style={{ backgroundColor: '#161826' }} />
+      ))}
+    </div>
+    <div className="h-0.5 bg-gray-850 rounded" style={{ backgroundColor: '#161826' }} />
+    <div className="flex gap-3">
+      <div className="h-10 flex-1 bg-gray-805 rounded-2xl" style={{ backgroundColor: '#1d2030' }} />
+      <div className="h-10 w-10 bg-gray-805 rounded-2xl" style={{ backgroundColor: '#1d2030' }} />
+    </div>
+  </div>
+);
+
+const generateMockResults = (examId, examTitle, passingScore = 60) => {
+  let seed = 0;
+  if (examId) {
+    for (let i = 0; i < examId.length; i++) {
+      seed = (seed << 5) - seed + examId.charCodeAt(i);
+      seed |= 0;
+    }
+  }
+
+  const random = () => {
+    const x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+  };
+
+  const studentNames = [
+    'Ahmad Ali',
+    'Fatima Al-Mutairi',
+    'Sarah Mansoor',
+    'Khalid Yusuf',
+    'Omar Farooq',
+    'Zainab Ibrahim',
+    'Mustafa Saeed',
+    'Layla Hassan',
+    'Bilal Qureshi',
+    'Yasmine Farhat',
+    'Tareq Masood',
+    'Nour Al-Huda'
+  ];
+
+  const numSubmissions = Math.floor(random() * 6) + 6; // 6 to 11 submissions
+  const shuffledNames = [...studentNames].sort(() => random() - 0.5);
+
+  const attempts = [];
+  let totalScore = 0;
+  let highScore = 0;
+  let lowScore = 100;
+
+  for (let i = 0; i < numSubmissions; i++) {
+    const score = Math.floor(random() * 41) + 55; // score between 55 and 96
+    const timeTaken = Math.floor(random() * 21) + 10; // 10 to 30 mins
+    const completedAt = new Date(Date.now() - (i * 2 + 1) * 24 * 60 * 60 * 1000).toLocaleDateString();
+    const passed = score >= passingScore;
+
+    totalScore += score;
+    if (score > highScore) highScore = score;
+    if (score < lowScore) lowScore = score;
+
+    attempts.push({
+      id: `attempt-${examId}-${i}`,
+      studentName: shuffledNames[i % shuffledNames.length],
+      score,
+      timeTaken,
+      completedAt,
+      passed
+    });
+  }
+
+  const avgScore = Math.round(totalScore / numSubmissions);
+
+  return {
+    attempts,
+    stats: {
+      avgScore: `${avgScore}%`,
+      highScore: `${highScore}%`,
+      lowScore: `${lowScore}%`,
+      submitted: `${numSubmissions}/${studentNames.length}`,
+      submissionRate: `${Math.round((numSubmissions / studentNames.length) * 100)}%`
+    }
+  };
+};
+
 const TeacherExams = () => {
   const navigate = useNavigate();
-  const [subjects, setSubjects] = useState(() => getStoredSubjects());
-  const [exams, setExams] = useState(() => getStoredExams());
+  const dispatch = useDispatch();
+
+  const { subjects = [], exams = [], isLoading } = useSelector((state) => state.teacher);
 
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddExamOpen, setIsAddExamOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [isDeletingId, setIsDeletingId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingExam, setDeletingExam] = useState(null);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+  const [resultsExam, setResultsExam] = useState(null);
+  const [resultsSearchQuery, setResultsSearchQuery] = useState('');
+  const [resultsFilter, setResultsFilter] = useState('all');
 
-  // Sync state from store
+  // Sync state from Redux on mount
   useEffect(() => {
-    const handleSync = () => {
-      setSubjects(getStoredSubjects());
-      setExams(getStoredExams());
-    };
-    window.addEventListener('storage', handleSync);
-    return () => window.removeEventListener('storage', handleSync);
-  }, []);
+    dispatch(fetchTeacherSubjects());
+    dispatch(fetchExams());
+  }, [dispatch]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -68,34 +169,55 @@ const TeacherExams = () => {
   }, []);
 
   const handleAddExam = (values, { resetForm }) => {
-    const newExam = {
-      id: `ex-${Date.now()}`,
+    const payload = {
       title: values.title,
       subjectId: values.subjectId,
-      duration: values.duration,
+      duration: Number(values.duration),
       date: values.date,
-      questionsCount: values.questionsCount,
-      status: 'published'
+      questionsCount: Number(values.questionsCount)
     };
-    const updated = [newExam, ...exams];
-    setExams(updated);
-    setStoredExams(updated);
-    toast.success('Exam scheduled successfully!');
-    setIsAddExamOpen(false);
-    resetForm();
+
+    toast.promise(
+      dispatch(createExam(payload)).unwrap(),
+      {
+        loading: 'Scheduling exam...',
+        success: () => {
+          setIsAddExamOpen(false);
+          resetForm();
+          return 'Exam scheduled successfully!';
+        },
+        error: (err) => err || 'Failed to schedule exam'
+      }
+    );
   };
 
-  const handleDeleteExam = (id) => {
-    const updated = exams.filter(ex => ex.id !== id);
-    setExams(updated);
-    setStoredExams(updated);
-    toast.success('Exam cancelled successfully!');
+  const handleDeleteClick = (exam) => {
+    setDeletingExam(exam);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingExam) return;
+    const id = deletingExam._id || deletingExam.id;
+    setIsDeletingId(id);
+    setShowDeleteConfirm(false);
+    const loadingToast = toast.loading('Deleting exam...');
+    try {
+      await dispatch(deleteExam(id)).unwrap();
+      toast.success('Exam deleted successfully!', { id: loadingToast });
+      setDeletingExam(null);
+    } catch (err) {
+      toast.error(err || 'Failed to delete exam', { id: loadingToast });
+    } finally {
+      setIsDeletingId(null);
+    }
   };
 
   // Filter logic
   const filteredExams = exams.filter(ex => {
-    const matchesSubject = selectedSubjectFilter === 'all' || ex.subjectId === selectedSubjectFilter;
-    const matchesQuery = ex.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const exSubjectId = ex.subject?._id || ex.subject || ex.subjectId;
+    const matchesSubject = selectedSubjectFilter === 'all' || exSubjectId === selectedSubjectFilter;
+    const matchesQuery = (ex.title || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSubject && matchesQuery;
   });
 
@@ -105,7 +227,7 @@ const TeacherExams = () => {
   const draftCount = exams.filter(e => e.status === 'draft').length;
   const upcomingCount = exams.filter(e => e.status === 'upcoming').length;
 
-  const isModalActive = isAddExamOpen;
+  const isModalActive = isAddExamOpen || showDeleteConfirm || showResultsModal;
 
   return (
     <DashboardLayout
@@ -158,7 +280,7 @@ const TeacherExams = () => {
             >
               <option value="all">All Subjects</option>
               {subjects.map(s => (
-                <option key={s.id} value={s.id}>{s.title}</option>
+                <option key={s._id || s.id} value={s._id || s.id}>{s.name || s.title}</option>
               ))}
             </select>
             <FiChevronDown className="text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -195,7 +317,13 @@ const TeacherExams = () => {
         </div>
 
         {/* Exams Grid */}
-        {filteredExams.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : filteredExams.length === 0 ? (
           <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] flex flex-col items-center justify-center">
             <FiAlertCircle className="text-gray-650 mb-3" size={40} />
             <span className="text-lg font-extrabold text-gray-500">No exams found</span>
@@ -204,13 +332,15 @@ const TeacherExams = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filteredExams.map((ex) => {
-              const subObj = subjects.find(s => s.id === ex.subjectId);
+              const exSubjectId = ex.subject?._id || ex.subject || ex.subjectId;
+              const subObj = subjects.find(s => (s._id || s.id) === exSubjectId);
               const isPublished = ex.status === 'published';
               const isDraft = ex.status === 'draft';
+              const mockRes = generateMockResults(ex._id || ex.id, ex.title, ex.passingScore);
 
               return (
                 <div
-                  key={ex.id}
+                  key={ex.id || ex._id}
                   className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 relative text-left transition-all duration-300 hover:border-gray-700 animate-fade-in"
                 >
                   {/* Top Row: Icon + Title + Status badge */}
@@ -223,8 +353,8 @@ const TeacherExams = () => {
                         <h4 className="text-lg font-extrabold text-white leading-tight capitalize max-w-[140px] md:max-w-[240px] truncate">
                           {ex.title}
                         </h4>
-                        <span className="text-sm text-gray-500 font-bold mt-1 block uppercase">
-                          {subObj ? subObj.title : 'Unassigned'}
+                        <span className="text-sm text-gray-500 font-bold mt-1 block uppercase font-semibold">
+                          {subObj ? (subObj.name || subObj.title) : 'Unassigned'}
                         </span>
                       </div>
                     </div>
@@ -244,15 +374,15 @@ const TeacherExams = () => {
                   <div className="flex items-center gap-3 flex-wrap text-sm font-bold text-gray-500 uppercase tracking-wide">
                     <div className="flex items-center gap-1">
                       <FiHelpCircle size={12} className="text-gray-650" />
-                      <span>{ex.questionsCount} Qs</span>
+                      <span>{ex.questions?.length || ex.questionsCount || 0} Qs</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FiClock size={12} className="text-gray-650" />
-                      <span>{ex.duration} min</span>
+                      <span>{ex.duration || 0} min</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FiCalendar size={12} className="text-gray-650" />
-                      <span>{ex.date}</span>
+                      <span>{ex.date || (ex.createdAt ? new Date(ex.createdAt).toLocaleDateString() : 'N/A')}</span>
                     </div>
                     <div className="flex items-center gap-1 text-blue-400">
                       <FiZap size={12} />
@@ -263,25 +393,25 @@ const TeacherExams = () => {
                   {/* Score Stats Grid */}
                   <div className="grid grid-cols-4 gap-2">
                     <div className="p-2.5 rounded-xl bg-amber-500/[0.05] border border-amber-500/10 text-center">
-                      <span className="text-base font-black text-amber-400 block">0%</span>
+                      <span className="text-base font-black text-amber-400 block">{mockRes.stats.avgScore}</span>
                       <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Avg Score</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/10 text-center">
-                      <span className="text-base font-black text-emerald-400 block">0%</span>
+                      <span className="text-base font-black text-emerald-400 block">{mockRes.stats.highScore}</span>
                       <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">High Score</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-red-500/[0.05] border border-red-500/10 text-center">
-                      <span className="text-base font-black text-red-400 block">0%</span>
+                      <span className="text-base font-black text-red-400 block">{mockRes.stats.lowScore}</span>
                       <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Low Score</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-blue-500/[0.05] border border-blue-500/10 text-center">
-                      <span className="text-base font-black text-blue-400 block">0/0</span>
+                      <span className="text-base font-black text-blue-400 block">{mockRes.stats.submitted}</span>
                       <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Submitted</span>
                     </div>
                   </div>
 
                   {/* Submission Rate */}
-                  <p className="text-sm font-semibold text-gray-600 -mt-1">0% submission rate</p>
+                  <p className="text-sm font-semibold text-gray-600 -mt-1">{mockRes.stats.submissionRate} submission rate</p>
 
                   {/* Divider */}
                   <div className="border-t border-gray-800/40" />
@@ -289,15 +419,19 @@ const TeacherExams = () => {
                   {/* Bottom Row: View Results + Delete */}
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => toast.success('Viewing results for: ' + ex.title)}
+                      onClick={() => {
+                        setResultsExam(ex);
+                        setShowResultsModal(true);
+                      }}
                       className="flex-1 py-3 rounded-2xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/20 text-blue-400 font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
                       <FiBarChart2 size={14} />
                       <span>View Results</span>
                     </button>
                     <button
-                      onClick={() => handleDeleteExam(ex.id)}
-                      className="p-3 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 transition-all cursor-pointer shrink-0"
+                      onClick={() => handleDeleteClick(ex)}
+                      disabled={isDeletingId === (ex._id || ex.id)}
+                      className="p-3 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Cancel Exam"
                     >
                       <FiTrash2 size={14} />
@@ -360,7 +494,7 @@ const TeacherExams = () => {
                           >
                             <option value="" className="bg-[#0b0c16] text-gray-500">Select Subject</option>
                             {subjects.map(s => (
-                              <option key={s.id} value={s.id} className="bg-[#0b0c16] text-white">{s.title}</option>
+                              <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0b0c16] text-white">{s.name || s.title}</option>
                             ))}
                           </select>
                         </div>
@@ -389,6 +523,218 @@ const TeacherExams = () => {
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      {/* MODAL: DELETE CONFIRMATION */}
+      <AnimatePresence>
+        {showDeleteConfirm && deletingExam && (
+          <div
+            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+            onClick={() => {
+              setShowDeleteConfirm(false);
+              setDeletingExam(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 100, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 100, opacity: 0 }}
+              className="w-full sm:max-w-md bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-black text-white mb-4">Cancel Exam</h3>
+              <p className="text-sm text-gray-400 leading-relaxed font-semibold mb-6">
+                Are you sure you want to cancel the exam <span className="text-red-400 font-extrabold">"{deletingExam.title}"</span>? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeletingExam(null);
+                  }}
+                  className="flex-1 py-4 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center shadow-[0_4px_15px_rgba(239,68,68,0.3)]"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL: VIEW RESULTS */}
+      <AnimatePresence>
+        {showResultsModal && resultsExam && (() => {
+          const { attempts, stats } = generateMockResults(resultsExam._id || resultsExam.id, resultsExam.title, resultsExam.passingScore);
+          const filteredAttempts = attempts.filter(att => {
+            const matchesSearch = att.studentName.toLowerCase().includes(resultsSearchQuery.toLowerCase());
+            const matchesFilter = resultsFilter === 'all' || 
+              (resultsFilter === 'passed' && att.passed) || 
+              (resultsFilter === 'failed' && !att.passed);
+            return matchesSearch && matchesFilter;
+          });
+
+          return (
+            <div
+              className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+              onClick={() => {
+                setShowResultsModal(false);
+                setResultsExam(null);
+                setResultsSearchQuery('');
+                setResultsFilter('all');
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.95, y: 100, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.95, y: 100, opacity: 0 }}
+                className="w-full max-w-3xl bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left flex flex-col max-h-[90vh]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-2xl font-black text-white capitalize">{resultsExam.title}</h3>
+                    <p className="text-sm text-gray-500 font-bold uppercase mt-1">Student Performance & Results</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowResultsModal(false);
+                      setResultsExam(null);
+                      setResultsSearchQuery('');
+                      setResultsFilter('all');
+                    }}
+                    className="p-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-400 hover:text-white transition-all cursor-pointer"
+                  >
+                    <FiX size={18} />
+                  </button>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/10 flex flex-col">
+                    <span className="text-2xl font-black text-amber-400">{stats.avgScore}</span>
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Average Score</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-emerald-500/[0.03] border border-emerald-500/10 flex flex-col">
+                    <span className="text-2xl font-black text-emerald-400">{stats.highScore}</span>
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">High Score</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-red-500/[0.03] border border-red-500/10 flex flex-col">
+                    <span className="text-2xl font-black text-red-400">{stats.lowScore}</span>
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Low Score</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-blue-500/[0.03] border border-blue-500/10 flex flex-col">
+                    <span className="text-2xl font-black text-blue-400">{stats.submitted}</span>
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Submission Rate ({stats.submissionRate})</span>
+                  </div>
+                </div>
+
+                {/* Search & Filters */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-6 items-center w-full">
+                  {/* Search */}
+                  <div className="relative flex-1 w-full">
+                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                    <input
+                      type="text"
+                      placeholder="Search student name..."
+                      value={resultsSearchQuery}
+                      onChange={(e) => setResultsSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3.5 bg-gray-900/50 border border-gray-800/80 rounded-2xl text-white font-bold text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all"
+                    />
+                  </div>
+
+                  {/* Filter tabs */}
+                  <div className="flex bg-gray-900/50 border border-gray-800/80 p-1.5 rounded-2xl w-full sm:w-auto shrink-0">
+                    <button
+                      onClick={() => setResultsFilter('all')}
+                      className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        resultsFilter === 'all'
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setResultsFilter('passed')}
+                      className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        resultsFilter === 'passed'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Passed
+                    </button>
+                    <button
+                      onClick={() => setResultsFilter('failed')}
+                      className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        resultsFilter === 'failed'
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Failed
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submissions List Container */}
+                <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 min-h-[250px] max-h-[45vh]">
+                  {filteredAttempts.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-gray-950/20 border border-gray-900 rounded-3xl">
+                      <FiUsers className="text-gray-650 mb-2" size={32} />
+                      <span className="text-base font-extrabold text-gray-500">No attempts found</span>
+                      <p className="text-xs text-gray-600 font-bold mt-1">Try resetting search or filters</p>
+                    </div>
+                  ) : (
+                    filteredAttempts.map((att) => (
+                      <div
+                        key={att.id}
+                        className="p-4 bg-[#090a12] border border-gray-900 rounded-3xl flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-extrabold text-sm uppercase">
+                            {att.studentName.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div>
+                            <h5 className="font-extrabold text-white text-base leading-tight">{att.studentName}</h5>
+                            <span className="text-xs text-gray-500 font-semibold mt-0.5 block">Submitted on {att.completedAt}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <span className={`text-base font-black block ${att.passed ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {att.score}%
+                            </span>
+                            <span className="text-xs text-gray-500 font-bold uppercase block mt-0.5">{att.timeTaken} mins</span>
+                          </div>
+
+                          <span className={`text-xs font-black uppercase px-3 py-1.5 rounded-full ${
+                            att.passed
+                              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                              : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                          }`}>
+                            {att.passed ? 'Passed' : 'Failed'}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
     </DashboardLayout>
   );
