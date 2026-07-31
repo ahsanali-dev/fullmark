@@ -246,9 +246,16 @@ export const extractQuestionsFromPdf = createAsyncThunk(
   'teacher/extractQuestionsFromPdf',
   async ({ subjectId, pdfFile }, thunkAPI) => {
     try {
-      const token = thunkAPI.getState().auth.token;
+      const state = thunkAPI.getState();
+      const token = state.auth.token;
+      const user = state.auth.user;
       const formData = new FormData();
       formData.append('subjectId', subjectId);
+      
+      const teacherId = user?._id || user?.id || user?.teacherProfileId;
+      if (teacherId) {
+        formData.append('teacherId', teacherId);
+      }
       formData.append('pdf', pdfFile);
 
       const response = await axios.post(apiEndpoints.teacher.extractPdf, formData, {
@@ -259,30 +266,8 @@ export const extractQuestionsFromPdf = createAsyncThunk(
       });
       return response.data.data;
     } catch (error) {
-      // Safe fallback to simulated questions if backend fails/crashes
-      const mockQuestions = [
-        {
-          _id: `q-pdf-${Date.now()}-1`,
-          subject: subjectId,
-          text: 'What is the primary function of DNA replication?',
-          options: ['Synthesis of proteins', 'Copying genetic information', 'Creating cellular energy', 'Dividing cells'],
-          correctOption: 1,
-          difficulty: 'medium',
-          explanation: 'DNA replication makes an identical copy of the DNA molecule before cell division.',
-          marks: 1
-        },
-        {
-          _id: `q-pdf-${Date.now()}-2`,
-          subject: subjectId,
-          text: 'Identify the element with atomic number 1 from the options:',
-          options: ['Helium', 'Oxygen', 'Hydrogen', 'Carbon'],
-          correctOption: 2,
-          difficulty: 'easy',
-          explanation: 'Hydrogen is the first element in the periodic table with atomic number 1.',
-          marks: 1
-        }
-      ];
-      return mockQuestions;
+      const message = error.response?.data?.message || error.message || 'Failed to extract questions from PDF';
+      return thunkAPI.rejectWithValue(message);
     }
   }
 );

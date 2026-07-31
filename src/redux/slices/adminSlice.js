@@ -8,6 +8,18 @@ const getAuthConfig = (token) => ({
   },
 });
 
+// Helper for trigger file download from Blob
+const downloadBlob = (data, filename) => {
+  const url = window.URL.createObjectURL(new Blob([data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
 // 1. Dashboard
 export const fetchDashboardStats = createAsyncThunk(
   'admin/fetchDashboardStats',
@@ -33,7 +45,7 @@ export const fetchAllUsers = createAsyncThunk(
         ...getAuthConfig(token),
         params,
       });
-      return response.data.data; // contains { users, pagination }
+      return response.data.data; // contains { users, pagination, metrics }
     } catch (error) {
       const message = error.response?.data?.message || error.message || 'Failed to fetch users';
       return thunkAPI.rejectWithValue(message);
@@ -69,7 +81,55 @@ export const toggleUserActive = createAsyncThunk(
   }
 );
 
-// 3. Subjects
+export const updateUser = createAsyncThunk(
+  'admin/updateUser',
+  async ({ id, userData }, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.put(apiEndpoints.admin.userById(id), userData, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to update user';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const deleteUser = createAsyncThunk(
+  'admin/deleteUser',
+  async (id, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      await axios.delete(apiEndpoints.admin.userById(id), getAuthConfig(token));
+      return id;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to delete user';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const exportUsersExcel = createAsyncThunk(
+  'admin/exportUsersExcel',
+  async (params, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.admin.usersExport, {
+        ...getAuthConfig(token),
+        params,
+        responseType: 'blob',
+      });
+      const filterName = params?.filter || 'users';
+      downloadBlob(response.data, `fullmark_${filterName}_export.xlsx`);
+      return true;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to export users';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// 3. Subjects & Content
 export const fetchAllSubjects = createAsyncThunk(
   'admin/fetchAllSubjects',
   async (_, thunkAPI) => {
@@ -126,67 +186,85 @@ export const deleteSubject = createAsyncThunk(
   }
 );
 
-// 4. Coupons
-export const fetchAllCoupons = createAsyncThunk(
-  'admin/fetchAllCoupons',
+// 4. Coupons & Coupon Batches
+export const fetchCouponBatches = createAsyncThunk(
+  'admin/fetchCouponBatches',
   async (params, thunkAPI) => {
     try {
       const token = thunkAPI.getState().auth.token;
-      const response = await axios.get(apiEndpoints.admin.coupons, {
+      const response = await axios.get(apiEndpoints.admin.couponBatches, {
         ...getAuthConfig(token),
         params,
       });
+      return response.data.data; // { batches, totalBatches, summary }
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch coupon batches';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const createCouponBatch = createAsyncThunk(
+  'admin/createCouponBatch',
+  async (batchData, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(apiEndpoints.admin.couponBatches, batchData, getAuthConfig(token));
       return response.data.data;
     } catch (error) {
-      const message = error.response?.data?.message || error.message || 'Failed to fetch coupons';
+      const message = error.response?.data?.message || error.message || 'Failed to generate coupon batch';
       return thunkAPI.rejectWithValue(message);
     }
   }
 );
 
-export const createCoupon = createAsyncThunk(
-  'admin/createCoupon',
-  async (couponData, thunkAPI) => {
+export const fetchCouponBatchDetail = createAsyncThunk(
+  'admin/fetchCouponBatchDetail',
+  async (batchId, thunkAPI) => {
     try {
       const token = thunkAPI.getState().auth.token;
-      const response = await axios.post(apiEndpoints.admin.coupons, couponData, getAuthConfig(token));
+      const response = await axios.get(apiEndpoints.admin.couponBatchDetail(batchId), getAuthConfig(token));
+      return response.data.data; // { batch, coupons }
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch batch details';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const exportCouponBatchExcel = createAsyncThunk(
+  'admin/exportCouponBatchExcel',
+  async (batchId, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.admin.exportCouponBatch(batchId), {
+        ...getAuthConfig(token),
+        responseType: 'blob',
+      });
+      downloadBlob(response.data, `fullmark_coupons_batch_${batchId.slice(-6)}.xlsx`);
+      return true;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to export batch Excel';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const cancelCoupon = createAsyncThunk(
+  'admin/cancelCoupon',
+  async (couponId, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.patch(apiEndpoints.admin.cancelCoupon(couponId), {}, getAuthConfig(token));
       return response.data.data;
     } catch (error) {
-      const message = error.response?.data?.message || error.message || 'Failed to create coupon';
+      const message = error.response?.data?.message || error.message || 'Failed to cancel coupon';
       return thunkAPI.rejectWithValue(message);
     }
   }
 );
 
-export const toggleCouponActive = createAsyncThunk(
-  'admin/toggleCouponActive',
-  async (id, thunkAPI) => {
-    try {
-      const token = thunkAPI.getState().auth.token;
-      const response = await axios.patch(apiEndpoints.admin.toggleCouponActive(id), {}, getAuthConfig(token));
-      return { id, data: response.data.data };
-    } catch (error) {
-      const message = error.response?.data?.message || error.message || 'Failed to toggle coupon status';
-      return thunkAPI.rejectWithValue(message);
-    }
-  }
-);
-
-export const deleteCoupon = createAsyncThunk(
-  'admin/deleteCoupon',
-  async (id, thunkAPI) => {
-    try {
-      const token = thunkAPI.getState().auth.token;
-      await axios.delete(apiEndpoints.admin.couponById(id), getAuthConfig(token));
-      return id;
-    } catch (error) {
-      const message = error.response?.data?.message || error.message || 'Failed to delete coupon';
-      return thunkAPI.rejectWithValue(message);
-    }
-  }
-);
-
-// 5. Reports
+// 5. Reports & Exports
 export const fetchReports = createAsyncThunk(
   'admin/fetchReports',
   async (params, thunkAPI) => {
@@ -204,16 +282,120 @@ export const fetchReports = createAsyncThunk(
   }
 );
 
+export const exportReportExcel = createAsyncThunk(
+  'admin/exportReportExcel',
+  async (params, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.admin.reportsExport, {
+        ...getAuthConfig(token),
+        params,
+        responseType: 'blob',
+      });
+      const periodName = params?.period || 'report';
+      const typeName = params?.type || 'students';
+      downloadBlob(response.data, `fullmark_${typeName}_${periodName}_report.xlsx`);
+      return true;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to export report Excel';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// 6. Admin Notifications & Broadcasts
+export const sendAdminNotification = createAsyncThunk(
+  'admin/sendAdminNotification',
+  async (payload, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(apiEndpoints.admin.notifications, payload, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to send notification';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const fetchNotificationHistory = createAsyncThunk(
+  'admin/fetchNotificationHistory',
+  async (params, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.admin.notificationHistory, {
+        ...getAuthConfig(token),
+        params,
+      });
+      return response.data.data; // { logs, pagination }
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch notification history';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// 7. Lessons & Free Preview Management
+export const fetchAdminLessons = createAsyncThunk(
+  'admin/fetchAdminLessons',
+  async (params, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.admin.lessons, {
+        ...getAuthConfig(token),
+        params,
+      });
+      return response.data.data; // { lessons }
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch lessons';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const toggleLessonFree = createAsyncThunk(
+  'admin/toggleLessonFree',
+  async (id, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.patch(apiEndpoints.admin.toggleLessonFree(id), {}, getAuthConfig(token));
+      return response.data.data; // { lesson }
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to toggle free lesson status';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const bulkToggleLessonFree = createAsyncThunk(
+  'admin/bulkToggleLessonFree',
+  async ({ lessonIds, isFree }, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.patch(apiEndpoints.admin.bulkToggleLessonFree, { lessonIds, isFree }, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to bulk toggle lesson status';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState: {
     stats: null,
     recentUsers: [],
     users: [],
+    usersMetrics: null,
     pagination: null,
     subjects: [],
-    coupons: [],
+    couponBatches: [],
+    couponSummary: null,
+    activeBatchDetail: null,
     reports: null,
+    notificationHistory: [],
+    lessons: [],
     isLoading: false,
     error: null,
   },
@@ -223,8 +405,10 @@ const adminSlice = createSlice({
       state.recentUsers = [];
       state.users = [];
       state.subjects = [];
-      state.coupons = [];
+      state.couponBatches = [];
       state.reports = null;
+      state.notificationHistory = [];
+      state.lessons = [];
       state.error = null;
     },
   },
@@ -244,6 +428,7 @@ const adminSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
+
       // Users
       .addCase(fetchAllUsers.pending, (state) => {
         state.isLoading = true;
@@ -253,19 +438,27 @@ const adminSlice = createSlice({
         state.isLoading = false;
         state.users = action.payload.users;
         state.pagination = action.payload.pagination;
+        state.usersMetrics = action.payload.metrics || null;
       })
       .addCase(fetchAllUsers.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-      })
-      .addCase(createUser.fulfilled, (state, action) => {
-        // Option: we can prepend the new user if we store simple info, or fetch again
       })
       .addCase(toggleUserActive.fulfilled, (state, action) => {
         state.users = state.users.map((u) =>
           u._id === action.payload.id ? { ...u, isActive: action.payload.data.isActive } : u
         );
       })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        const updated = action.payload?.user || action.payload;
+        if (updated && updated._id) {
+          state.users = state.users.map((u) => (u._id === updated._id ? { ...u, ...updated } : u));
+        }
+      })
+      .addCase(deleteUser.fulfilled, (state, action) => {
+        state.users = state.users.filter((u) => u._id !== action.payload);
+      })
+
       // Subjects
       .addCase(fetchAllSubjects.pending, (state) => {
         state.isLoading = true;
@@ -280,40 +473,46 @@ const adminSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(createSubject.fulfilled, (state, action) => {
-        state.subjects = [action.payload.subject, ...state.subjects];
+        if (action.payload?.subject) {
+          state.subjects = [action.payload.subject, ...state.subjects];
+        }
       })
       .addCase(updateSubject.fulfilled, (state, action) => {
-        state.subjects = state.subjects.map((s) =>
-          s._id === action.payload.subject._id ? action.payload.subject : s
-        );
+        if (action.payload?.subject) {
+          state.subjects = state.subjects.map((s) =>
+            s._id === action.payload.subject._id ? action.payload.subject : s
+          );
+        }
       })
       .addCase(deleteSubject.fulfilled, (state, action) => {
         state.subjects = state.subjects.filter((s) => s._id !== action.payload);
       })
-      // Coupons
-      .addCase(fetchAllCoupons.pending, (state) => {
+
+      // Coupon Batches
+      .addCase(fetchCouponBatches.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchAllCoupons.fulfilled, (state, action) => {
+      .addCase(fetchCouponBatches.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.coupons = action.payload.coupons;
+        state.couponBatches = action.payload.batches || [];
+        state.couponSummary = action.payload.summary || null;
       })
-      .addCase(fetchAllCoupons.rejected, (state, action) => {
+      .addCase(fetchCouponBatches.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })
-      .addCase(createCoupon.fulfilled, (state, action) => {
-        state.coupons = [action.payload.coupon, ...state.coupons];
+      .addCase(fetchCouponBatchDetail.fulfilled, (state, action) => {
+        state.activeBatchDetail = action.payload;
       })
-      .addCase(toggleCouponActive.fulfilled, (state, action) => {
-        state.coupons = state.coupons.map((c) =>
-          c._id === action.payload.id ? { ...c, isActive: action.payload.data.isActive } : c
-        );
+      .addCase(cancelCoupon.fulfilled, (state, action) => {
+        if (state.activeBatchDetail?.coupons) {
+          state.activeBatchDetail.coupons = state.activeBatchDetail.coupons.map(c => 
+            c._id === action.payload._id ? { ...c, status: 'Cancelled' } : c
+          );
+        }
       })
-      .addCase(deleteCoupon.fulfilled, (state, action) => {
-        state.coupons = state.coupons.filter((c) => c._id !== action.payload);
-      })
+
       // Reports
       .addCase(fetchReports.pending, (state) => {
         state.isLoading = true;
@@ -326,6 +525,35 @@ const adminSlice = createSlice({
       .addCase(fetchReports.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+      })
+
+      // Notification History
+      .addCase(fetchNotificationHistory.fulfilled, (state, action) => {
+        state.notificationHistory = action.payload.broadcasts || action.payload.logs || [];
+      })
+
+      // Lessons
+      .addCase(fetchAdminLessons.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchAdminLessons.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.lessons = action.payload.lessons || [];
+      })
+      .addCase(fetchAdminLessons.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      .addCase(toggleLessonFree.fulfilled, (state, action) => {
+        const updated = action.payload.lesson;
+        if (updated) {
+          state.lessons = state.lessons.map(l => l._id === updated._id ? updated : l);
+        }
+      })
+      .addCase(bulkToggleLessonFree.fulfilled, (state, action) => {
+        const updatedList = action.payload.lessons || [];
+        const updatedMap = new Map(updatedList.map(l => [l._id, l]));
+        state.lessons = state.lessons.map(l => updatedMap.get(l._id) || l);
       });
   },
 });

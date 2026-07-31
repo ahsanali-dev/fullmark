@@ -26,6 +26,7 @@ import TeacherSubjectDetails from '../pages/teacher/SubjectDetails';
 import TeacherEditQuestion from '../pages/teacher/EditQuestion';
 import TeacherCreateExam from '../pages/teacher/CreateExam';
 import TeacherAddLesson from '../pages/teacher/AddLesson';
+import TeacherPdfUpload from '../pages/teacher/PdfUpload';
 
 import StudentDashboard from '../pages/student/StudentDashboard';
 import StudentCourses from '../pages/student/Courses';
@@ -164,6 +165,10 @@ const router = createBrowserRouter([
       {
         path: '/teacher/questions',
         element: <TeacherQuestions />,
+      },
+      {
+        path: '/teacher/pdf-upload',
+        element: <TeacherPdfUpload />,
       },
       {
         path: '/teacher/exams',

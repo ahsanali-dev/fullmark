@@ -374,7 +374,7 @@ const TeacherSettings = () => {
                       name="name"
                       type="text"
                       label="Full Name"
-                      placeholder="Ahsan Ali"
+                      placeholder="Full Name"
                       icon={FiUser}
                       roleColor="teacher"
                     />

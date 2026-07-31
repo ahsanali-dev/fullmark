@@ -67,17 +67,49 @@ export const fetchLinkCode = createAsyncThunk(
 
 export const enrollWithCoupon = createAsyncThunk(
   'student/enrollWithCoupon',
-  async ({ subjectId, couponCode }, thunkAPI) => {
+  async ({ subjectId }, thunkAPI) => {
     try {
       const token = thunkAPI.getState().auth.token;
       const response = await axios.post(
         apiEndpoints.student.enroll,
-        { subject: subjectId, couponCode },
+        { subject: subjectId },
         getAuthConfig(token)
       );
       return response.data;
     } catch (error) {
       const message = error.response?.data?.message || error.message || 'Failed to enroll';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const validateCoupon = createAsyncThunk(
+  'student/validateCoupon',
+  async (code, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.student.couponsValidate(code), getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to validate coupon';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const redeemCoupon = createAsyncThunk(
+  'student/redeemCoupon',
+  async (couponCode, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(
+        apiEndpoints.student.couponsRedeem,
+        { couponCode },
+        getAuthConfig(token)
+      );
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to redeem coupon';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -175,19 +207,7 @@ export const markLessonComplete = createAsyncThunk(
   }
 );
 
-export const validateCoupon = createAsyncThunk(
-  'student/validateCoupon',
-  async (code, thunkAPI) => {
-    try {
-      const token = thunkAPI.getState().auth.token;
-      const response = await axios.post(apiEndpoints.student.couponsValidate, { code }, getAuthConfig(token));
-      return response.data.data;
-    } catch (error) {
-      const message = error.response?.data?.message || error.message || 'Failed to validate coupon';
-      return thunkAPI.rejectWithValue(message);
-    }
-  }
-);
+
 
 export const fetchCouponTransactions = createAsyncThunk(
   'student/fetchCouponTransactions',
@@ -547,6 +567,18 @@ const studentSlice = createSlice({
         state.isActionLoading = false;
       })
       .addCase(enrollWithCoupon.rejected, (state) => {
+        state.isActionLoading = false;
+      })
+
+      // Redeem Coupon (COUPON v3)
+      .addCase(redeemCoupon.pending, (state) => {
+        state.isActionLoading = true;
+      })
+      .addCase(redeemCoupon.fulfilled, (state) => {
+        state.isActionLoading = false;
+        state.couponDetails = null;
+      })
+      .addCase(redeemCoupon.rejected, (state) => {
         state.isActionLoading = false;
       })
 

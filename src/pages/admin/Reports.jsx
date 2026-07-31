@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   FiGrid, 
   FiUsers, 
-  FiWifi, 
   FiFileText, 
-  FiStar, 
   FiPieChart, 
   FiAward, 
   FiTv, 
@@ -13,11 +11,13 @@ import {
   FiDownload,
   FiShare2,
   FiTag,
-  FiTrendingUp
+  FiTrendingUp,
+  FiCalendar,
+  FiX
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchReports } from '../../redux/slices/adminSlice';
+import { fetchReports, exportReportExcel } from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { ReportsSkeleton } from '../../components/shared/SkeletonLoading';
 
@@ -25,81 +25,72 @@ const Reports = () => {
   const dispatch = useDispatch();
   const { reports, isLoading } = useSelector((state) => state.admin);
 
-  const [timeframe, setTimeframe] = useState('month'); // today, week, month, year
+  const [timeframe, setTimeframe] = useState('month'); // week, month, year, custom
   const [activeTab, setActiveTab] = useState('overview'); // overview or users
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isCustomDateOpen, setIsCustomDateOpen] = useState(false);
+
+  // Custom date range state
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   // Timeframes list
   const timeframes = [
-    { id: 'today', label: 'Today' },
-    { id: 'week', label: 'This Week' },
-    { id: 'month', label: 'This Month' },
-    { id: 'year', label: 'This Year' }
+    { id: 'week', label: 'Weekly' },
+    { id: 'month', label: 'Monthly' },
+    { id: 'year', label: 'Yearly' },
+    { id: 'custom', label: 'Custom Range' }
   ];
 
-  // Helper to map timeframe selector to backend period parameter
-  const getMappedPeriod = (tf) => {
-    if (tf === 'today') return 'week';
-    if (tf === 'week') return 'week';
-    if (tf === 'month') return 'month';
-    if (tf === 'year') return 'all';
-    return 'all';
-  };
-
-  // Fetch reports when activeTab or timeframe changes
+  // Fetch reports when timeframe changes
   useEffect(() => {
     dispatch(fetchReports({
       type: activeTab,
-      period: getMappedPeriod(timeframe)
+      period: timeframe,
+      from: timeframe === 'custom' ? fromDate : undefined,
+      to: timeframe === 'custom' ? toDate : undefined,
     }));
-  }, [dispatch, activeTab, timeframe]);
+  }, [dispatch, activeTab, timeframe, fromDate, toDate]);
 
   // Export handlers
-  const handleExportOption = (option) => {
-    const loadingToast = toast.loading(option.toastMsg);
-    
-    setTimeout(() => {
-      toast.dismiss(loadingToast);
-      toast.success(option.successMsg);
+  const handleExportSubscribedExcel = async () => {
+    const toastId = toast.loading('Generating Subscribed Users Excel Report...');
+    try {
+      await dispatch(exportReportExcel({
+        type: 'subscribed',
+        period: timeframe,
+        from: timeframe === 'custom' ? fromDate : undefined,
+        to: timeframe === 'custom' ? toDate : undefined,
+      })).unwrap();
+      toast.dismiss(toastId);
+      toast.success('Subscribed Users Excel Report downloaded!');
       setIsExportOpen(false);
-    }, 1500);
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error(err || 'Failed to export report');
+    }
   };
 
-  const exportOptions = [
-    {
-      id: 'pdf',
-      title: 'Export as PDF',
-      subtitle: 'Full report in PDF',
-      icon: FiFileText,
-      iconColor: 'text-red-400',
-      iconBg: 'bg-red-500/10 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)]',
-      toastMsg: 'Exporting as PDF...',
-      successMsg: 'PDF report downloaded successfully!'
-    },
-    {
-      id: 'excel',
-      title: 'Export as Excel',
-      subtitle: 'Data in spreadsheet',
-      icon: FiGrid,
-      iconColor: 'text-emerald-400',
-      iconBg: 'bg-emerald-500/10 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]',
-      toastMsg: 'Exporting as Excel...',
-      successMsg: 'Excel spreadsheet downloaded successfully!'
-    },
-    {
-      id: 'share',
-      title: 'Share Report',
-      subtitle: 'Share via email or link',
-      icon: FiShare2,
-      iconColor: 'text-blue-400',
-      iconBg: 'bg-blue-500/10 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]',
-      toastMsg: 'Generating share link...',
-      successMsg: 'Link copied to clipboard!'
+  const handleExportNonSubscribedExcel = async () => {
+    const toastId = toast.loading('Generating Non-Subscribed Users Excel Report...');
+    try {
+      await dispatch(exportReportExcel({
+        type: 'non_subscribed',
+        period: timeframe,
+        from: timeframe === 'custom' ? fromDate : undefined,
+        to: timeframe === 'custom' ? toDate : undefined,
+      })).unwrap();
+      toast.dismiss(toastId);
+      toast.success('Non-Subscribed Users Excel Report downloaded!');
+      setIsExportOpen(false);
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error(err || 'Failed to export report');
     }
-  ];
+  };
 
   const reportsData = reports || {};
-  const isBlurred = isExportOpen;
+  const isBlurred = isExportOpen || isCustomDateOpen;
 
   if (isLoading && (!reports || Object.keys(reports).length === 0)) {
     return (
@@ -120,9 +111,9 @@ const Reports = () => {
       role="admin" 
       activeTab="reports" 
       title="Platform Reports" 
-      subtitle="Analytics & Insights"
+      subtitle="Periodic Export Reports & Analytics"
       disableScroll={true}
-      isModalOpen={isExportOpen}
+      isModalOpen={isBlurred}
       showBackButton={false}
     >
       <div className="h-full flex flex-col px-4 md:px-8 py-4 overflow-hidden gap-5 animate-fade-in relative transition-all duration-300">
@@ -137,7 +128,10 @@ const Reports = () => {
               {timeframes.map((tf) => (
                 <button
                   key={tf.id}
-                  onClick={() => setTimeframe(tf.id)}
+                  onClick={() => {
+                    setTimeframe(tf.id);
+                    if (tf.id === 'custom') setIsCustomDateOpen(true);
+                  }}
                   className={`px-5 py-2.5 rounded-2xl text-xs font-extrabold transition-all duration-300 whitespace-nowrap cursor-pointer ${
                     timeframe === tf.id
                       ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-[0_4px_20px_rgba(239,68,68,0.35)]'
@@ -152,12 +146,27 @@ const Reports = () => {
             {/* Export Button */}
             <button 
               onClick={() => setIsExportOpen(true)}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white px-5 py-2.5 rounded-2xl font-extrabold shadow-[0_4px_20px_rgba(239,68,68,0.3)] transition-all active:scale-95 cursor-pointer text-sm shrink-0 w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white px-5 py-2.5 rounded-2xl font-extrabold shadow-[0_4px_20px_rgba(16,185,129,0.3)] transition-all active:scale-95 cursor-pointer text-sm shrink-0 w-full sm:w-auto"
             >
               <FiDownload className="text-base" />
-              <span>Export</span>
+              <span>Export Excel Reports</span>
             </button>
           </div>
+
+          {/* Custom Date Range Display Banner (if custom active) */}
+          {timeframe === 'custom' && (
+            <div className="flex items-center justify-between p-3 bg-[#0c0d19] border border-amber-500/20 rounded-2xl text-xs text-amber-400 font-bold">
+              <span className="flex items-center gap-2">
+                <FiCalendar /> Selected Range: {fromDate || 'Start Date'} to {toDate || 'End Date'}
+              </span>
+              <button 
+                onClick={() => setIsCustomDateOpen(true)} 
+                className="underline text-white hover:text-amber-300 cursor-pointer"
+              >
+                Change Dates
+              </button>
+            </div>
+          )}
 
           {/* Segmented controls Overview vs Users */}
           <div className="grid grid-cols-2 p-1.5 bg-[#0c0d19]/80 border border-gray-800/50 rounded-2xl gap-1">
@@ -181,7 +190,7 @@ const Reports = () => {
               }`}
             >
               <FiUsers className="text-base" />
-              <span>Users</span>
+              <span>User Breakdown</span>
             </button>
           </div>
 
@@ -203,22 +212,22 @@ const Reports = () => {
                       {reportsData.overview?.newStudents || 0}
                     </span>
                     <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                      New Students
+                      New Registered
                     </span>
                   </div>
                 </div>
 
-                {/* Card 2: New Teachers */}
+                {/* Card 2: Subscribed Users */}
                 <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-blue-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
                   <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-                    <FiTv size={22} />
+                    <FiAward size={22} />
                   </div>
                   <div className="flex flex-col text-left">
                     <span className="text-2xl font-black text-blue-400 leading-tight">
-                      {reportsData.overview?.newTeachers || 0}
+                      {reportsData.overview?.subscribedStudents || 0}
                     </span>
                     <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                      New Teachers
+                      Subscribed Users
                     </span>
                   </div>
                 </div>
@@ -248,7 +257,7 @@ const Reports = () => {
                       {reportsData.overview?.couponsUsed || 0}
                     </span>
                     <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                      Coupons Redeemed
+                      Coupons Activated
                     </span>
                   </div>
                 </div>
@@ -260,12 +269,12 @@ const Reports = () => {
                   <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
                     <FiTrendingUp size={18} />
                   </div>
-                  <h3 className="text-base font-extrabold text-white">Subject Performance</h3>
+                  <h3 className="text-base font-extrabold text-white">Course Performance</h3>
                 </div>
 
                 {(!reportsData.subjectPerformance || reportsData.subjectPerformance.length === 0) ? (
                   <div className="py-8 text-center border border-dashed border-gray-800 rounded-2xl">
-                    <span className="text-xs text-gray-500 font-semibold">No performance data recorded for this period</span>
+                    <span className="text-xs text-gray-500 font-semibold">No course performance data for selected period</span>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -310,18 +319,9 @@ const Reports = () => {
                 { label: 'Admins', count: adminData.count, percentage: Math.round((adminData.count / totalCount) * 100), icon: FiShield, iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400', barBg: 'bg-red-500', textColor: 'text-red-400' }
               ];
 
-              const cards = [
-                { value: studentData.count, label: 'Total Students', border: 'border-emerald-500/20', text: 'text-emerald-400' },
-                { value: teacherData.count, label: 'Total Teachers', border: 'border-blue-500/20', text: 'text-blue-400' },
-                { value: studentData.active + teacherData.active + parentData.active + adminData.active, label: 'Active Accounts', border: 'border-yellow-500/20', text: 'text-yellow-400' },
-                { value: studentData.verified + teacherData.verified + parentData.verified + adminData.verified, label: 'Verified Accounts', border: 'border-purple-500/20', text: 'text-purple-400' }
-              ];
-
               return (
                 <div className="flex flex-col gap-5">
-                  {/* Role Distribution Container Card */}
                   <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-6">
-                    {/* Card Header */}
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                         <FiPieChart size={18} />
@@ -329,7 +329,6 @@ const Reports = () => {
                       <h3 className="text-base font-extrabold text-white">Role Distribution</h3>
                     </div>
 
-                    {/* Progress bars list */}
                     <div className="flex flex-col gap-5">
                       {distribution.map((role, idx) => {
                         const Icon = role.icon;
@@ -346,7 +345,6 @@ const Reports = () => {
                                 {role.count} ({role.percentage}%)
                               </span>
                             </div>
-                            {/* Progress Bar Track */}
                             <div className="w-full h-2.5 bg-gray-950 rounded-full overflow-hidden border border-gray-800/80">
                               <div 
                                 className={`h-full ${role.barBg} rounded-full transition-all duration-700 ease-out`} 
@@ -358,23 +356,6 @@ const Reports = () => {
                       })}
                     </div>
                   </div>
-
-                  {/* Bottom 4 Grid Metric Cards */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {cards.map((card, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`p-5 bg-[#0c0d19]/40 border ${card.border} rounded-3xl flex flex-col gap-1 text-left hover:scale-[1.02] transition-all duration-300`}
-                      >
-                        <span className={`text-3xl font-black ${card.text}`}>
-                          {card.value}
-                        </span>
-                        <span className={`text-xs font-bold ${card.text}/80 mt-1`}>
-                          {card.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               );
             })()
@@ -383,58 +364,134 @@ const Reports = () => {
 
       </div>
 
-      {/* Export Report Bottom Sheet Modal */}
+      {/* Export Options Modal (Requirement 3) */}
       {isExportOpen && (
         <div 
-          className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center transition-all duration-300"
+          className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300"
           onClick={() => setIsExportOpen(false)}
         >
-          {/* Bottom Sheet Card */}
           <div 
-            className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden transition-transform duration-300 animate-slide-up"
+            className="w-full max-w-md bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Top Pull Bar (visual handle) */}
-            <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
-            
-            {/* Modal Title */}
-            <h3 className="text-xl sm:text-2xl font-black text-white text-center mb-6">
-              Export Report
-            </h3>
+            <button
+              onClick={() => setIsExportOpen(false)}
+              className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+            >
+              <FiX size={20} />
+            </button>
 
-            {/* Export options grid list */}
-            <div className="flex flex-col gap-3">
-              {exportOptions.map((opt) => {
-                const Icon = opt.icon;
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => handleExportOption(opt)}
-                    className="w-full bg-[#121324] hover:bg-[#181a30] border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 hover:border-gray-700/50 cursor-pointer group text-left"
-                  >
-                    <div className="flex items-center gap-4">
-                      {/* Icon Box */}
-                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${opt.iconBg}`}>
-                        <Icon size={20} className={opt.iconColor} />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-black text-white leading-tight">
-                          {opt.title}
-                        </h4>
-                        <p className="text-xs text-gray-500 font-semibold mt-1">
-                          {opt.subtitle}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Right Chevron */}
-                    <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
-                  </button>
-                );
-              })}
+            <h3 className="text-xl font-black text-white mb-2">
+              Export Excel Reports ({timeframe.toUpperCase()})
+            </h3>
+            <p className="text-xs text-gray-400 font-semibold mb-6">
+              Download formatted Excel spreadsheets for specific user types.
+            </p>
+
+            <div className="flex flex-col gap-4">
+              {/* Option 1: Subscribed Users Report */}
+              <button
+                onClick={handleExportSubscribedExcel}
+                className="w-full bg-[#121324] hover:bg-[#181a30] border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 text-left group cursor-pointer"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                    <FiGrid size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white">Subscribed Users Excel Report</h4>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Name, Phone, Email, Coupon Code, Courses, Price, Activation Date/Time
+                    </p>
+                  </div>
+                </div>
+                <FiChevronRight className="text-emerald-400 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              {/* Option 2: Registered Non-Subscribed Users Report */}
+              <button
+                onClick={handleExportNonSubscribedExcel}
+                className="w-full bg-[#121324] hover:bg-[#181a30] border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 text-left group cursor-pointer"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                    <FiUsers size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white">Non-Subscribed Users Excel Report</h4>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Name, Phone, Email, Account Registration Date
+                    </p>
+                  </div>
+                </div>
+                <FiChevronRight className="text-amber-400 group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Custom Date Picker Modal */}
+      {isCustomDateOpen && (
+        <div 
+          className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300"
+          onClick={() => setIsCustomDateOpen(false)}
+        >
+          <div 
+            className="w-full max-w-sm bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsCustomDateOpen(false)}
+              className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+            >
+              <FiX size={20} />
+            </button>
+
+            <h3 className="text-xl font-black text-white mb-4">
+              Select Custom Date Range
+            </h3>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-gray-400">From Date</label>
+                <input 
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="w-full py-3 px-4 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-gray-400">To Date</label>
+                <input 
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="w-full py-3 px-4 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50"
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  if (!fromDate || !toDate) {
+                    toast.error('Please select both From and To dates');
+                    return;
+                  }
+                  setIsCustomDateOpen(false);
+                  dispatch(fetchReports({ type: activeTab, period: 'custom', from: fromDate, to: toDate }));
+                  toast.success('Custom date filter applied!');
+                }}
+                className="w-full py-3.5 bg-gradient-to-r from-red-600 to-rose-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(239,68,68,0.3)] mt-2 cursor-pointer"
+              >
+                Apply Custom Range
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </DashboardLayout>
   );
 };

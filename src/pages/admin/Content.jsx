@@ -11,13 +11,27 @@ import {
   FiCheck,
   FiX,
   FiChevronDown,
-  FiDollarSign
+  FiDollarSign,
+  FiVideo,
+  FiUnlock,
+  FiLock,
+  FiCheckSquare,
+  FiSquare
 } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAllSubjects, createSubject, updateSubject, deleteSubject, fetchAllUsers } from '../../redux/slices/adminSlice';
+import { 
+  fetchAllSubjects, 
+  createSubject, 
+  updateSubject, 
+  deleteSubject, 
+  fetchAllUsers,
+  fetchAdminLessons,
+  toggleLessonFree,
+  bulkToggleLessonFree 
+} from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -25,28 +39,33 @@ import { SubjectSchema } from '../../schemas/adminSchemas';
 import { useLocation } from 'react-router-dom';
 import { ContentSkeleton } from '../../components/shared/SkeletonLoading';
 
-// SubjectSchema imported from src/schemas/adminSchemas.js
-
 const Content = () => {
   const dispatch = useDispatch();
-  const { subjects, isLoading } = useSelector((state) => state.admin);
+  const location = useLocation();
+
+  const { subjects, lessons, isLoading } = useSelector((state) => state.admin);
   const [teachers, setTeachers] = useState([]);
 
-  // States
+  // Content Sub-tab: 'subjects' or 'lessons' (Requirement 10)
+  const [contentTab, setContentTab] = useState('subjects');
+
+  // Subjects States
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, active, inactive
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingSubject, setDeletingSubject] = useState(null);
-  const [isDescFocused, setIsDescFocused] = useState(false);
-  const [isSelectFocused, setIsSelectFocused] = useState(false);
 
-  const location = useLocation();
+  // Lessons Free-Preview Management States (Requirement 10)
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('');
+  const [lessonSearch, setLessonSearch] = useState('');
+  const [selectedLessonIds, setSelectedLessonIds] = useState([]);
 
   useEffect(() => {
     dispatch(fetchAllSubjects());
-    dispatch(fetchAllUsers({ role: 'teacher' })).unwrap()
+    dispatch(fetchAdminLessons());
+    dispatch(fetchAllUsers({ role: 'teacher', limit: 1000 })).unwrap()
       .then((res) => {
         setTeachers(res.users || []);
       })
@@ -63,7 +82,50 @@ const Content = () => {
     }
   }, [location.state]);
 
-  // Toggle switch handler
+  // Toggle Free Preview for single lesson (Requirement 10)
+  const handleToggleLessonFree = async (lessonId, currentFree) => {
+    const toastId = toast.loading('Updating lesson preview status...');
+    try {
+      await dispatch(toggleLessonFree(lessonId)).unwrap();
+      toast.dismiss(toastId);
+      toast.success(`Lesson marked as ${!currentFree ? 'Free Preview' : 'Paid Lesson'}!`);
+      dispatch(fetchAdminLessons({ subjectId: selectedSubjectFilter || undefined }));
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error(err || 'Failed to update lesson status');
+    }
+  };
+
+  // Bulk Toggle Free Preview (Requirement 10)
+  const handleBulkToggleFree = async (isFree) => {
+    if (selectedLessonIds.length === 0) {
+      toast.error('Please select at least one lesson.');
+      return;
+    }
+
+    const toastId = toast.loading(`Updating ${selectedLessonIds.length} lesson(s)...`);
+    try {
+      await dispatch(bulkToggleLessonFree({ lessonIds: selectedLessonIds, isFree })).unwrap();
+      toast.dismiss(toastId);
+      toast.success(`Updated ${selectedLessonIds.length} lesson(s) to ${isFree ? 'Free Preview' : 'Paid Lesson'}!`);
+      setSelectedLessonIds([]);
+      dispatch(fetchAdminLessons({ subjectId: selectedSubjectFilter || undefined }));
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error(err || 'Failed bulk update');
+    }
+  };
+
+  // Select all lessons in current view
+  const handleSelectAllLessons = () => {
+    if (selectedLessonIds.length === filteredLessons.length) {
+      setSelectedLessonIds([]);
+    } else {
+      setSelectedLessonIds(filteredLessons.map(l => l._id));
+    }
+  };
+
+  // Toggle Subject Status
   const toggleSubjectStatus = async (id, currentStatus) => {
     const loadToast = toast.loading('Updating subject status...');
     try {
@@ -80,25 +142,21 @@ const Content = () => {
     }
   };
 
-  // Add Click Handler
   const handleAddClick = () => {
     setEditingSubject(null);
     setIsModalOpen(true);
   };
 
-  // Edit Click Handler
   const handleEditClick = (subject) => {
     setEditingSubject(subject);
     setIsModalOpen(true);
   };
 
-  // Delete Click Handler
   const handleDeleteClick = (subject) => {
     setDeletingSubject(subject);
     setShowDeleteConfirm(true);
   };
 
-  // Confirm Delete
   const confirmDelete = async () => {
     const loadToast = toast.loading('Deleting subject...');
     try {
@@ -114,7 +172,6 @@ const Content = () => {
     }
   };
 
-  // Form Submit Handler
   const handleFormSubmit = async (values, { resetForm, setSubmitting }) => {
     const loadToast = toast.loading(editingSubject ? 'Saving subject...' : 'Creating subject...');
     try {
@@ -156,15 +213,9 @@ const Content = () => {
     }
   };
 
-  // Calculations for Metrics
   const subjectsList = subjects || [];
   const totalSubjects = subjectsList.length;
-  const totalQuestions = subjectsList.reduce((sum, s) => sum + (s.questionsCount || 0), 0);
-  const totalStudents = subjectsList.reduce((sum, s) => sum + (s.studentsCount || 0), 0);
 
-  const activeSubjectsCount = subjectsList.filter(s => s.isActive).length;
-
-  // Filtered list
   const filteredSubjects = subjectsList.filter(sub => {
     const nameMatch = sub.name ? sub.name.toLowerCase() : '';
     const teacherName = sub.teacher && typeof sub.teacher === 'object' ? sub.teacher.name : (sub.teacher || '');
@@ -174,26 +225,22 @@ const Content = () => {
       nameMatch.includes(searchQuery.toLowerCase()) ||
       teacherMatch.includes(searchQuery.toLowerCase());
 
-    if (filterStatus === 'active') {
-      return matchesSearch && sub.isActive;
-    }
-    if (filterStatus === 'inactive') {
-      return matchesSearch && !sub.isActive;
-    }
+    if (filterStatus === 'active') return matchesSearch && sub.isActive;
+    if (filterStatus === 'inactive') return matchesSearch && !sub.isActive;
     return matchesSearch;
+  });
+
+  const filteredLessons = (lessons || []).filter(l => {
+    const titleMatch = l.title ? l.title.toLowerCase().includes(lessonSearch.toLowerCase()) : false;
+    const subjectMatch = selectedSubjectFilter ? (l.subject?._id === selectedSubjectFilter || l.subject === selectedSubjectFilter) : true;
+    return titleMatch && subjectMatch;
   });
 
   const isBlurred = isModalOpen || showDeleteConfirm;
 
-  if (isLoading && subjectsList.length === 0) {
+  if (isLoading && subjectsList.length === 0 && lessons.length === 0) {
     return (
-      <DashboardLayout
-        role="admin"
-        activeTab="content"
-        title="Subjects"
-        subtitle="Loading subjects..."
-        disableScroll={true}
-      >
+      <DashboardLayout role="admin" activeTab="content" title="Courses & Lessons" subtitle="Loading content..." disableScroll={true}>
         <ContentSkeleton />
       </DashboardLayout>
     );
@@ -203,205 +250,284 @@ const Content = () => {
     <DashboardLayout
       role="admin"
       activeTab="content"
-      title="Subjects"
-      subtitle={`${totalSubjects} subjects total`}
+      title="Courses & Lessons"
+      subtitle="Course Management & Free Preview Toggles"
       isModalOpen={isBlurred}
       disableScroll={true}
     >
-      {/* Main Page Content */}
       <div className={`h-full flex flex-col px-4 md:px-8 py-4 overflow-hidden gap-5 animate-fade-in relative transition-all duration-300 ${isBlurred ? 'blur-sm pointer-events-none' : ''}`}>
 
-        {/* Fixed Top Controls Section */}
+        {/* Top Controls Section */}
         <div className="flex flex-col gap-4 shrink-0">
-          {/* Search */}
-          <div className="relative w-full">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Search subjects or teachers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm focus:outline-none focus:border-red-500/50 transition-colors"
-            />
-          </div>
-
-          {/* Metric Cards Grid */}
-          <div className="grid grid-cols-3 gap-3 md:gap-4">
-            {/* Subjects Metric */}
-            <div className="p-4 bg-[#0e101a] border border-red-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <span className="text-2xl font-extrabold text-red-400">{totalSubjects}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Subjects</span>
-            </div>
-            {/* Questions Metric */}
-            <div className="p-4 bg-[#0e101a] border border-yellow-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <span className="text-2xl font-extrabold text-yellow-400">{totalQuestions}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Questions</span>
-            </div>
-            {/* Students Metric */}
-            <div className="p-4 bg-[#0e101a] border border-emerald-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <span className="text-2xl font-extrabold text-emerald-400">{totalStudents}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Students</span>
-            </div>
-          </div>
-
-          {/* Filters pills */}
-          <div className="flex gap-2">
+          
+          {/* Segmented Control: Subjects vs Lessons */}
+          <div className="grid grid-cols-2 p-1.5 bg-[#0c0d19] border border-gray-800 rounded-2xl gap-1">
             <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer ${filterStatus === 'all'
-                  ? 'bg-red-500 text-white shadow-[0_4px_15px_rgba(239,68,68,0.3)]'
-                  : 'bg-transparent border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-                }`}
+              onClick={() => setContentTab('subjects')}
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 cursor-pointer ${
+                contentTab === 'subjects'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-[0_4px_20px_rgba(239,68,68,0.3)]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
             >
-              All
+              <FiBookOpen size={16} />
+              <span>Subjects ({totalSubjects})</span>
             </button>
+
             <button
-              onClick={() => setFilterStatus('active')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer ${filterStatus === 'active'
-                  ? 'bg-red-500 text-white shadow-[0_4px_15px_rgba(239,68,68,0.3)]'
-                  : 'bg-transparent border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-                }`}
+              onClick={() => setContentTab('lessons')}
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 cursor-pointer ${
+                contentTab === 'lessons'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-[0_4px_20px_rgba(239,68,68,0.3)]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
             >
-              Active
-            </button>
-            <button
-              onClick={() => setFilterStatus('inactive')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer ${filterStatus === 'inactive'
-                  ? 'bg-red-500 text-white shadow-[0_4px_15px_rgba(239,68,68,0.3)]'
-                  : 'bg-transparent border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-                }`}
-            >
-              Inactive
+              <FiVideo size={16} />
+              <span>Free Lesson Management</span>
             </button>
           </div>
 
-          {/* Subjects Row Stats Label */}
-          <div className="flex justify-between items-center text-xs font-bold">
-            <span className="text-gray-400">{filteredSubjects.length} subjects</span>
-            <span className="text-emerald-400">{activeSubjectsCount} active</span>
-          </div>
         </div>
 
-        {/* List of Subjects Cards */}
-        <div className="flex-1 overflow-y-auto pr-1 pb-36">
-          {filteredSubjects.length === 0 ? (
-            <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl flex flex-col items-center justify-center">
-              <span className="text-sm font-bold text-gray-500">No subjects match search criteria</span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSubjects.map((sub) => {
-                const teacherName = sub.teacher && typeof sub.teacher === 'object' ? sub.teacher.name : 'Unassigned';
-                const formattedDate = sub.createdAt ? new Date(sub.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
-                const displayStatus = sub.isActive ? 'active' : 'inactive';
-
-                return (
-                  <div
-                    key={sub._id}
-                    className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden"
+        {/* 1. Subjects View */}
+        {contentTab === 'subjects' && (
+          <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+            {/* Search & Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search subjects or teachers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm focus:outline-none focus:border-red-500/50"
+                />
+              </div>
+              <div className="flex gap-2">
+                {['all', 'active', 'inactive'].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setFilterStatus(st)}
+                    className={`px-4 py-2.5 rounded-2xl text-xs font-bold capitalize transition-all cursor-pointer ${
+                      filterStatus === st
+                        ? 'bg-red-500 text-white'
+                        : 'bg-[#0e101a] border border-gray-800 text-gray-400'
+                    }`}
                   >
-                    {/* Top section */}
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3.5">
-                        {/* Book Icon Box */}
-                        <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)] shrink-0">
-                          <FiBookOpen size={22} />
+                    {st}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* List of Subjects Cards */}
+            <div className="flex-1 overflow-y-auto pr-1 pb-36">
+              {filteredSubjects.length === 0 ? (
+                <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl text-gray-500 font-bold">
+                  No subjects found.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredSubjects.map((sub) => {
+                    const teacherName = sub.teacher && typeof sub.teacher === 'object' ? sub.teacher.name : 'Unassigned';
+
+                    return (
+                      <div
+                        key={sub._id}
+                        className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden text-left"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                              <FiBookOpen size={22} />
+                            </div>
+                            <div>
+                              <h4 className="text-base font-extrabold text-white leading-tight capitalize">{sub.name}</h4>
+                              <p className="text-xs text-gray-400 mt-1">{sub.description}</p>
+                              <span className="text-[11px] text-gray-500 font-bold block mt-1">Teacher: {teacherName}</span>
+                            </div>
+                          </div>
+
+                          <label className="relative inline-flex items-center cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              checked={!!sub.isActive}
+                              onChange={() => toggleSubjectStatus(sub._id, sub.isActive)}
+                            />
+                            <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500" />
+                          </label>
                         </div>
-                        <div className="flex flex-col text-left">
-                          <h4 className="text-base font-extrabold text-white leading-tight capitalize">{sub.name}</h4>
-                          <p className="text-xs text-gray-500 font-semibold mt-1 mb-1 leading-normal">{sub.description}</p>
-                          <div className="flex items-center gap-2 mt-1 mb-1 text-[11px] text-gray-500 font-bold">
-                            <span className="flex items-center gap-1">
-                              <FiUser size={13} className="text-red-400" />
-                              <span>{teacherName}</span>
-                            </span>
-                            <span className="text-gray-700 font-black">•</span>
-                            <span className="text-yellow-400">
-                              {sub.price === 0 || sub.price === '0' || sub.price === undefined ? 'Free' : `${sub.price} Pts`}
-                            </span>
+
+                        <div className="flex justify-end gap-2 pt-2 border-t border-gray-800/50">
+                          <button
+                            onClick={() => handleEditClick(sub)}
+                            className="px-4 py-2 border border-red-500/20 text-red-400 rounded-2xl text-xs font-bold cursor-pointer"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(sub)}
+                            className="px-4 py-2 border border-red-500/20 text-red-400 rounded-2xl text-xs font-bold cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Floating Add Subject Button */}
+            <button 
+              onClick={handleAddClick}
+              className="fixed bottom-26 right-6 lg:bottom-10 lg:right-10 z-30 flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-500 text-white px-5 py-3.5 rounded-2xl font-extrabold shadow-[0_4px_25px_rgba(239,68,68,0.4)] hover:scale-105 transition-all cursor-pointer"
+            >
+              <FiPlus size={18} />
+              <span>Add Subject</span>
+            </button>
+          </div>
+        )}
+
+        {/* 2. Free Preview & Lesson Management View (Requirement 10) */}
+        {contentTab === 'lessons' && (
+          <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+            
+            {/* Filter and Bulk Action Bar */}
+            <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-[#0e101a] border border-gray-800 rounded-2xl p-4">
+              
+              <div className="flex flex-1 gap-3 w-full">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search lesson title..."
+                    value={lessonSearch}
+                    onChange={(e) => setLessonSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#07080e] border border-gray-800 rounded-xl text-xs font-bold text-white focus:outline-none"
+                  />
+                </div>
+
+                {/* Course Filter */}
+                <select
+                  value={selectedSubjectFilter}
+                  onChange={(e) => setSelectedSubjectFilter(e.target.value)}
+                  className="py-2.5 px-3 bg-[#07080e] border border-gray-800 rounded-xl text-xs font-bold text-white focus:outline-none cursor-pointer"
+                >
+                  <option value="">All Courses</option>
+                  {subjects?.map(s => (
+                    <option key={s._id} value={s._id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Bulk Toggle Buttons (Requirement 10) */}
+              <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+                <button
+                  onClick={handleSelectAllLessons}
+                  className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  {selectedLessonIds.length === filteredLessons.length ? 'Deselect All' : 'Select All'}
+                </button>
+
+                <button
+                  onClick={() => handleBulkToggleFree(true)}
+                  disabled={selectedLessonIds.length === 0}
+                  className="px-3.5 py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-black hover:bg-emerald-500/30 transition-all cursor-pointer disabled:opacity-40"
+                >
+                  Mark Selected Free
+                </button>
+
+                <button
+                  onClick={() => handleBulkToggleFree(false)}
+                  disabled={selectedLessonIds.length === 0}
+                  className="px-3.5 py-2 bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-xl text-xs font-black hover:bg-amber-500/30 transition-all cursor-pointer disabled:opacity-40"
+                >
+                  Mark Selected Paid
+                </button>
+              </div>
+
+            </div>
+
+            {/* Lessons List (Requirement 10) */}
+            <div className="flex-1 overflow-y-auto pr-1 pb-36">
+              {filteredLessons.length === 0 ? (
+                <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl text-gray-500 font-bold">
+                  No lessons found matching filters.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {filteredLessons.map((lesson) => {
+                    const isSelected = selectedLessonIds.includes(lesson._id);
+                    const isFree = lesson.isFree;
+                    const subjectName = lesson.subject?.name || 'Subject';
+
+                    return (
+                      <div
+                        key={lesson._id}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedLessonIds(selectedLessonIds.filter(id => id !== lesson._id));
+                          } else {
+                            setSelectedLessonIds([...selectedLessonIds, lesson._id]);
+                          }
+                        }}
+                        className={`p-4 bg-[#0e101a] border rounded-2xl flex items-center justify-between gap-4 transition-all duration-300 text-left cursor-pointer ${
+                          isSelected ? 'border-red-500/60 bg-red-500/5' : 'border-gray-800/80 hover:border-gray-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3.5">
+                          {/* Checkbox */}
+                          <div className="text-gray-400">
+                            {isSelected ? <FiCheckSquare className="text-red-400" size={18} /> : <FiSquare size={18} />}
+                          </div>
+
+                          {/* Lesson Details */}
+                          <div className="flex flex-col">
+                            <span className="text-sm font-extrabold text-white leading-tight">{lesson.title}</span>
+                            <span className="text-xs text-gray-400 font-semibold mt-0.5">{subjectName}</span>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Toggle Switch */}
-                      <label className="relative inline-flex items-center cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={!!sub.isActive}
-                          onChange={() => toggleSubjectStatus(sub._id, sub.isActive)}
-                        />
-                        <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500" />
-                      </label>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="h-[1px] bg-gray-800/50" />
-
-                    {/* Middle details row */}
-                    <div className="flex justify-between items-center text-xs font-bold">
-                      <div className="flex gap-4 text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <FiHelpCircle size={14} className="text-red-400" />
-                          {sub.questionsCount || 0} Qs
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <FiUsers size={14} className="text-emerald-400" />
-                          {sub.studentsCount || 0}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2.5 py-0.5 rounded-full border text-[9px] font-extrabold uppercase tracking-wider ${sub.isActive
-                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                            : 'bg-gray-500/10 border-gray-500/20 text-gray-400'
+                        {/* Status Badge & Toggle Action */}
+                        <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1.5 ${
+                            isFree 
+                              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' 
+                              : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
                           }`}>
-                          {displayStatus}
-                        </span>
-                        <span className="text-[10px] text-gray-500">Created {formattedDate}</span>
+                            {isFree ? <FiUnlock size={12} /> : <FiLock size={12} />}
+                            {isFree ? 'Free Preview' : 'Paid Lesson'}
+                          </span>
+
+                          <button
+                            onClick={() => handleToggleLessonFree(lesson._id, lesson.isFree)}
+                            className="px-3 py-1.5 bg-[#07080e] border border-gray-800 hover:border-gray-700 text-xs font-bold text-gray-300 rounded-xl transition-all cursor-pointer"
+                          >
+                            {isFree ? 'Make Paid' : 'Make Free'}
+                          </button>
+                        </div>
+
                       </div>
-                    </div>
-
-                    {/* Edit / Delete Buttons */}
-                    <div className="flex justify-end gap-2.5 pt-1">
-                      <button
-                        onClick={() => handleEditClick(sub)}
-                        className="flex items-center gap-1 px-4 py-2 border border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
-                      >
-                        <FiEdit size={12} />
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(sub)}
-                        className="flex items-center gap-1 px-4 py-2 border border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
-                      >
-                        <FiTrash2 size={12} />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Floating Add Subject Button */}
-        <button 
-          onClick={handleAddClick}
-          className="fixed bottom-26 right-6 lg:bottom-10 lg:right-10 z-30 flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-500 text-white px-5 py-3.5 rounded-2xl font-extrabold shadow-[0_4px_25px_rgba(239,68,68,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
-        >
-          <FiPlus size={18} />
-          <span>Add Subject</span>
-        </button>
+          </div>
+        )}
 
       </div>
 
-      {/* 1. Add / Edit Modal */}
+      {/* Add / Edit Subject Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0b0c16] border border-gray-800 rounded-3xl p-6 w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 animate-fade-in flex flex-col gap-4 text-left relative">
-
-            {/* Close button */}
             <button
               onClick={() => {
                 setIsModalOpen(false);
@@ -428,7 +554,6 @@ const Content = () => {
             >
               {({ values, handleChange, handleBlur, touched, errors, isValid, dirty, isSubmitting }) => (
                 <Form className="flex flex-col gap-4 mt-2">
-
                   <Input
                     name="title"
                     type="text"
@@ -437,92 +562,42 @@ const Content = () => {
                     icon={FiBookOpen}
                     roleColor="admin"
                   />
-
                   <Input
                     name="price"
                     type="number"
-                    label="Price (Points)"
+                    label="Price ($)"
                     placeholder="0"
                     icon={FiDollarSign}
                     roleColor="admin"
                   />
-
-                  {/* Description Textarea */}
-                  <div className="w-full flex flex-col mb-4 relative select-none">
-                    <div className="w-full flex flex-col relative rounded-2xl px-4 py-3 input-3d-admin min-h-[120px] justify-start">
-                      <motion.span
-                        animate={{
-                          y: (isDescFocused || !!values.description) ? -28 : 0,
-                          scale: (isDescFocused || !!values.description) ? 0.8 : 1,
-                          color: (touched.description && errors.description) ? '#ef4444' : (isDescFocused || !!values.description) ? '#ef4444' : '#9ca3af'
-                        }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                        className="absolute left-4 top-3.5 pointer-events-none font-semibold text-sm md:text-base tracking-wide origin-left z-10"
-                      >
-                        Description
-                      </motion.span>
-                      <textarea
-                        name="description"
-                        rows={3}
-                        placeholder={isDescFocused ? "Introduce key curriculum topics..." : ""}
-                        value={values.description}
-                        onChange={handleChange}
-                        onFocus={() => setIsDescFocused(true)}
-                        onBlur={(e) => {
-                          setIsDescFocused(false);
-                          handleBlur(e);
-                        }}
-                        className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold outline-none focus:ring-0 resize-none pt-4"
-                      />
-                    </div>
-                    {touched.description && errors.description && (
-                      <div className="text-red-400 text-xs font-bold mt-1 pl-2">
-                        {errors.description}
-                      </div>
-                    )}
+                  
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-gray-400">Description</label>
+                    <textarea
+                      name="description"
+                      rows={3}
+                      value={values.description}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className="w-full bg-[#07080e] border border-gray-800 rounded-2xl p-3 text-white text-sm focus:outline-none"
+                    />
                   </div>
 
-                  {/* Teacher Dropdown */}
-                  <div className="w-full flex flex-col mb-4 relative select-none">
-                    <div className="w-full flex items-center justify-center relative rounded-2xl px-4 h-15 input-3d-admin">
-                      <div className="flex-1 relative h-full flex items-center">
-                        <motion.span
-                          animate={{
-                            y: (isSelectFocused || !!values.teacher) ? -30.5 : 0,
-                            scale: (isSelectFocused || !!values.teacher) ? 0.8 : 1,
-                            color: (touched.teacher && errors.teacher) ? '#ef4444' : (isSelectFocused || !!values.teacher) ? '#ef4444' : '#9ca3af'
-                          }}
-                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                          className="absolute left-0 pointer-events-none font-semibold text-sm md:text-base tracking-wide origin-left z-10"
-                        >
-                          Assign Teacher
-                        </motion.span>
-                        <select
-                          name="teacher"
-                          value={values.teacher}
-                          onChange={handleChange}
-                          onFocus={() => setIsSelectFocused(true)}
-                          onBlur={(e) => {
-                            setIsSelectFocused(false);
-                            handleBlur(e);
-                          }}
-                          className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer z-0"
-                        >
-                          <option value="" className="bg-[#0b0c16] text-gray-500">Select Teacher</option>
-                          {teachers && teachers.map((t) => (
-                             <option key={t._id} value={t._id} className="bg-[#0b0c16] text-white">
-                               {t.name}
-                             </option>
-                           ))}
-                        </select>
-                      </div>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-red-400 z-10">
-                        <FiChevronDown size={18} />
-                      </div>
-                    </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-gray-400">Teacher</label>
+                    <select
+                      name="teacher"
+                      value={values.teacher}
+                      onChange={handleChange}
+                      className="w-full bg-[#07080e] border border-gray-800 rounded-2xl p-3 text-white text-sm focus:outline-none"
+                    >
+                      <option value="">Select Teacher</option>
+                      {teachers?.map((t) => (
+                        <option key={t._id} value={t._id}>{t.name}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  {/* Submit Button */}
                   <Button
                     type="submit"
                     roleColor="admin"
@@ -530,50 +605,11 @@ const Content = () => {
                     icon={isSubmitting ? undefined : FiCheck}
                     className="w-full mt-2 !rounded-2xl"
                   >
-                    {isSubmitting ? (
-                      <span className="inline-flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
-                        <span>{editingSubject ? 'Saving Changes...' : 'Creating Subject...'}</span>
-                      </span>
-                    ) : (
-                      editingSubject ? 'Save Changes' : 'Create Subject'
-                    )}
+                    {isSubmitting ? 'Saving...' : editingSubject ? 'Save Changes' : 'Create Subject'}
                   </Button>
-
                 </Form>
               )}
             </Formik>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Delete Confirmation Modal */}
-      {showDeleteConfirm && deletingSubject && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0b0c16] border border-gray-800 rounded-3xl p-6 w-full max-w-sm shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 animate-fade-in flex flex-col gap-4 text-left relative">
-            <h3 className="text-lg font-black text-white">Delete Subject</h3>
-            <p className="text-sm text-gray-400 leading-relaxed font-semibold">
-              Are you sure you want to delete the subject <span className="text-red-400 font-extrabold">"{deletingSubject.title}"</span>? This action cannot be undone.
-            </p>
-            <div className="flex gap-3 mt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeletingSubject(null);
-                }}
-                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl font-bold text-sm transition-all cursor-pointer text-center"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDelete}
-                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-sm transition-all cursor-pointer text-center shadow-[0_4px_15px_rgba(239,68,68,0.3)]"
-              >
-                Delete
-              </button>
-            </div>
           </div>
         </div>
       )}

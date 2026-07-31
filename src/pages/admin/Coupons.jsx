@@ -11,14 +11,24 @@ import {
   FiCreditCard,
   FiZap,
   FiKey,
-  FiShoppingBag,
-  FiFileText
+  FiDownload,
+  FiSlash,
+  FiLayers,
+  FiGift,
+  FiDollarSign
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAllCoupons, createCoupon, toggleCouponActive, deleteCoupon } from '../../redux/slices/adminSlice';
+import { 
+  fetchCouponBatches, 
+  createCouponBatch, 
+  fetchCouponBatchDetail, 
+  exportCouponBatchExcel, 
+  cancelCoupon,
+  fetchAllSubjects 
+} from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -27,413 +37,287 @@ import { CouponsSkeleton } from '../../components/shared/SkeletonLoading';
 const Coupons = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { coupons, isLoading } = useSelector((state) => state.admin);
 
-  // States
+  const { couponBatches, couponSummary, activeBatchDetail, subjects, isLoading } = useSelector((state) => state.admin);
+
+  // Search and view states
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all'); // all, active, used, expired, revoked
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingCoupon, setDeletingCoupon] = useState(null);
-  
-  // Revoke Confirmation States
-  const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
-  const [revokingCoupon, setRevokingCoupon] = useState(null);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [isBatchDetailOpen, setIsBatchDetailOpen] = useState(false);
 
-  // History Modal States
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [historyCoupon, setHistoryCoupon] = useState(null);
-
-  // Form States for Generate Coupon
-  const [couponValue, setCouponValue] = useState('');
-  const [autoGenerate, setAutoGenerate] = useState(true);
-  const [customCode, setCustomCode] = useState('');
-  const [expiresIn, setExpiresIn] = useState('never'); // never, 30 days, 60 days, 90 days, 180 days
+  // Form States for Batch Generation (Requirements 7 & 8)
+  const [selectedCourseIds, setSelectedCourseIds] = useState([]);
+  const [mainCourseSearch, setMainCourseSearch] = useState('');
+  const [price, setPrice] = useState('');
+  const [count, setCount] = useState('10');
+  const [expiryDays, setExpiryDays] = useState('none');
+  const [prefix, setPrefix] = useState('FM');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Fetch coupons on mount and when filter/search changes
+  // Optional Additional Courses (Bonus Courses) state (Requirement 8)
+  // Must NOT be enabled by default
+  const [enableBonusCourses, setEnableBonusCourses] = useState(false);
+  const [selectedBonusCourseIds, setSelectedBonusCourseIds] = useState([]);
+  const [bonusCourseSearch, setBonusCourseSearch] = useState('');
+
+  const filteredMainSubjects = (subjects || []).filter(s =>
+    s.name ? s.name.toLowerCase().includes(mainCourseSearch.toLowerCase()) : false
+  );
+
+  const filteredBonusSubjects = (subjects || []).filter(s =>
+    s.name ? s.name.toLowerCase().includes(bonusCourseSearch.toLowerCase()) : false
+  );
+
   useEffect(() => {
-    dispatch(fetchAllCoupons({
-      search: searchQuery || undefined,
-      status: filterStatus === 'all' ? undefined : filterStatus
-    }));
-  }, [dispatch, searchQuery, filterStatus]);
+    dispatch(fetchCouponBatches());
+    dispatch(fetchAllSubjects());
+  }, [dispatch]);
 
-  // Helper to determine coupon status dynamically
-  const getCouponStatus = (c) => {
-    if (!c.isActive) return 'revoked';
-    if (c.expiresAt && new Date(c.expiresAt) < new Date()) return 'expired';
-    if (c.balance === 0) return 'used';
-    return 'active';
+  // Handle batch click to open detail drawer
+  const handleOpenBatchDetail = (batchId) => {
+    if (!batchId || batchId === 'null') {
+      toast.error('No batch ID available for this legacy record.');
+      return;
+    }
+    setIsBatchDetailOpen(true);
+    dispatch(fetchCouponBatchDetail(batchId));
   };
 
-  const couponsList = coupons || [];
-
-  // Stats
-  const totalCoupons = couponsList.length;
-  const activeCoupons = couponsList.filter(c => getCouponStatus(c) === 'active').length;
-  const usedCoupons = couponsList.filter(c => getCouponStatus(c) === 'used').length;
-  const expiredCoupons = couponsList.filter(c => getCouponStatus(c) === 'expired').length;
-
-  // Copy Code to Clipboard
-  const handleCopyCode = (code) => {
-    navigator.clipboard.writeText(code);
-    toast.success(`Coupon code "${code}" copied! 📋`);
-  };
-
-  // Revoke Click
-  const handleRevokeClick = (coupon) => {
-    setRevokingCoupon(coupon);
-    setShowRevokeConfirm(true);
-  };
-
-  // Confirm Revoke
-  const confirmRevoke = async () => {
-    const loadToast = toast.loading('Revoking coupon...');
+  // Export batch Excel
+  const handleExportBatch = async (batchId) => {
+    const toastId = toast.loading('Exporting Batch Excel file...');
     try {
-      await dispatch(toggleCouponActive(revokingCoupon._id)).unwrap();
-      toast.dismiss(loadToast);
-      toast.success('Coupon status updated!');
-      setShowRevokeConfirm(false);
-      setRevokingCoupon(null);
-      dispatch(fetchAllCoupons({
-        search: searchQuery || undefined,
-        status: filterStatus === 'all' ? undefined : filterStatus
-      }));
+      await dispatch(exportCouponBatchExcel(batchId)).unwrap();
+      toast.dismiss(toastId);
+      toast.success('Batch Excel downloaded! 📊');
     } catch (err) {
-      toast.dismiss(loadToast);
-      toast.error(err || 'Failed to revoke coupon');
+      toast.dismiss(toastId);
+      toast.error(err || 'Failed to export batch Excel');
     }
   };
 
-  // Delete Click
-  const handleDeleteClick = (coupon) => {
-    setDeletingCoupon(coupon);
-    setShowDeleteConfirm(true);
-  };
-
-  // Confirm Delete
-  const confirmDelete = async () => {
-    const loadToast = toast.loading('Deleting coupon...');
+  // Cancel coupon action (Requirement 9)
+  const handleCancelCoupon = async (couponId) => {
+    const toastId = toast.loading('Cancelling coupon...');
     try {
-      await dispatch(deleteCoupon(deletingCoupon._id)).unwrap();
-      toast.dismiss(loadToast);
-      toast.success('Coupon deleted successfully!');
-      setShowDeleteConfirm(false);
-      setDeletingCoupon(null);
-      dispatch(fetchAllCoupons({
-        search: searchQuery || undefined,
-        status: filterStatus === 'all' ? undefined : filterStatus
-      }));
+      await dispatch(cancelCoupon(couponId)).unwrap();
+      toast.dismiss(toastId);
+      toast.success('Coupon cancelled successfully!');
+      if (activeBatchDetail?.batch?._id) {
+        dispatch(fetchCouponBatchDetail(activeBatchDetail.batch._id));
+      }
+      dispatch(fetchCouponBatches());
     } catch (err) {
-      toast.dismiss(loadToast);
-      toast.error(err || 'Failed to delete coupon');
+      toast.dismiss(toastId);
+      toast.error(err || 'Failed to cancel coupon');
     }
   };
 
-  // View History
-  const handleViewHistory = (coupon) => {
-    setHistoryCoupon(coupon);
-    setIsHistoryOpen(true);
-  };
-
-  // Helper to generate a random 8-character string for coupon code
-  const generateRandomCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return `FM-${result}`;
-  };
-
-  // Form Submit Handler
-  const handleGenerateSubmit = async (e) => {
+  // Submit Generate Batch Form
+  const handleGenerateBatchSubmit = async (e) => {
     e.preventDefault();
 
-    const valueNum = Number(couponValue);
-    if (!couponValue || isNaN(valueNum) || valueNum <= 0) {
-      toast.error('Please enter a valid positive coupon value.');
+    if (selectedCourseIds.length === 0) {
+      toast.error('Please select at least one main course.');
       return;
     }
 
-    let codeToUse = '';
-    if (autoGenerate) {
-      codeToUse = generateRandomCode();
-    } else {
-      if (!customCode.trim()) {
-        toast.error('Please enter a custom code.');
-        return;
-      }
-      codeToUse = customCode.trim().toUpperCase();
-      if (!codeToUse.startsWith('FM-')) {
-        codeToUse = `FM-${codeToUse}`;
-      }
+    const priceNum = Number(price);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      toast.error('Please enter a valid coupon price.');
+      return;
     }
 
-    // Calculate expiresAt date
-    let expiresAt = null;
-    if (expiresIn !== 'never') {
-      const days = parseInt(expiresIn);
-      const date = new Date();
-      date.setDate(date.getDate() + days);
-      expiresAt = date.toISOString();
+    const countNum = Number(count);
+    if (isNaN(countNum) || countNum <= 0) {
+      toast.error('Please enter a valid count.');
+      return;
     }
 
-    const loadToast = toast.loading('Generating coupon...');
+    const payload = {
+      courseIds: selectedCourseIds,
+      price: priceNum,
+      count: countNum,
+      prefix: prefix.trim() || 'FM',
+      expiryDays: expiryDays !== 'none' ? Number(expiryDays) : undefined,
+      bonusCourseIds: enableBonusCourses ? selectedBonusCourseIds : [],
+    };
+
+    const loadToast = toast.loading('Generating prepaid coupon batch...');
     setIsGenerating(true);
     try {
-      await dispatch(createCoupon({
-        code: codeToUse,
-        value: valueNum,
-        expiresAt
-      })).unwrap();
+      const res = await dispatch(createCouponBatch(payload)).unwrap();
       toast.dismiss(loadToast);
-      toast.success(`Coupon ${codeToUse} generated successfully!`);
-      setIsModalOpen(false);
+      toast.success(`Generated batch of ${countNum} prepaid coupon(s)!`);
+      
+      // Auto export Excel
+      if (res?.batch?._id) {
+        dispatch(exportCouponBatchExcel(res.batch._id));
+      }
 
+      setIsGenerateModalOpen(false);
       // Reset Form
-      setCouponValue('');
-      setCustomCode('');
-      setAutoGenerate(true);
-      setExpiresIn('never');
-      dispatch(fetchAllCoupons({
-        search: searchQuery || undefined,
-        status: filterStatus === 'all' ? undefined : filterStatus
-      }));
+      setSelectedCourseIds([]);
+      setPrice('');
+      setCount('10');
+      setExpiryDays('none');
+      setEnableBonusCourses(false);
+      setSelectedBonusCourseIds([]);
+      dispatch(fetchCouponBatches());
     } catch (err) {
       toast.dismiss(loadToast);
-      toast.error(err || 'Failed to generate coupon');
+      toast.error(err || 'Failed to generate batch');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // Filtered coupons list (filtering done primarily in API, minor local fallback)
-  const filteredCoupons = couponsList;
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`Copied code "${text}" to clipboard!`);
+  };
 
-  const isBlurred = isModalOpen || showDeleteConfirm || showRevokeConfirm || isHistoryOpen;
+  const isBlurred = isGenerateModalOpen || isBatchDetailOpen;
 
-  if (isLoading && couponsList.length === 0) {
+  if (isLoading && couponBatches.length === 0) {
     return (
-      <DashboardLayout
-        role="admin"
-        activeTab="coupons"
-        title="Coupon Management"
-        subtitle="Loading coupons..."
-        disableScroll={true}
-      >
+      <DashboardLayout role="admin" activeTab="coupons" title="Prepaid Coupon System" subtitle="Loading batches..." disableScroll={true}>
         <CouponsSkeleton />
       </DashboardLayout>
     );
   }
 
+  // Computed Summary stats from batches array
+  const computedSummary = couponBatches.reduce((acc, b) => {
+    acc.totalGenerated += b.generated ?? b.count ?? 0;
+    acc.activatedCount += b.activated ?? b.activatedCount ?? 0;
+    acc.notActivatedCount += b.notActivated ?? ((b.generated || 0) - (b.activated || 0)) ?? 0;
+    acc.cancelledCount += b.cancelledOrExpired ?? 0;
+    acc.totalSalesValue += b.activatedValue ?? ((b.activated || 0) * (b.price || 0));
+    return acc;
+  }, {
+    totalGenerated: 0,
+    activatedCount: 0,
+    notActivatedCount: 0,
+    cancelledCount: 0,
+    totalSalesValue: 0
+  });
+
+  const summaryStats = couponSummary || computedSummary;
+
   return (
     <DashboardLayout
       role="admin"
       activeTab="coupons"
-      title="Coupon Management"
-      subtitle={`${totalCoupons} coupons total`}
+      title="Prepaid Coupon System"
+      subtitle="Course Activation Codes & Batch Management"
       isModalOpen={isBlurred}
       disableScroll={true}
       showBackButton={true}
       onBackClick={() => navigate('/admin/dashboard')}
     >
-      {/* Main Page Content */}
       <div className={`h-full flex flex-col px-4 md:px-8 py-4 overflow-hidden gap-5 animate-fade-in relative transition-all duration-300 ${isBlurred ? 'blur-sm pointer-events-none' : ''}`}>
 
         {/* Top Controls Section */}
         <div className="flex flex-col gap-4 shrink-0">
-          {/* Search */}
-          <div className="relative w-full">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Search by code or linked student..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm focus:outline-none focus:border-red-500/50 transition-colors"
-            />
-          </div>
-
-          {/* Metric Cards Grid */}
-          <div className="grid grid-cols-4 gap-2 md:gap-4">
-            {/* Total Card */}
-            <div className="p-3 md:p-4 bg-[#0e101a] border border-red-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <div className="w-8 h-8 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-2">
-                <FiTag size={16} />
-              </div>
-              <span className="text-xl md:text-2xl font-extrabold text-red-400">{totalCoupons}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Total</span>
+          
+          {/* Summary Metric Cards (Requirement 9) */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="p-4 bg-[#0e101a] border border-red-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+              <span className="text-2xl font-black text-red-400">{summaryStats.totalGenerated || 0}</span>
+              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">Total Generated</span>
             </div>
-            {/* Active Card */}
-            <div className="p-3 md:p-4 bg-[#0e101a] border border-emerald-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-2">
-                <FiCheckCircle size={16} />
-              </div>
-              <span className="text-xl md:text-2xl font-extrabold text-emerald-400">{activeCoupons}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Active</span>
+            <div className="p-4 bg-[#0e101a] border border-emerald-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+              <span className="text-2xl font-black text-emerald-400">{summaryStats.activatedCount || 0}</span>
+              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">Activated</span>
             </div>
-            {/* Used Card */}
-            <div className="p-3 md:p-4 bg-[#0e101a] border border-blue-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-2">
-                <FiUser size={16} />
-              </div>
-              <span className="text-xl md:text-2xl font-extrabold text-blue-400">{usedCoupons}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Used</span>
+            <div className="p-4 bg-[#0e101a] border border-amber-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+              <span className="text-2xl font-black text-amber-400">{summaryStats.notActivatedCount || 0}</span>
+              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">Not Activated</span>
             </div>
-            {/* Expired Card */}
-            <div className="p-3 md:p-4 bg-[#0e101a] border border-orange-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <div className="w-8 h-8 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400 mb-2">
-                <FiClock size={16} />
-              </div>
-              <span className="text-xl md:text-2xl font-extrabold text-orange-400">{expiredCoupons}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-gray-500 tracking-wider mt-1 uppercase">Expired</span>
+            <div className="p-4 bg-[#0e101a] border border-orange-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+              <span className="text-2xl font-black text-orange-400">{summaryStats.cancelledCount || 0}</span>
+              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">Cancelled/Expired</span>
+            </div>
+            <div className="p-4 bg-[#0e101a] border border-blue-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg col-span-2 lg:col-span-1">
+              <span className="text-xl font-black text-blue-400">${(summaryStats.totalSalesValue || 0).toLocaleString()}</span>
+              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">Activated Sales Value</span>
             </div>
           </div>
 
-          {/* Filters pills */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none w-full">
-            {['all', 'active', 'used', 'expired', 'revoked'].map(status => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer capitalize whitespace-nowrap ${filterStatus === status
-                    ? 'bg-red-500 text-white shadow-[0_4px_15px_rgba(239,68,68,0.3)]'
-                    : 'bg-transparent border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700'
-                  }`}
-              >
-                {status}
-              </button>
-            ))}
-          </div>
-
-          {/* Stat Labels */}
-          <div className="flex justify-between items-center text-xs font-bold">
-            <span className="text-gray-400">{filteredCoupons.length} coupons</span>
-            <span className="text-gray-500">Tap code to copy</span>
+          {/* Search & Header */}
+          <div className="flex justify-between items-center text-xs font-bold text-gray-400 pt-2 border-b border-gray-800/40 pb-2">
+            <span>{couponBatches.length} Batches Generated</span>
+            <span>Prepaid codes activate selected courses instantly</span>
           </div>
         </div>
 
-        {/* Coupons List */}
+        {/* Coupon Batches List (Requirement 9) */}
         <div className="flex-1 overflow-y-auto pr-1 pb-36">
-          {filteredCoupons.length === 0 ? (
-            <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl flex flex-col items-center justify-center">
-              <span className="text-sm font-bold text-gray-500">No coupons match search filters</span>
+          {couponBatches.length === 0 ? (
+            <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl text-gray-500 font-bold">
+              No coupon batches generated yet. Click "Generate Coupon Batch" to create one.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCoupons.map((coupon) => {
-                const status = getCouponStatus(coupon);
-                const spentAmount = (coupon.amount || 0) - (coupon.remainingBalance || 0);
-                const progressPercent = coupon.amount > 0 ? Math.round(((coupon.remainingBalance || 0) / coupon.amount) * 100) : 0;
-                const createdDate = coupon.createdAt ? new Date(coupon.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-                const linkedUser = coupon.assignedTo ? (coupon.assignedTo.name || coupon.assignedTo.email || 'Linked User') : 'Not linked';
-                const expiresIn = coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'never';
+              {couponBatches.map((batch, idx) => {
+                const batchDate = batch.createdAt ? new Date(batch.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                const mainCourseNames = batch.courses && batch.courses.length > 0 ? batch.courses.map(c => c.name).join(', ') : 'Courses';
+                const batchIdDisplay = batch.batchId || batch._id || `BATCH-${idx + 1}`;
+                const genCount = batch.generated ?? batch.count ?? 0;
+                const actCount = batch.activated ?? batch.activatedCount ?? 0;
+                const notActCount = batch.notActivated ?? (genCount - actCount);
+
+                const actualBatchId = batch._id || batch.batchId;
 
                 return (
                   <div
-                    key={coupon._id}
-                    className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:border-emerald-500/25"
+                    key={batch._id || batch.batchId || idx}
+                    className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden transition-all duration-300 hover:border-red-500/30 text-left"
                   >
-                    {/* Top Row: Icon, Value, Status */}
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] shrink-0">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
-                            <path d="M13 5v2"/>
-                            <path d="M13 17v2"/>
-                            <path d="M13 11v2"/>
-                          </svg>
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-black shrink-0">
+                          <FiLayers size={22} />
                         </div>
-                        <div className="flex flex-col text-left">
-                          <h4 className="text-base font-extrabold text-white leading-tight">Value: {(coupon.amount || 0).toLocaleString()}</h4>
-                          <p className="text-xs text-gray-500 font-semibold mt-1">Created {createdDate}</p>
+                        <div>
+                          <h4 className="text-base font-extrabold text-white leading-tight">Batch #{batchIdDisplay.toString().slice(-6)}</h4>
+                          <span className="text-xs font-semibold text-gray-400 mt-1 block truncate max-w-[180px]">{mainCourseNames}</span>
                         </div>
                       </div>
 
-                      <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
-                        status === 'active'
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                          : status === 'used'
-                          ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
-                          : status === 'expired'
-                          ? 'bg-orange-500/10 border-orange-500/20 text-orange-400'
-                          : 'bg-red-500/10 border-red-500/20 text-red-400'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          status === 'active' ? 'bg-emerald-400 animate-pulse' :
-                          status === 'used' ? 'bg-blue-400' :
-                          status === 'expired' ? 'bg-orange-400' : 'bg-red-400'
-                        }`} />
-                        {status}
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black">
+                        ${batch.price ?? 0} / code
                       </span>
                     </div>
 
-                    {/* Code Container */}
-                    <div className="flex items-center justify-between p-3.5 bg-[#07080e] border border-gray-800 rounded-2xl">
-                      <div className="flex items-center gap-2.5 text-emerald-400">
-                        <FiKey size={16} />
-                        <span className="font-mono font-extrabold text-sm text-white tracking-wider">{coupon.code}</span>
+                    {/* Progress details */}
+                    <div className="p-3 bg-[#07080e] border border-gray-800 rounded-2xl flex items-center justify-between text-xs font-semibold">
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-400 font-black">{actCount} Activated</span>
+                        <span className="text-gray-600">•</span>
+                        <span className="text-amber-400 font-bold">{notActCount} Remaining</span>
                       </div>
+                      <span className="text-gray-500">{batchDate}</span>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex gap-2 pt-1">
                       <button
-                        onClick={() => handleCopyCode(coupon.code)}
-                        className="px-3.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5"
+                        onClick={() => handleOpenBatchDetail(actualBatchId)}
+                        className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl text-xs font-black transition-all cursor-pointer text-center"
                       >
-                        <FiCopy size={12} />
-                        Copy
+                        View All Codes
                       </button>
-                    </div>
-
-                    {/* Progress Balance */}
-                    <div className="flex flex-col gap-2">
-                      <div className="flex justify-between items-center text-xs font-bold">
-                        <span className="text-gray-400">Balance: {(coupon.remainingBalance || 0).toLocaleString()} / {(coupon.amount || 0).toLocaleString()}</span>
-                        <span className="text-blue-400 font-extrabold">{spentAmount.toLocaleString()} spent</span>
-                      </div>
-                      <div className="h-2 w-full bg-gray-900 rounded-full overflow-hidden border border-gray-800/60">
-                        <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
-                          style={{ width: `${progressPercent}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Linked User */}
-                    <div className="flex items-center gap-2 px-3 py-2.5 bg-[#07080e]/40 border border-gray-800/40 rounded-2xl text-xs font-bold text-gray-400">
-                      <FiUser size={14} className="text-blue-400" />
-                      <span>Linked to {linkedUser}</span>
-                    </div>
-
-                    {/* Bottom row: Expires and Actions */}
-                    <div className="flex justify-between items-center pt-2">
-                      <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1">
-                        <FiClock size={12} className="text-orange-400" />
-                        Expires: {expiresIn}
-                      </span>
-                      <div className="flex gap-2">
+                      {actualBatchId && (
                         <button
-                          onClick={() => handleViewHistory(coupon)}
-                          className="px-3.5 py-2 border border-blue-500/20 text-blue-400 hover:bg-blue-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
+                          onClick={() => handleExportBatch(actualBatchId)}
+                          className="px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5"
                         >
-                          History
+                          <FiDownload size={14} />
+                          Excel
                         </button>
-                        {status === 'active' && (
-                          <button
-                            onClick={() => handleRevokeClick(coupon)}
-                            className="px-3.5 py-2 border border-yellow-500/20 text-yellow-400 hover:bg-yellow-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
-                          >
-                            Revoke
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDeleteClick(coupon)}
-                          className="px-3.5 py-2 border border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-2xl text-xs font-extrabold transition-all cursor-pointer"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      )}
                     </div>
 
                   </div>
@@ -446,362 +330,386 @@ const Coupons = () => {
         {/* Floating Generate Coupon Button */}
         <div className="fixed bottom-26 right-6 lg:bottom-10 lg:right-10 z-30">
           <Button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsGenerateModalOpen(true)}
             roleColor="admin"
             icon={FiPlus}
             className="w-auto h-auto px-5 py-3.5 !rounded-2xl shadow-[0_4px_25px_rgba(239,68,68,0.4)]"
           >
-            Generate Coupon
+            Generate Coupon Batch
           </Button>
         </div>
 
       </div>
 
-      {/* 1. Generate Coupon Modal */}
+      {/* 1. Generate Batch Modal (Requirements 7 & 8) */}
       <AnimatePresence>
-        {isModalOpen && (
+        {isGenerateModalOpen && (
           <div
-            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
-            onClick={() => setIsModalOpen(false)}
+            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300"
+            onClick={() => setIsGenerateModalOpen(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 100, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-lg bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Mobile Handle */}
-              <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
-
-              {/* Close Button */}
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => setIsGenerateModalOpen(false)}
                 className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
               >
                 <FiX size={20} />
               </button>
 
-              {/* Header Title with gold background tag icon */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.15)] shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
-                    <path d="M13 5v2"/>
-                    <path d="M13 17v2"/>
-                    <path d="M13 11v2"/>
-                  </svg>
-                </div>
-                <h3 className="text-xl font-black text-white">Generate Coupon</h3>
-              </div>
+              <h3 className="text-xl font-black text-white mb-1">Generate Prepaid Coupon Batch</h3>
+              <p className="text-xs text-gray-400 font-semibold mb-5">
+                Generate batch activation codes for single or multiple courses.
+              </p>
 
-              {/* Form */}
-              <form onSubmit={handleGenerateSubmit} className="flex flex-col gap-5 mt-2">
-                {/* Coupon Value field */}
+              <form onSubmit={handleGenerateBatchSubmit} className="flex flex-col gap-4">
+                
+                {/* Course Selection (Main Courses) - Searchable Multi-Select */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Coupon Value</label>
-                  <Input
-                    label="Amount"
-                    type="number"
-                    value={couponValue}
-                    onChange={(e) => setCouponValue(e.target.value)}
-                    icon={FiCreditCard}
-                    roleColor="admin"
-                  />
-
-                  {/* Preset Values Grid */}
-                  <div className="grid grid-cols-4 gap-2 mt-1">
-                    {[500, 1000, 2000, 5000].map(val => (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => setCouponValue(val.toString())}
-                        className={`py-2 px-1 text-xs font-bold border rounded-xl transition-all cursor-pointer text-center ${
-                          Number(couponValue) === val
-                            ? 'border-amber-500 bg-amber-500/10 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
-                            : 'border-gray-800 bg-[#07080e]/40 text-gray-400 hover:text-gray-200'
-                        }`}
-                      >
-                        {val.toLocaleString()}
-                      </button>
-                    ))}
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Select Main Course(s) ({selectedCourseIds.length} selected)
+                    </label>
                   </div>
-                </div>
-
-                {/* Auto-generate code switch */}
-                <div className="flex items-center justify-between p-4 bg-[#07080e]/40 border border-gray-800/60 rounded-2xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
-                      <FiZap size={18} />
-                    </div>
-                    <div className="flex flex-col text-left">
-                      <span className="text-xs font-bold text-white leading-tight">Auto-Generate Code</span>
-                      <span className="text-[10px] text-gray-500 font-medium">System generates a unique code</span>
-                    </div>
-                  </div>
-
-                  {/* Toggle switch */}
-                  <label className="relative inline-flex items-center cursor-pointer select-none">
+                  
+                  {/* Search input field */}
+                  <div className="relative">
+                    <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
                     <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={autoGenerate}
-                      onChange={() => setAutoGenerate(!autoGenerate)}
+                      type="text"
+                      placeholder="Search courses by name..."
+                      value={mainCourseSearch}
+                      onChange={(e) => setMainCourseSearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-[#07080e] border border-gray-800 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-red-500/50"
                     />
-                    <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
-                  </label>
+                  </div>
+
+                  {/* Selected course chips */}
+                  {selectedCourseIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 p-2 bg-[#07080e]/80 border border-red-500/20 rounded-xl max-h-24 overflow-y-auto">
+                      {selectedCourseIds.map((id) => {
+                        const course = subjects?.find(s => s._id === id);
+                        return (
+                          <span key={id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-500/15 border border-red-500/30 text-red-400 rounded-lg text-xs font-extrabold">
+                            {course?.name || 'Course'}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCourseIds(selectedCourseIds.filter(cId => cId !== id))}
+                              className="hover:text-white cursor-pointer"
+                            >
+                              <FiX size={13} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Scrollable Filtered Subjects List */}
+                  <div className="max-h-36 overflow-y-auto p-1.5 bg-[#07080e] border border-gray-800 rounded-2xl flex flex-col gap-1">
+                    {filteredMainSubjects.length === 0 ? (
+                      <span className="p-3 text-xs text-gray-500 font-semibold text-center">
+                        No courses found matching "{mainCourseSearch}"
+                      </span>
+                    ) : (
+                      filteredMainSubjects.map((s) => {
+                        const isSelected = selectedCourseIds.includes(s._id);
+                        return (
+                          <button
+                            key={s._id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedCourseIds(selectedCourseIds.filter(id => id !== s._id));
+                              } else {
+                                setSelectedCourseIds([...selectedCourseIds, s._id]);
+                              }
+                            }}
+                            className={`w-full p-2.5 rounded-xl border text-xs font-bold text-left flex items-center justify-between transition-all cursor-pointer ${
+                              isSelected
+                                ? 'border-red-500 bg-red-500/10 text-red-400'
+                                : 'border-gray-800/80 text-gray-400 hover:text-white hover:bg-gray-800/40'
+                            }`}
+                          >
+                            <span>{s.name}</span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                              isSelected ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-500'
+                            }`}>
+                              {isSelected ? 'Selected ✓' : '+ Select'}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
 
-                {/* Custom Code field (only if auto-generate is toggled off) */}
-                <AnimatePresence>
-                  {!autoGenerate && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex flex-col gap-2 overflow-hidden"
-                    >
-                      <Input
-                        label="Custom Code"
-                        type="text"
-                        value={customCode}
-                        onChange={(e) => setCustomCode(e.target.value)}
-                        placeholder={customCode ? "" : "e.g. DISCOUNT50"}
-                        icon={FiKey}
-                        roleColor="admin"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Expires In field */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expires In</label>
-                  <div className="grid grid-cols-5 gap-1.5">
-                    {[
-                      { key: 'never', label: '∞ never' },
-                      { key: '30 days', label: '30 days' },
-                      { key: '60 days', label: '60 days' },
-                      { key: '90 days', label: '90 days' },
-                      { key: '180 days', label: '180 days' }
-                    ].map(exp => (
-                      <button
-                        key={exp.key}
-                        type="button"
-                        onClick={() => setExpiresIn(exp.key)}
-                        className={`py-2 px-1 text-[10px] font-bold border rounded-xl transition-all cursor-pointer text-center whitespace-nowrap ${
-                          expiresIn === exp.key
-                            ? 'border-amber-500 bg-amber-500/10 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
-                            : 'border-gray-800 bg-[#07080e]/40 text-gray-400 hover:text-gray-200'
-                        }`}
-                      >
-                        {exp.label}
-                      </button>
-                    ))}
+                {/* Price and Quantity Count */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Coupon Price ($)</label>
+                    <input
+                      type="number"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="e.g. 50"
+                      className="w-full p-3 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-bold text-white focus:outline-none focus:border-red-500/50"
+                    />
                   </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Quantity (Count)</label>
+                    <input
+                      type="number"
+                      value={count}
+                      onChange={(e) => setCount(e.target.value)}
+                      placeholder="e.g. 10, 100, 1000"
+                      className="w-full p-3 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-bold text-white focus:outline-none focus:border-red-500/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Expiry Days Option */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Expiry Days (Optional)</label>
+                  <select
+                    value={expiryDays}
+                    onChange={(e) => setExpiryDays(e.target.value)}
+                    className="w-full p-3 bg-[#07080e] border border-gray-800 rounded-2xl text-xs font-bold text-white focus:outline-none"
+                  >
+                    <option value="none">No Expiry (Never Expires)</option>
+                    <option value="30">30 Days</option>
+                    <option value="60">60 Days</option>
+                    <option value="90">90 Days</option>
+                    <option value="180">180 Days</option>
+                    <option value="365">365 Days</option>
+                  </select>
+                </div>
+
+                {/* Requirement 8: Optional Additional Courses (Bonus Courses) */}
+                {/* Must NOT be enabled by default */}
+                <div className="p-4 bg-[#07080e]/60 border border-gray-800/80 rounded-2xl flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FiGift className="text-amber-400" size={16} />
+                      <span className="text-xs font-black text-white">Automatic Additional Courses (Bonus Courses)</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={enableBonusCourses}
+                        onChange={() => setEnableBonusCourses(!enableBonusCourses)}
+                      />
+                      <div className="w-10 h-5 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500" />
+                    </label>
+                  </div>
+                  
+                  {enableBonusCourses && (
+                    <div className="flex flex-col gap-2 mt-1">
+                      <span className="text-[11px] text-amber-400/90 font-semibold">
+                        Select 1 or 2 bonus courses automatically granted upon code activation:
+                      </span>
+
+                      {/* Search bonus courses input */}
+                      <div className="relative">
+                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={13} />
+                        <input
+                          type="text"
+                          placeholder="Search bonus courses..."
+                          value={bonusCourseSearch}
+                          onChange={(e) => setBonusCourseSearch(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 bg-[#0c0d19] border border-amber-500/20 rounded-xl text-xs font-bold text-white focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Selected bonus chips */}
+                      {selectedBonusCourseIds.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 p-2 bg-[#0c0d19]/80 border border-amber-500/20 rounded-xl">
+                          {selectedBonusCourseIds.map((id) => {
+                            const course = subjects?.find(s => s._id === id);
+                            return (
+                              <span key={id} className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-500/15 border border-amber-500/30 text-amber-400 rounded-lg text-xs font-extrabold">
+                                {course?.name || 'Course'}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedBonusCourseIds(selectedBonusCourseIds.filter(cId => cId !== id))}
+                                  className="hover:text-white cursor-pointer"
+                                >
+                                  <FiX size={12} />
+                                </button>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Scrollable Bonus Courses List */}
+                      <div className="max-h-28 overflow-y-auto p-1 bg-[#0c0d19] border border-amber-500/20 rounded-xl flex flex-col gap-1">
+                        {filteredBonusSubjects.length === 0 ? (
+                          <span className="p-2 text-xs text-gray-500 font-semibold text-center">No bonus courses found</span>
+                        ) : (
+                          filteredBonusSubjects.map((s) => {
+                            const isSelected = selectedBonusCourseIds.includes(s._id);
+                            return (
+                              <button
+                                key={s._id}
+                                type="button"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSelectedBonusCourseIds(selectedBonusCourseIds.filter(id => id !== s._id));
+                                  } else {
+                                    if (selectedBonusCourseIds.length >= 2) {
+                                      toast.error('Maximum 2 bonus courses allowed.');
+                                      return;
+                                    }
+                                    setSelectedBonusCourseIds([...selectedBonusCourseIds, s._id]);
+                                  }
+                                }}
+                                className={`w-full p-2 rounded-lg border text-[11px] font-bold text-left flex items-center justify-between transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'border-amber-500 bg-amber-500/10 text-amber-400'
+                                    : 'border-gray-800 text-gray-400 hover:text-white'
+                                }`}
+                              >
+                                <span>{s.name}</span>
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded ${
+                                  isSelected ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500'
+                                }}`}>
+                                  {isSelected ? 'Selected ✓' : '+ Select'}
+                                </span>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Submit button */}
-                <Button
+                <button
                   type="submit"
-                  roleColor="admin"
-                  icon={isGenerating ? undefined : FiTag}
                   disabled={isGenerating}
-                  className="w-full mt-2 !rounded-2xl flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-gradient-to-r from-red-600 to-rose-500 text-white rounded-2xl font-black text-sm shadow-[0_4px_25px_rgba(239,68,68,0.4)] transition-all cursor-pointer disabled:opacity-50 mt-2"
                 >
-                  {isGenerating ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
-                      <span>Generating Coupon...</span>
-                    </>
-                  ) : (
-                    'Generate Coupon'
-                  )}
-                </Button>
-
+                  {isGenerating ? 'Generating Batch & Excel...' : 'Generate Coupon Batch'}
+                </button>
               </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* 2. History Dialog Modal */}
+      {/* 2. Batch Detail Modal (Requirement 9) */}
       <AnimatePresence>
-        {isHistoryOpen && historyCoupon && (
+        {isBatchDetailOpen && (
           <div
-            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
-            onClick={() => setIsHistoryOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 100, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Mobile Handle */}
-              <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
-
-              {/* Close Button */}
-              <button
-                onClick={() => setIsHistoryOpen(false)}
-                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
-              >
-                <FiX size={20} />
-              </button>
-
-              {/* Header section with blue receipt icon and text, and right stats */}
-              <div className="flex items-center justify-between mb-6 pr-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] shrink-0">
-                    <FiFileText size={22} />
-                  </div>
-                  <div className="flex flex-col">
-                    <h3 className="text-lg font-black text-white leading-tight">Usage History</h3>
-                    <span className="text-xs font-mono font-bold text-gray-500 tracking-wider mt-1">{historyCoupon.code}</span>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col items-end text-right">
-                  <span className="text-xl font-black text-emerald-400">{(historyCoupon.remainingBalance || 0).toLocaleString()}</span>
-                  <span className="text-[10px] font-bold text-gray-500 tracking-wide mt-0.5">of {(historyCoupon.amount || 0).toLocaleString()} left</span>
-                </div>
-              </div>
-
-              {/* Transaction List Card container */}
-              <div className="flex flex-col gap-3 max-h-60 overflow-y-auto mt-2 pr-1">
-                {historyCoupon.history.length === 0 ? (
-                  <div className="p-8 text-center bg-[#07080e]/40 border border-gray-800/80 rounded-3xl">
-                    <span className="text-xs font-semibold text-gray-500">No transactions recorded yet.</span>
-                  </div>
-                ) : (
-                  historyCoupon.history.map((tx) => {
-                    const subjectName = tx.subject && typeof tx.subject === 'object' ? tx.subject.name : (tx.type === 'admin_adjustment' ? 'Admin Adjustment' : 'Purchase');
-                    const studentName = tx.student && typeof tx.student === 'object' ? (tx.student.name || tx.student.email) : 'Unknown User';
-                    const txDate = tx.createdAt ? new Date(tx.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-
-                    return (
-                      <div
-                        key={tx._id}
-                        className="p-4 bg-[#07080e]/45 border border-gray-800 rounded-3xl flex justify-between items-center"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)] shrink-0">
-                            <FiShoppingBag size={18} />
-                          </div>
-                          <div className="flex flex-col text-left">
-                            <span className="font-extrabold text-sm text-white leading-tight">{subjectName}</span>
-                            <span className="text-xs font-semibold text-gray-400 mt-1">{studentName}</span>
-                            <span className="text-[10px] font-medium text-gray-500 mt-0.5">{txDate}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-end text-right shrink-0">
-                          <span className="text-sm font-extrabold text-red-500">-{tx.amount.toLocaleString()}</span>
-                          <span className="text-[10px] font-semibold text-gray-500 mt-1">bal {tx.balanceAfter.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Revoke Confirmation Modal */}
-      <AnimatePresence>
-        {showRevokeConfirm && revokingCoupon && (
-          <div
-            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300 animate-fade-in"
-            onClick={() => {
-              setShowRevokeConfirm(false);
-              setRevokingCoupon(null);
-            }}
+            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300"
+            onClick={() => setIsBatchDetailOpen(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#0b0c16] border border-gray-800 rounded-[2rem] p-6 w-full max-w-sm shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 flex flex-col gap-4 text-left relative"
+              className="w-full max-w-2xl bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left max-h-[85vh] flex flex-col gap-4"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-black text-white">Revoke Coupon?</h3>
-              <p className="text-sm text-gray-400 leading-relaxed font-semibold">
-                This will deactivate coupon <span className="font-mono text-white">"{revokingCoupon.code}"</span>. Its remaining balance of {revokingCoupon.balance.toLocaleString()} can no longer be spent.
-              </p>
-              <div className="flex justify-end gap-2 mt-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  roleColor="admin"
-                  onClick={() => {
-                    setShowRevokeConfirm(false);
-                    setRevokingCoupon(null);
-                  }}
-                  className="w-auto px-5 py-3 !rounded-2xl text-sm"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  roleColor="admin"
-                  onClick={confirmRevoke}
-                  className="w-auto px-6 py-3 !rounded-2xl text-sm"
-                >
-                  Revoke
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              <button
+                onClick={() => setIsBatchDetailOpen(false)}
+                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer z-10"
+              >
+                <FiX size={20} />
+              </button>
 
-      {/* 3. Delete Confirmation Modal */}
-      <AnimatePresence>
-        {showDeleteConfirm && deletingCoupon && (
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300 animate-fade-in"
-            onClick={() => {
-              setShowDeleteConfirm(false);
-              setDeletingCoupon(null);
-            }}
-          >
-            <div
-              className="bg-[#0b0c16] border border-gray-800 rounded-3xl p-6 w-full max-w-sm shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 flex flex-col gap-4 text-left relative"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-black text-white">Delete Coupon</h3>
-              <p className="text-sm text-gray-400 leading-relaxed font-semibold">
-                Are you sure you want to delete the coupon <span className="text-red-400 font-extrabold font-mono">"{deletingCoupon.code}"</span>? This action cannot be undone.
-              </p>
-              <div className="flex gap-3 mt-2 w-full">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  roleColor="admin"
-                  onClick={() => {
-                    setShowDeleteConfirm(false);
-                    setDeletingCoupon(null);
-                  }}
-                  className="flex-1 py-3 !rounded-2xl text-sm"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  roleColor="admin"
-                  onClick={confirmDelete}
-                  className="flex-1 py-3 !rounded-2xl text-sm"
-                >
-                  Delete
-                </Button>
+              {!activeBatchDetail ? (
+                <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm font-bold text-gray-400">Loading batch details...</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between pr-8">
+                    <div>
+                      <h3 className="text-xl font-black text-white">
+                        Batch Codes (#{activeBatchDetail?.batch?._id ? activeBatchDetail.batch._id.slice(-6) : activeBatchDetail?.batch?.batchId ? activeBatchDetail.batch.batchId.slice(-6) : 'Detail'})
+                      </h3>
+                      <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                        Price: ${activeBatchDetail?.batch?.price ?? 0} | {activeBatchDetail?.coupons?.length || 0} Total Codes
+                      </p>
+                    </div>
+
+                    {activeBatchDetail?.batch?._id && (
+                      <button
+                        onClick={() => handleExportBatch(activeBatchDetail.batch._id)}
+                        className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <FiDownload size={14} /> Export Excel
+                      </button>
+                    )}
+                  </div>
+
+              {/* Codes list */}
+              <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3">
+                {activeBatchDetail?.coupons?.map((c) => {
+                  const isActivated = c.status === 'Activated';
+                  const isCancelled = c.status === 'Cancelled';
+                  const isExpired = c.status === 'Expired';
+                  const actDate = c.activatedAt ? new Date(c.activatedAt).toLocaleString() : '';
+
+                  return (
+                    <div key={c._id} className="p-4 bg-[#07080e] border border-gray-800 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono font-black text-amber-400 bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/20 text-sm">
+                          {c.code}
+                        </span>
+
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                          isActivated ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                          isCancelled ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                          isExpired ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
+                          'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        }`}>
+                          {c.status}
+                        </span>
+                      </div>
+
+                      {isActivated ? (
+                        <div className="text-xs text-gray-300 font-semibold flex flex-col items-start md:items-end">
+                          <span>Activated by: <strong className="text-white">{c.usedBy?.name || c.usedBy?.email || 'Student'}</strong></span>
+                          <span className="text-[10px] text-gray-500">{actDate}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => copyToClipboard(c.code)}
+                            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                          >
+                            Copy
+                          </button>
+                          {!isCancelled && !isExpired && (
+                            <button
+                              onClick={() => handleCancelCoupon(c._id)}
+                              className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                            >
+                              Cancel Code
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+                </>
+              )}
+
+            </motion.div>
           </div>
         )}
       </AnimatePresence>

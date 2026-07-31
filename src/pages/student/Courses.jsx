@@ -12,12 +12,14 @@ import {
   FiX,
   FiLock,
   FiKey,
-  FiShoppingBag
+  FiShoppingBag,
+  FiCheckCircle,
+  FiGift
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { CardSkeleton } from '../../components/ui/Skeleton';
-import { fetchBrowseSubjects, validateCoupon, enrollWithCoupon } from '../../redux/slices/studentSlice';
+import { fetchBrowseSubjects, validateCoupon, redeemCoupon, enrollWithCoupon } from '../../redux/slices/studentSlice';
 
 const Courses = () => {
   const navigate = useNavigate();
@@ -58,7 +60,7 @@ const Courses = () => {
       const res = await dispatch(validateCoupon(couponCode)).unwrap();
       toast.dismiss(myToast);
       setValidatedCouponData(res);
-      toast.success('Coupon validation successful! 🎁');
+      toast.success('Coupon valid! 🎁');
     } catch (err) {
       toast.dismiss(myToast);
       toast.error(err || 'Invalid or expired coupon code.');
@@ -67,23 +69,23 @@ const Courses = () => {
   };
 
   const handleConfirmEnrollment = async () => {
-    if (!activeEnrollCourse) return;
-
-    const isFree = activeEnrollCourse.price === 0;
+    const isFree = activeEnrollCourse && activeEnrollCourse.price === 0;
     if (!isFree && !validatedCouponData) {
       toast.error('Please validate a coupon first.');
       return;
     }
 
-    const myToast = toast.loading(isFree ? 'Enrolling...' : 'Processing purchase...');
+    const myToast = toast.loading(isFree ? 'Enrolling...' : 'Redeeming coupon...');
     try {
-      await dispatch(enrollWithCoupon({
-        subjectId: activeEnrollCourse._id,
-        couponCode: isFree ? '' : couponCode,
-      })).unwrap();
+      if (isFree) {
+        await dispatch(enrollWithCoupon({ subjectId: activeEnrollCourse._id })).unwrap();
+        toast.success(`Successfully enrolled in ${activeEnrollCourse.name}! 🎉`);
+      } else {
+        const res = await dispatch(redeemCoupon(couponCode)).unwrap();
+        toast.success(res.message || 'Coupon redeemed successfully! 🎉');
+      }
 
       toast.dismiss(myToast);
-      toast.success(`Successfully enrolled in ${activeEnrollCourse.name}! 🎉`);
       setIsEnrollModalOpen(false);
       setActiveEnrollCourse(null);
       setValidatedCouponData(null);
@@ -91,7 +93,7 @@ const Courses = () => {
       dispatch(fetchBrowseSubjects());
     } catch (err) {
       toast.dismiss(myToast);
-      toast.error(err || 'Failed to enroll.');
+      toast.error(err || 'Failed to redeem coupon.');
     }
   };
 
@@ -130,16 +132,30 @@ const Courses = () => {
       isModalOpen={isEnrollModalOpen}
     >
       <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-32 lg:pb-12 w-full">
-        {/* Search input */}
-        <div className="relative w-full">
-          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
-          <input
-            type="text"
-            placeholder="Search courses..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-gray-900/50 border border-gray-800 text-sm font-semibold text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-gray-500"
-          />
+        {/* Search & Redeem Bar */}
+        <div className="flex items-center gap-3 w-full">
+          <div className="relative flex-1">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
+            <input
+              type="text"
+              placeholder="Search courses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-gray-900/50 border border-gray-800 text-sm font-semibold text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-gray-500"
+            />
+          </div>
+          <button
+            onClick={() => {
+              setActiveEnrollCourse(null);
+              setCouponCode('');
+              setValidatedCouponData(null);
+              setIsEnrollModalOpen(true);
+            }}
+            className="px-4 py-3.5 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-gray-950 font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(234,179,8,0.25)] transition-all hover:scale-105 cursor-pointer shrink-0"
+          >
+            <FiGift size={16} />
+            Redeem Coupon
+          </button>
         </div>
 
         {/* Tag filters (horizontal scrollable) */}
@@ -298,9 +314,9 @@ const Courses = () => {
         </div>
       </div>
 
-      {/* ENROLL MODAL DRAWER OVERLAY */}
+      {/* ENROLL / REDEEM MODAL OVERLAY */}
       <AnimatePresence>
-        {isEnrollModalOpen && activeEnrollCourse && (
+        {isEnrollModalOpen && (
           <div
             className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-4 transition-all duration-300 animate-fade-in"
             onClick={() => {
@@ -326,29 +342,35 @@ const Courses = () => {
                 <FiX size={20} />
               </button>
 
-              {/* Course Title and Badges */}
+              {/* Header Title and Badges */}
               <div className="flex items-center gap-4 mb-6 text-left">
-                <div className="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
-                  <FiBookOpen size={24} />
+                <div className="w-14 h-14 rounded-2xl bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-400 shrink-0">
+                  <FiGift size={26} />
                 </div>
                 <div className="flex flex-col text-left">
                   <h3 className="text-xl font-black text-white capitalize leading-tight">
-                    {activeEnrollCourse.name}
+                    {activeEnrollCourse ? activeEnrollCourse.name : 'Redeem Coupon'}
                   </h3>
-                  {activeEnrollCourse.price === 0 || validatedCouponData ? (
-                    <span className="text-xs font-bold text-emerald-400 mt-1 leading-none">
-                      Free / Fully covered by coupon
-                    </span>
+                  {activeEnrollCourse ? (
+                    activeEnrollCourse.price === 0 || validatedCouponData ? (
+                      <span className="text-xs font-bold text-emerald-400 mt-1 leading-none">
+                        Free / Covered by coupon
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-yellow-500 mt-1 leading-none">
+                        Price: {activeEnrollCourse.price} Points
+                      </span>
+                    )
                   ) : (
-                    <span className="text-xs font-bold text-yellow-500 mt-1 leading-none">
-                      Price: {activeEnrollCourse.price} Points
+                    <span className="text-xs font-bold text-gray-400 mt-1 leading-none">
+                      Unlock courses with a batch coupon code
                     </span>
                   )}
                 </div>
               </div>
 
               {/* Coupon inputs or Free Banners */}
-              {activeEnrollCourse.price === 0 ? (
+              {activeEnrollCourse && activeEnrollCourse.price === 0 ? (
                 <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 flex items-center gap-3 mb-6">
                   <FiLock className="text-lg shrink-0" />
                   <span className="text-xs font-bold">This course is free — no coupon needed.</span>
@@ -381,22 +403,35 @@ const Courses = () => {
                     )}
                   </div>
                   {validatedCouponData && (
-                    <div className="p-3.5 mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex flex-col gap-1">
-                      <div>Coupon Applied successfully!</div>
-                      <div className="text-gray-400 font-semibold mt-1">Remaining Balance: {validatedCouponData.remainingBalance} Pts</div>
+                    <div className="p-4 mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-black">
+                        <FiCheckCircle size={16} /> Valid Coupon: {validatedCouponData.code}
+                      </div>
+                      <div className="text-gray-300 font-semibold">
+                        Unlocks {validatedCouponData.courses?.length || 0} main course(s) and {validatedCouponData.bonusCourses?.length || 0} bonus course(s).
+                      </div>
+                      {((validatedCouponData.courses && validatedCouponData.courses.length > 0) || (validatedCouponData.bonusCourses && validatedCouponData.bonusCourses.length > 0)) && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {[...(validatedCouponData.courses || []), ...(validatedCouponData.bonusCourses || [])].map((c) => (
+                            <span key={c._id} className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                              {c.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               )}
 
               {/* Confirm action button */}
-              {activeEnrollCourse.price === 0 || validatedCouponData ? (
+              {(activeEnrollCourse && activeEnrollCourse.price === 0) || validatedCouponData ? (
                 <button
                   onClick={handleConfirmEnrollment}
                   disabled={isActionLoading}
                   className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_15px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  {isActionLoading ? 'Processing...' : 'Confirm Enrollment'}
+                  {isActionLoading ? 'Processing...' : 'Confirm & Unlock Courses'}
                 </button>
               ) : (
                 <button
@@ -404,7 +439,7 @@ const Courses = () => {
                   disabled={true}
                   className="w-full py-4 rounded-2xl bg-gray-850 text-xs font-black text-gray-500 flex items-center justify-center gap-2 cursor-not-allowed border border-gray-800/80"
                 >
-                  <FiShoppingBag className="text-sm" /> Enter valid coupon to purchase
+                  <FiShoppingBag className="text-sm" /> Enter valid coupon code
                 </button>
               )}
             </motion.div>

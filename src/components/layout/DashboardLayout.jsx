@@ -132,54 +132,62 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
   });
   const [showNotifications, setShowNotifications] = useState(false);
   const { notifications } = useSelector((state) => state.notifications);
+  const user = useSelector((state) => state.auth.user);
   const desktopUserMenuRef = useRef(null);
   const mobileUserMenuRef = useRef(null);
   const notificationsRef = useRef(null);
 
   const [profileName, setProfileName] = useState('User');
-  const [profileAvatar, setProfileAvatar] = useState('TR');
+  const [profileAvatar, setProfileAvatar] = useState(config.avatarText);
 
   useEffect(() => {
     const loadProfile = () => {
+      if (user?.name || user?.fullName || user?.email) {
+        const dynamicName = user.name || user.fullName || user.email.split('@')[0];
+        setProfileName(dynamicName);
+        const initials = dynamicName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        setProfileAvatar(initials || config.avatarText);
+        return;
+      }
+
       if (role === 'teacher') {
         const stored = localStorage.getItem('teacher_profile');
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
-            setProfileName(parsed.name || 'Ahsan Ali');
             if (parsed.name) {
-              setProfileAvatar(parsed.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2));
-            } else {
-              setProfileAvatar('AA');
+              setProfileName(parsed.name);
+              setProfileAvatar(parsed.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().substring(0, 2));
+              return;
             }
-          } catch {
-            setProfileName('Ahsan Ali');
-            setProfileAvatar('AA');
-          }
-        } else {
-          setProfileName('Ahsan Ali');
-          setProfileAvatar('AA');
+          } catch {}
         }
+        setProfileName('Teacher');
+        setProfileAvatar('TR');
       } else if (role === 'student') {
-        const storedName = localStorage.getItem('student_profile_name') || 'ali';
-        setProfileName(storedName);
-        const initials = storedName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-        setProfileAvatar(initials || 'AL');
+        const storedName = localStorage.getItem('student_profile_name');
+        if (storedName) {
+          setProfileName(storedName);
+          const initials = storedName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().substring(0, 2);
+          setProfileAvatar(initials || 'ST');
+        } else {
+          setProfileName('Student');
+          setProfileAvatar('ST');
+        }
       } else if (role === 'parent') {
         const stored = localStorage.getItem('parent_profile');
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
-            setProfileName(parsed.name || 'ali faraz');
-            setProfileAvatar(parsed.initials || 'AF');
-          } catch {
-            setProfileName('ali faraz');
-            setProfileAvatar('AF');
-          }
-        } else {
-          setProfileName('ali faraz');
-          setProfileAvatar('AF');
+            if (parsed.name) {
+              setProfileName(parsed.name);
+              setProfileAvatar(parsed.initials || 'PT');
+              return;
+            }
+          } catch {}
         }
+        setProfileName('Parent');
+        setProfileAvatar('PT');
       } else {
         setProfileName(role === 'admin' ? 'Admin Panel' : 'User');
         setProfileAvatar(config.avatarText);
@@ -192,7 +200,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
       window.removeEventListener('storage', loadProfile);
       window.removeEventListener('profileUpdate', loadProfile);
     };
-  }, [role, config.avatarText]);
+  }, [role, config.avatarText, user]);
 
   useEffect(() => {
     dispatch(fetchNotifications());

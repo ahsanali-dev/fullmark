@@ -176,12 +176,13 @@ const TeacherQuestions = () => {
             </button>
             <button
               onClick={() => {
-                toast.success('Downloading Question Bank PDF...');
+                const query = selectedSubjectFilter && selectedSubjectFilter !== 'all' ? `?subject=${selectedSubjectFilter}` : '';
+                navigate(`/teacher/pdf-upload${query}`);
               }}
-              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black transition-all flex items-center gap-1.5 cursor-pointer text-base"
+              className="px-5 py-3 rounded-2xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-400 font-black transition-all flex items-center gap-1.5 cursor-pointer text-base shadow-md"
             >
               <FiFileText size={16} />
-              <span>PDF</span>
+              <span>PDF Upload</span>
             </button>
           </div>
         </div>

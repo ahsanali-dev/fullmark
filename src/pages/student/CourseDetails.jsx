@@ -14,11 +14,12 @@ import {
   FiLock,
   FiKey,
   FiSearch,
-  FiShoppingBag
+  FiShoppingBag,
+  FiCheckCircle
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { fetchBrowseSubjects, validateCoupon, enrollWithCoupon } from '../../redux/slices/studentSlice';
+import { fetchBrowseSubjects, validateCoupon, redeemCoupon, enrollWithCoupon } from '../../redux/slices/studentSlice';
 
 const CourseDetails = () => {
   const { courseId } = useParams();
@@ -65,7 +66,7 @@ const CourseDetails = () => {
       const res = await dispatch(validateCoupon(couponCode)).unwrap();
       toast.dismiss(myToast);
       setValidatedCouponData(res);
-      toast.success('Coupon validation successful! 🎁');
+      toast.success('Coupon valid! 🎁');
     } catch (err) {
       toast.dismiss(myToast);
       toast.error(err || 'Invalid or expired coupon code.');
@@ -82,22 +83,24 @@ const CourseDetails = () => {
       return;
     }
 
-    const myToast = toast.loading(isFree ? 'Enrolling...' : 'Processing purchase...');
+    const myToast = toast.loading(isFree ? 'Enrolling...' : 'Redeeming coupon...');
     try {
-      await dispatch(enrollWithCoupon({
-        subjectId: course._id,
-        couponCode: isFree ? '' : couponCode,
-      })).unwrap();
+      if (isFree) {
+        await dispatch(enrollWithCoupon({ subjectId: course._id })).unwrap();
+        toast.success(`Successfully enrolled in ${course.name}! 🎉`);
+      } else {
+        const res = await dispatch(redeemCoupon(couponCode)).unwrap();
+        toast.success(res.message || 'Coupon redeemed successfully! 🎉');
+      }
 
       toast.dismiss(myToast);
-      toast.success(`Successfully enrolled in ${course.name}! 🎉`);
       setIsEnrollModalOpen(false);
       setValidatedCouponData(null);
       // Refresh browse catalog to update status
       dispatch(fetchBrowseSubjects());
     } catch (err) {
       toast.dismiss(myToast);
-      toast.error(err || 'Failed to enroll.');
+      toast.error(err || 'Failed to redeem coupon.');
     }
   };
 
@@ -319,9 +322,22 @@ const CourseDetails = () => {
                     )}
                   </div>
                   {validatedCouponData && (
-                    <div className="p-3.5 mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex flex-col gap-1">
-                      <div>Coupon Applied successfully!</div>
-                      <div className="text-gray-400 font-semibold mt-1">Remaining Balance: {validatedCouponData.remainingBalance} Pts</div>
+                    <div className="p-4 mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-black">
+                        <FiCheckCircle size={16} /> Valid Coupon: {validatedCouponData.code}
+                      </div>
+                      <div className="text-gray-300 font-semibold">
+                        Unlocks {validatedCouponData.courses?.length || 0} main course(s) and {validatedCouponData.bonusCourses?.length || 0} bonus course(s).
+                      </div>
+                      {((validatedCouponData.courses && validatedCouponData.courses.length > 0) || (validatedCouponData.bonusCourses && validatedCouponData.bonusCourses.length > 0)) && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {[...(validatedCouponData.courses || []), ...(validatedCouponData.bonusCourses || [])].map((c) => (
+                            <span key={c._id} className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                              {c.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

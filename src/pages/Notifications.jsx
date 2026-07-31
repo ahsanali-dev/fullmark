@@ -12,8 +12,12 @@ import {
   FiClipboard, 
   FiTag, 
   FiClock, 
-  FiChevronLeft,
-  FiAlertCircle
+  FiSend,
+  FiRotateCcw,
+  FiLink,
+  FiUsers,
+  FiGrid,
+  FiX
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -23,6 +27,12 @@ import {
   markNotificationRead, 
   deleteNotification 
 } from '../redux/slices/notificationsSlice';
+import { 
+  sendAdminNotification, 
+  fetchNotificationHistory,
+  fetchAllSubjects,
+  fetchAllUsers 
+} from '../redux/slices/adminSlice';
 import Skeleton from 'react-loading-skeleton';
 
 const Notifications = () => {
@@ -31,276 +41,392 @@ const Notifications = () => {
 
   const user = useSelector((state) => state.auth.user);
   const role = user?.role || 'student';
+  const isAdmin = role === 'admin';
 
   const { notifications, isLoading } = useSelector((state) => state.notifications);
+  const { notificationHistory, subjects, users } = useSelector((state) => state.admin);
 
-  // Modal State for Delete
-  const [deleteModal, setDeleteModal] = useState({
-    isOpen: false,
-    id: null, // null for "all", otherwise notification ID
-  });
+  // Admin Tab: 'compose' or 'history'
+  const [adminTab, setAdminTab] = useState('compose');
 
-  const [isDeleting, setIsDeleting] = useState(false);
+  // Broadcast Composer State
+  const [mode, setMode] = useState('all'); // all, non_subscribed, all_subscribed, course, courses, user
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [selectedCourses, setSelectedCourses] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  
+  // Deep Link State
+  const [deepLinkType, setDeepLinkType] = useState('none'); // none, course, lesson, exam
+  const [deepLinkId, setDeepLinkId] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  // User Search State for 'user' mode
+  const [userSearch, setUserSearch] = useState('');
 
   useEffect(() => {
     dispatch(fetchNotifications());
-  }, [dispatch]);
+    if (isAdmin) {
+      dispatch(fetchNotificationHistory());
+      dispatch(fetchAllSubjects());
+      dispatch(fetchAllUsers({ role: 'student', limit: 1000 }));
+    }
+  }, [dispatch, isAdmin]);
 
-  // Format date helper
+  // Handle Send Notification Broadcast
+  const handleSendBroadcast = async (e) => {
+    e.preventDefault();
+
+    if (!title.trim() || !body.trim()) {
+      toast.error('Title and message body are required.');
+      return;
+    }
+
+    if (mode === 'course' && !selectedCourse) {
+      toast.error('Please select a course for this broadcast.');
+      return;
+    }
+
+    if (mode === 'courses' && selectedCourses.length === 0) {
+      toast.error('Please select at least one course.');
+      return;
+    }
+
+    if (mode === 'user' && !selectedUser) {
+      toast.error('Please select a recipient user.');
+      return;
+    }
+
+    const payload = {
+      mode,
+      title: title.trim(),
+      body: body.trim(),
+      courseIds: mode === 'course' ? [selectedCourse] : mode === 'courses' ? selectedCourses : undefined,
+      userId: mode === 'user' ? selectedUser : undefined,
+      deepLink: deepLinkType !== 'none' && deepLinkId ? { type: deepLinkType, id: deepLinkId.trim() } : undefined,
+    };
+
+    const loadToast = toast.loading('Sending broadcast notification...');
+    setIsSending(true);
+    try {
+      const res = await dispatch(sendAdminNotification(payload)).unwrap();
+      toast.dismiss(loadToast);
+      toast.success(`Notification sent successfully to ${res.sentCount || 'targeted'} user(s)! 🚀`);
+      
+      // Reset Form
+      setTitle('');
+      setBody('');
+      setMode('all');
+      setSelectedCourse('');
+      setSelectedCourses([]);
+      setSelectedUser('');
+      setDeepLinkType('none');
+      setDeepLinkId('');
+      
+      // Refresh History
+      dispatch(fetchNotificationHistory());
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error(err || 'Failed to send notification');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Helper date formatter
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return 'Recently';
-    
-    const now = new Date();
-    const diffMs = now - d;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays === 1) return 'Yesterday';
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
-
-  // Icon selector based on type
-  const getNotificationIcon = (type) => {
-    switch (type) {
-      case 'exam_result':
-        return { icon: FiClipboard, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' };
-      case 'new_lesson':
-        return { icon: FiBookOpen, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
-      case 'coupon_used':
-        return { icon: FiTag, color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' };
-      case 'enrollment':
-        return { icon: FiUser, color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' };
-      case 'system':
-        return { icon: FiShield, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' };
-      case 'reminder':
-        return { icon: FiClock, color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' };
-      default:
-        return { icon: FiBell, color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' };
-    }
-  };
-
-  const handleMarkRead = (id, isRead) => {
-    if (!isRead) {
-      dispatch(markNotificationRead(id));
-    }
-  };
-
-  const handleOpenDeleteModal = (id) => {
-    setDeleteModal({ isOpen: true, id });
-  };
-
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true);
-    try {
-      if (deleteModal.id === 'all') {
-        // Clear all notifications
-        // Note: Backend doesn't have "delete all" but we can iterate or mark all read.
-        // Let's implement clearing all in UI and triggering markAllNotificationsRead
-        await dispatch(markAllNotificationsRead()).unwrap();
-        toast.success('All notifications marked as read');
-      } else {
-        await dispatch(deleteNotification(deleteModal.id)).unwrap();
-        toast.success('Notification deleted successfully');
-      }
-    } catch (err) {
-      toast.error(err || 'Operation failed');
-    } finally {
-      setIsDeleting(false);
-      setDeleteModal({ isOpen: false, id: null });
-    }
-  };
-
-  const hasUnread = notifications.some(n => !n.isRead);
-
-  // Theme support
-  const [isLight, setIsLight] = useState(localStorage.getItem('theme') === 'light');
-
-  useEffect(() => {
-    const handleThemeChange = () => {
-      setIsLight(localStorage.getItem('theme') === 'light');
-    };
-    window.addEventListener('themeChange', handleThemeChange);
-    return () => window.removeEventListener('themeChange', handleThemeChange);
-  }, []);
-
-  const textPrimary = isLight ? 'text-[#0f172a]' : 'text-white';
-  const textSecondary = isLight ? 'text-gray-600' : 'text-gray-400';
-  const cardBg = isLight ? 'bg-white border-gray-200 shadow-sm' : 'bg-[#0f111a]/65 border-gray-800/80';
 
   return (
     <DashboardLayout
       role={role}
       activeTab=""
-      title="Notifications"
-      subtitle="Stay updated with recent alerts 🔔"
+      title="Notifications & Broadcasts"
+      subtitle={isAdmin ? "Targeted Messaging & Notification History" : "Stay updated with recent alerts 🔔"}
       showBackButton
       onBackClick={() => navigate(`/${role}/dashboard`)}
-      headerActions={
-        hasUnread && (
-          <button
-            onClick={() => dispatch(markAllNotificationsRead())}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-black hover:bg-emerald-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
-          >
-            <FiCheckCircle />
-            Mark All Read
-          </button>
-        )
-      }
     >
-      <div className="max-w-4xl mx-auto p-6 md:p-8 text-left pb-32">
+      <div className="max-w-4xl mx-auto p-4 md:p-8 text-left pb-32 flex flex-col gap-6">
         
-        {/* Banner Card */}
-        <div className={`p-6 rounded-[2.5rem] ${cardBg} backdrop-blur-xl mb-6 relative overflow-hidden flex items-center justify-between`}>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] shrink-0">
-              <FiBell size={26} className="animate-swing" />
-            </div>
-            <div>
-              <h3 className={`text-xl font-black ${textPrimary}`}>Alerts & Notifications</h3>
-              <p className={`text-xs font-semibold ${textSecondary}`}>
-                You have {notifications.filter(n => !n.isRead).length} unread notifications.
-              </p>
-            </div>
-          </div>
-
-          {notifications.length > 0 && (
+        {/* Admin Navigation Segmented Control */}
+        {isAdmin && (
+          <div className="grid grid-cols-2 p-1.5 bg-[#0c0d19] border border-gray-800 rounded-2xl gap-1 shrink-0">
             <button
-              onClick={() => handleOpenDeleteModal('all')}
-              disabled={isLoading}
-              className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all cursor-pointer disabled:opacity-50"
-              title="Clear all"
+              onClick={() => setAdminTab('compose')}
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 cursor-pointer ${
+                adminTab === 'compose'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-[0_4px_20px_rgba(239,68,68,0.3)]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
             >
-              <FiTrash2 size={18} />
+              <FiSend size={16} />
+              <span>Send Broadcast</span>
             </button>
-          )}
-        </div>
+            <button
+              onClick={() => setAdminTab('history')}
+              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 cursor-pointer ${
+                adminTab === 'history'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-[0_4px_20px_rgba(239,68,68,0.3)]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <FiRotateCcw size={16} />
+              <span>Notification History</span>
+            </button>
+          </div>
+        )}
 
-        {/* Notifications List */}
-        <div className="flex flex-col gap-3">
-          {isLoading ? (
-            // Skeleton Loader
-            [1, 2, 3, 4].map((i) => (
-              <div key={i} className={`p-4 rounded-3xl ${cardBg} flex gap-4 items-center animate-pulse`}>
-                <div className="w-11 h-11 rounded-xl bg-gray-800 shrink-0" />
-                <div className="flex-1">
-                  <div className="h-4 bg-gray-800 rounded w-1/3 mb-2" />
-                  <div className="h-3 bg-gray-800 rounded w-2/3" />
-                </div>
-              </div>
-            ))
-          ) : notifications.length > 0 ? (
-            <AnimatePresence initial={false}>
-              {notifications.map((n) => {
-                const iconConfig = getNotificationIcon(n.type);
-                const Icon = iconConfig.icon;
-                return (
-                  <motion.div
-                    key={n._id}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -50 }}
-                    onClick={() => handleMarkRead(n._id, n.isRead)}
-                    className={`p-4 sm:p-5 rounded-3xl border flex gap-4 items-start transition-all relative group cursor-pointer ${
-                      n.isRead 
-                        ? `${isLight ? 'bg-gray-50/50 border-gray-200' : 'bg-transparent border-gray-900/60'} opacity-75` 
-                        : `${isLight ? 'bg-indigo-50/20 border-indigo-100' : 'bg-[#141727]/75 border-gray-800/80'} shadow-[0_4px_20px_rgba(0,0,0,0.15)]`
-                    }`}
-                  >
-                    {/* Unread indicator */}
-                    {!n.isRead && (
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" />
-                    )}
-
-                    {/* Icon */}
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${iconConfig.color}`}>
-                      <Icon size={18} />
-                    </div>
-
-                    {/* Text content */}
-                    <div className="flex-1 min-w-0 pr-8">
-                      <p className={`text-sm sm:text-base font-black ${textPrimary} truncate`}>
-                        {n.title}
-                      </p>
-                      <p className={`text-xs sm:text-sm font-bold ${textSecondary} mt-1 leading-relaxed`}>
-                        {n.body}
-                      </p>
-                      <span className="text-[10px] font-semibold text-gray-500 mt-2 flex items-center gap-1">
-                        <FiClock size={11} />
-                        {formatDate(n.createdAt)}
-                      </span>
-                    </div>
-
-                    {/* Delete button (shows on hover/tap) */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenDeleteModal(n._id);
-                      }}
-                      className="absolute right-4 top-4 sm:top-1/2 sm:-translate-y-1/2 p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer focus:opacity-100"
-                    >
-                      <FiTrash2 size={14} />
-                    </button>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          ) : (
-            // Empty State
-            <div className={`p-12 text-center rounded-[2.5rem] border ${cardBg} flex flex-col items-center justify-center gap-4`}>
-              <div className="w-16 h-16 rounded-full bg-gray-500/5 flex items-center justify-center text-gray-500">
-                <FiBell size={28} className="opacity-40" />
+        {/* 1. Admin Composer View (Requirement 4) */}
+        {isAdmin && adminTab === 'compose' && (
+          <div className="bg-[#0e101a] border border-gray-800/80 rounded-[2.5rem] p-6 md:p-8 shadow-xl flex flex-col gap-6">
+            
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                <FiSend size={22} />
               </div>
               <div>
-                <h4 className={`text-lg font-black ${textPrimary}`}>All Caught Up!</h4>
-                <p className={`text-sm font-semibold ${textSecondary} mt-1`}>
-                  You don't have any notifications right now.
+                <h3 className="text-xl font-black text-white leading-tight">Compose Targeted Notification</h3>
+                <p className="text-xs font-semibold text-gray-400 mt-0.5">
+                  Broadcast push alerts to specific groups, courses, or individual students.
                 </p>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Delete Confirmation Modal */}
-        {deleteModal.isOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <div className="bg-[#0f111a] border border-gray-800 rounded-[2.5rem] p-6 max-w-md w-full text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-up">
-              <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
-                <FiAlertCircle size={28} />
+            <form onSubmit={handleSendBroadcast} className="flex flex-col gap-5">
+              
+              {/* Target Mode Selector Buttons */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Target Audience</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {[
+                    { id: 'all', label: 'All Users', desc: 'Every registered user' },
+                    { id: 'non_subscribed', label: 'Registered Non-Subscribed', desc: 'Users without active course' },
+                    { id: 'all_subscribed', label: 'All Subscribed', desc: 'Students with active course' },
+                    { id: 'course', label: 'Specific Course', desc: 'Enrolled in one course' },
+                    { id: 'courses', label: 'Multiple Courses', desc: 'Enrolled in selected courses' },
+                    { id: 'user', label: 'One Specific User', desc: 'Direct message to student' },
+                  ].map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setMode(m.id)}
+                      className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                        mode === m.id
+                          ? 'border-red-500 bg-red-500/10 text-white shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                          : 'border-gray-800 bg-[#07080e]/50 text-gray-400 hover:border-gray-700 hover:text-gray-200'
+                      }`}
+                    >
+                      <span className="text-xs font-black">{m.label}</span>
+                      <span className="text-[10px] text-gray-500 mt-1">{m.desc}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <h3 className="text-xl font-black text-white">
-                {deleteModal.id === 'all' ? 'Mark All Read?' : 'Delete Notification?'}
-              </h3>
-              <p className="text-sm text-gray-400 font-semibold mt-2">
-                {deleteModal.id === 'all'
-                  ? 'Are you sure you want to mark all notifications as read?'
-                  : 'Are you sure you want to delete this notification? This action cannot be undone.'}
-              </p>
-              <div className="grid grid-cols-2 gap-3 mt-6">
-                <button
-                  onClick={() => setDeleteModal({ isOpen: false, id: null })}
-                  disabled={isDeleting}
-                  className="px-5 py-3 rounded-2xl bg-gray-800/40 hover:bg-gray-800 border border-gray-700 text-gray-300 font-bold text-sm transition-all cursor-pointer disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  disabled={isDeleting}
-                  className="px-5 py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isDeleting ? 'Processing...' : 'Confirm'}
-                </button>
+
+              {/* Dynamic Target Selectors */}
+              {mode === 'course' && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase">Select Course</label>
+                  <select
+                    value={selectedCourse}
+                    onChange={(e) => setSelectedCourse(e.target.value)}
+                    className="w-full p-3.5 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50"
+                  >
+                    <option value="">Select Target Course</option>
+                    {subjects?.map((s) => (
+                      <option key={s._id} value={s._id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {mode === 'courses' && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase">Select Multiple Courses</label>
+                  <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-[#07080e] border border-gray-800 rounded-2xl">
+                    {subjects?.map((s) => {
+                      const isSelected = selectedCourses.includes(s._id);
+                      return (
+                        <button
+                          key={s._id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedCourses(selectedCourses.filter(id => id !== s._id));
+                            } else {
+                              setSelectedCourses([...selectedCourses, s._id]);
+                            }
+                          }}
+                          className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
+                              : 'border-gray-800 text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          {isSelected ? '✓ ' : '+ '}{s.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {mode === 'user' && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase">Select Specific User</label>
+                  <select
+                    value={selectedUser}
+                    onChange={(e) => setSelectedUser(e.target.value)}
+                    className="w-full p-3.5 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50"
+                  >
+                    <option value="">Select Target Student</option>
+                    {users?.map((u) => (
+                      <option key={u._id} value={u._id}>
+                        {u.name} ({u.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Title & Body Inputs */}
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Notification Title</label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. New Exam Available or Offer!"
+                    className="w-full p-3.5 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Notification Body Message</label>
+                  <textarea
+                    rows={3}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    placeholder="Write detailed message to send..."
+                    className="w-full p-3.5 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50 resize-none"
+                  />
+                </div>
               </div>
-            </div>
+
+              {/* Deep Link Section (Requirement 4) */}
+              <div className="p-4 bg-[#07080e]/60 border border-gray-800/80 rounded-2xl flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-xs font-extrabold text-blue-400">
+                  <FiLink size={14} />
+                  <span>Deep Link Attachment (Optional)</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <select
+                    value={deepLinkType}
+                    onChange={(e) => setDeepLinkType(e.target.value)}
+                    className="w-full p-3 bg-[#0c0d19] border border-gray-800 rounded-xl text-xs font-bold text-white focus:outline-none"
+                  >
+                    <option value="none">No Deep Link</option>
+                    <option value="course">Link to Course</option>
+                    <option value="lesson">Link to Lesson</option>
+                    <option value="exam">Link to Exam</option>
+                  </select>
+
+                  {deepLinkType !== 'none' && (
+                    <input
+                      type="text"
+                      value={deepLinkId}
+                      onChange={(e) => setDeepLinkId(e.target.value)}
+                      placeholder={`Enter ${deepLinkType} ID`}
+                      className="w-full p-3 bg-[#0c0d19] border border-gray-800 rounded-xl text-xs font-bold text-white focus:outline-none"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Broadcast Button */}
+              <button
+                type="submit"
+                disabled={isSending}
+                className="w-full py-4 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white rounded-2xl font-black text-sm shadow-[0_4px_25px_rgba(239,68,68,0.4)] transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+              >
+                <FiSend size={18} />
+                <span>{isSending ? 'Sending Broadcast...' : 'Send Broadcast Notification'}</span>
+              </button>
+
+            </form>
           </div>
         )}
-        
+
+        {/* 2. Admin History View (Requirement 4) */}
+        {isAdmin && adminTab === 'history' && (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-lg font-black text-white">Broadcast History</h3>
+            
+            {notificationHistory.length === 0 ? (
+              <div className="p-8 text-center bg-[#0e101a] border border-gray-800 rounded-3xl text-gray-500 font-bold">
+                No past broadcast notifications recorded yet.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {notificationHistory.map((item, idx) => (
+                  <div key={item._id || item.createdAt || idx} className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                          <FiBell size={18} />
+                        </div>
+                        <div>
+                          <h4 className="text-base font-extrabold text-white leading-tight">{item.title}</h4>
+                          <span className="text-xs font-bold text-gray-400 mt-0.5 block">{item.body}</span>
+                        </div>
+                      </div>
+
+                      <span className="px-3 py-1 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-black uppercase rounded-full">
+                        {item.targetMeta?.mode || item.targetMode || 'Broadcast'}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between text-xs font-semibold text-gray-500 pt-2 border-t border-gray-800/50">
+                      <span>Recipients: {item.recipientCount || 1} student(s)</span>
+                      <span>Sent: {formatDate(item.createdAt)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 3. Non-Admin / Standard Received Alerts View */}
+        {(!isAdmin || adminTab === 'compose') && (
+          <div className="flex flex-col gap-3 mt-4">
+            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Your Notifications</h4>
+            {notifications.length > 0 ? (
+              notifications.map((n) => (
+                <div key={n._id} className="p-4 bg-[#0e101a]/60 border border-gray-800/80 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FiBell className="text-indigo-400" />
+                    <div>
+                      <h5 className="text-xs font-black text-white">{n.title}</h5>
+                      <p className="text-[11px] text-gray-400 font-semibold">{n.body}</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-gray-500">{formatDate(n.createdAt)}</span>
+                </div>
+              ))
+            ) : (
+              <div className="p-6 text-center text-xs text-gray-500 font-bold bg-[#0e101a]/30 rounded-2xl">
+                No personal unread notifications.
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </DashboardLayout>
   );

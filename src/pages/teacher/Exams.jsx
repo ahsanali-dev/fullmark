@@ -249,13 +249,6 @@ const TeacherExams = () => {
               <FiPlus size={16} />
               <span>Create Exam</span>
             </button>
-            <button
-              onClick={() => toast.success('Downloading Exams PDF...')}
-              className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black transition-all flex items-center gap-1.5 cursor-pointer text-base"
-            >
-              <FiFileText size={16} />
-              <span>PDF</span>
-            </button>
           </div>
         </div>
 

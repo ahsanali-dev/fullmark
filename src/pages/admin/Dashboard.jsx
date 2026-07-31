@@ -15,11 +15,15 @@ import {
   FiCheck,
   FiHeart,
   FiChevronDown,
-  FiDollarSign
+  FiDollarSign,
+  FiShield,
+  FiArrowRight,
+  FiPhone
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { Formik, Form, useFormik, FormikProvider } from 'formik';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDashboardStats, createUser, createSubject, fetchAllUsers } from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -28,9 +32,59 @@ import Button from '../../components/ui/Button';
 import { DashboardSkeleton } from '../../components/shared/SkeletonLoading';
 import { UserSchema, SubjectSchema } from '../../schemas/adminSchemas';
 
-// Schemas imported from src/schemas/adminSchemas.js
+// Role avatar and badge styling helpers matching Users page
+const getRoleAvatarGradient = (role) => {
+  switch (role?.toLowerCase()) {
+    case 'student':
+      return 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]';
+    case 'teacher':
+      return 'bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-[0_0_15px_rgba(147,51,234,0.3)]';
+    case 'parent':
+      return 'bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-[0_0_15px_rgba(245,158,11,0.3)]';
+    case 'admin':
+      return 'bg-gradient-to-br from-red-600 to-rose-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.3)]';
+    default:
+      return 'bg-gradient-to-br from-gray-700 to-gray-900 text-white';
+  }
+};
+
+const getRoleBadge = (role) => {
+  switch (role?.toLowerCase()) {
+    case 'student':
+      return {
+        label: 'Student',
+        Icon: FiUser,
+        badgeClass: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'
+      };
+    case 'teacher':
+      return {
+        label: 'Teacher',
+        Icon: FiAward,
+        badgeClass: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+      };
+    case 'parent':
+      return {
+        label: 'Parent',
+        Icon: FiHeart,
+        badgeClass: 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+      };
+    case 'admin':
+      return {
+        label: 'Admin',
+        Icon: FiShield,
+        badgeClass: 'bg-red-500/10 border-red-500/20 text-red-400'
+      };
+    default:
+      return {
+        label: role || 'User',
+        Icon: FiUser,
+        badgeClass: 'bg-gray-500/10 border-gray-500/20 text-gray-400'
+      };
+  }
+};
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { stats, recentUsers, isLoading } = useSelector((state) => state.admin);
 
@@ -48,7 +102,7 @@ const Dashboard = () => {
   // Fetch teachers when Subject modal opens
   useEffect(() => {
     if (isSubjectModalOpen) {
-      dispatch(fetchAllUsers({ role: 'teacher' })).unwrap()
+      dispatch(fetchAllUsers({ role: 'teacher', limit: 1000 })).unwrap()
         .then((res) => {
           setTeachers(res.users || []);
         })
@@ -131,10 +185,90 @@ const Dashboard = () => {
       <div className={`px-6 md:px-8 py-4 flex flex-col gap-8 animate-fade-in transition-all duration-300 ${
         isBlurred ? 'blur-sm pointer-events-none' : ''
       }`}>
-        {/* A. Core Stats Row */}
+        {/* User Subscription Statistics (Requirement 1) */}
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg md:text-xl font-black tracking-wide text-white">User Overview</h3>
+            <span className="text-xs font-semibold text-gray-500">Click any card to view user list</span>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 1. Total Registered Users */}
+            <div 
+              onClick={() => navigate('/admin/users?filter=all')}
+              className="p-5 bg-[#0e101a] border border-gray-800 hover:border-red-500/40 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform">
+                  <FiUsers className="text-xl" />
+                </div>
+                <span className="text-[10px] font-extrabold text-red-400 bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20">All Users</span>
+              </div>
+              <div>
+                <h4 className="text-3xl font-black text-white">{stats?.subscription?.totalRegistered ?? stats?.totalStudents ?? 0}</h4>
+                <span className="text-xs font-bold text-gray-400 mt-1 block">Total Registered Users</span>
+              </div>
+            </div>
+
+            {/* 2. Total Subscribed Users */}
+            <div 
+              onClick={() => navigate('/admin/users?filter=subscribed')}
+              className="p-5 bg-[#0e101a] border border-gray-800 hover:border-emerald-500/40 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                  <FiAward className="text-xl" />
+                </div>
+                <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">Subscribed</span>
+              </div>
+              <div>
+                <h4 className="text-3xl font-black text-emerald-400">{stats?.subscription?.totalSubscribed ?? 0}</h4>
+                <span className="text-xs font-bold text-gray-400 mt-1 block">Total Subscribed Users</span>
+              </div>
+            </div>
+
+            {/* 3. Total Registered Non-Subscribed Users */}
+            <div 
+              onClick={() => navigate('/admin/users?filter=non_subscribed')}
+              className="p-5 bg-[#0e101a] border border-gray-800 hover:border-amber-500/40 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                  <FiUser className="text-xl" />
+                </div>
+                <span className="text-[10px] font-extrabold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">Non-Subscribed</span>
+              </div>
+              <div>
+                <h4 className="text-3xl font-black text-amber-400">{stats?.subscription?.totalNonSubscribed ?? 0}</h4>
+                <span className="text-xs font-bold text-gray-400 mt-1 block">Registered Non-Subscribed</span>
+              </div>
+            </div>
+
+            {/* 4. Total Users Currently Active */}
+            <div 
+              onClick={() => navigate('/admin/users?filter=all&activeOnly=true')}
+              className="p-5 bg-[#0e101a] border border-gray-800 hover:border-blue-500/40 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                  <FiActivity className="text-xl" />
+                </div>
+                <span className="text-[10px] font-extrabold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20">Active Now</span>
+              </div>
+              <div>
+                <h4 className="text-3xl font-black text-blue-400">{stats?.subscription?.totalActive ?? 0}</h4>
+                <span className="text-xs font-bold text-gray-400 mt-1 block">Currently Active Users</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Core Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {/* Students */}
-          <div className="p-5 stat-card-student rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+          <div 
+            onClick={() => navigate('/admin/users?filter=all')}
+            className="p-5 stat-card-student rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
+          >
             <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] mb-4">
               <FiAward className="text-xl" />
             </div>
@@ -142,7 +276,10 @@ const Dashboard = () => {
             <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">Students</span>
           </div>
           {/* Teachers */}
-          <div className="p-5 stat-card-teacher rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+          <div 
+            onClick={() => navigate('/admin/users?filter=all')}
+            className="p-5 stat-card-teacher rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
+          >
             <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] mb-4">
               <FiUsers className="text-xl" />
             </div>
@@ -150,7 +287,10 @@ const Dashboard = () => {
             <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">Teachers</span>
           </div>
           {/* Subjects */}
-          <div className="p-5 stat-card-exam rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+          <div 
+            onClick={() => navigate('/admin/content')}
+            className="p-5 stat-card-exam rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
+          >
             <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)] mb-4">
               <FiBookOpen className="text-xl" />
             </div>
@@ -158,7 +298,10 @@ const Dashboard = () => {
             <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">Subjects</span>
           </div>
           {/* Coupons */}
-          <div className="p-5 stat-card-question rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+          <div 
+            onClick={() => navigate('/admin/coupons')}
+            className="p-5 stat-card-question rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
+          >
             <div className="w-12 h-12 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)] mb-4">
               <span className="text-lg font-bold">$</span>
             </div>
@@ -257,58 +400,89 @@ const Dashboard = () => {
 
         {/* D. Recent Users Section */}
         <div className="flex flex-col gap-4">
-          <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">Recent Users</h3>
-          <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg md:text-xl font-black tracking-wide text-white">Recent Users</h3>
+            <button 
+              onClick={() => navigate('/admin/users')}
+              className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors flex items-center gap-1.5 cursor-pointer bg-red-500/10 hover:bg-red-500/20 px-3.5 py-1.5 rounded-xl border border-red-500/20"
+            >
+              <span>View All Users</span>
+              <FiArrowRight size={14} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {recentUsers && recentUsers.map((u, idx) => {
               const avatarInitials = u.name
                 ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
-                : 'U';
-              const roleDisplay = u.role ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : 'User';
-              const isTeacher = u.role === 'teacher';
-              const isStudent = u.role === 'student';
-              const isParent = u.role === 'parent';
-              
-              let roleColorClass = 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]';
-              let badgeColorClass = 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400';
-              let roleDotColorClass = 'bg-emerald-500';
-              
-              if (isTeacher) {
-                roleColorClass = 'bg-blue-500/10 border border-blue-500/20 text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.2)]';
-                badgeColorClass = 'bg-blue-500/10 border border-blue-500/20 text-blue-400';
-                roleDotColorClass = 'bg-blue-500';
-              } else if (isParent) {
-                roleColorClass = 'bg-purple-500/10 border border-purple-500/20 text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.2)]';
-                badgeColorClass = 'bg-purple-500/10 border border-purple-500/20 text-purple-400';
-                roleDotColorClass = 'bg-purple-500';
-              }
+                : 'US';
+              const avatarGradient = getRoleAvatarGradient(u.role);
+              const { label: roleLabel, Icon: RoleIcon, badgeClass: roleBadgeClass } = getRoleBadge(u.role);
+              const isSubscribed = u.isSubscribed || (u.enrolledCourses && u.enrolledCourses.length > 0);
 
               return (
                 <div 
                   key={u._id || idx}
-                  className="flex items-center justify-between p-4 bg-[#0e101a]/90 border border-gray-800/80 rounded-3xl shadow-lg transition-all hover:bg-gray-800/20"
+                  onClick={() => navigate('/admin/users')}
+                  className="p-5 bg-[#0c0d19]/90 border border-gray-800/80 rounded-[1.75rem] shadow-xl hover:border-red-500/40 hover:shadow-[0_8px_30px_rgba(239,68,68,0.15)] transition-all duration-300 flex flex-col justify-between text-left relative overflow-hidden group cursor-pointer"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm ${roleColorClass}`}>
-                      {avatarInitials}
+                  {/* Top Accent Glow Line */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    {/* Role Avatar with Live Status Dot */}
+                    <div className="relative">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm tracking-wider ${avatarGradient}`}>
+                        {avatarInitials}
+                      </div>
+                      <span 
+                        className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0c0d19] ${
+                          u.isActive !== false ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
+                        }`} 
+                      />
                     </div>
-                    <div className="flex flex-col text-left">
-                      <span className="text-sm md:text-base font-extrabold text-white leading-snug">{u.name}</span>
-                      <span className="text-xs text-gray-500 tracking-wide font-semibold">{u.email}</span>
+
+                    {/* Badges */}
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border flex items-center gap-1 uppercase tracking-wider ${roleBadgeClass}`}>
+                        <RoleIcon size={11} />
+                        {roleLabel}
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border flex items-center gap-1 uppercase tracking-wider ${
+                        isSubscribed 
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                          : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                      }`}>
+                        {isSubscribed ? 'Subscribed' : 'Non-Subscribed'}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col md:flex-row items-end md:items-center gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${badgeColorClass}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${roleDotColorClass}`} />
-                      {roleDisplay}
+                  {/* Name & Contact */}
+                  <div className="mb-3">
+                    <h4 className="text-base font-black text-white leading-tight group-hover:text-red-400 transition-colors">
+                      {u.name}
+                    </h4>
+                    <div className="flex flex-col gap-1.5 text-xs text-gray-400 font-semibold mt-2">
+                      <span className="flex items-center gap-2 truncate bg-[#07080e] px-3 py-1.5 rounded-xl border border-gray-800/60">
+                        <FiMail size={13} className="text-red-400 shrink-0" />
+                        <span className="truncate">{u.email}</span>
+                      </span>
+                      {u.phone && (
+                        <span className="flex items-center gap-2 truncate bg-[#07080e] px-3 py-1.5 rounded-xl border border-gray-800/60">
+                          <FiPhone size={13} className="text-emerald-400 shrink-0" />
+                          <span>{u.phone}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bottom Footer / Action */}
+                  <div className="pt-3 border-t border-gray-800/50 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-gray-500">
+                      {u.isActive !== false ? '✓ Account Active' : '✕ Account Suspended'}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 ${
-                      u.isVerified 
-                        ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' 
-                        : 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${u.isVerified ? 'bg-emerald-500' : 'bg-yellow-500'}`} />
-                      {u.isVerified ? 'Verified' : 'Unverified'}
+                    <span className="text-xs font-black text-red-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                      Manage User <FiArrowRight size={13} />
                     </span>
                   </div>
                 </div>
