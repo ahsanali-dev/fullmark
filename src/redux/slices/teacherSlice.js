@@ -68,6 +68,84 @@ export const deleteLessonPdf = createAsyncThunk(
   }
 );
 
+export const uploadSubjectBanner = createAsyncThunk(
+  'teacher/uploadSubjectBanner',
+  async ({ subjectId, file }, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const formData = new FormData();
+      formData.append('subjectId', subjectId);
+      formData.append('banner', file);
+      const response = await axios.post(apiEndpoints.common.uploadSubjectBanner, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data?.data || response.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to upload banner';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const fetchSubjectUnits = createAsyncThunk(
+  'teacher/fetchSubjectUnits',
+  async (subjectId, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.teacher.subjectUnits(subjectId), getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch units';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const createUnit = createAsyncThunk(
+  'teacher/createUnit',
+  async (unitData, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(apiEndpoints.teacher.units, unitData, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to create unit';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const updateUnit = createAsyncThunk(
+  'teacher/updateUnit',
+  async ({ id, unitData }, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.put(apiEndpoints.teacher.unitById(id), unitData, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to update unit';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const deleteUnit = createAsyncThunk(
+  'teacher/deleteUnit',
+  async (id, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      await axios.delete(apiEndpoints.teacher.unitById(id), getAuthConfig(token));
+      return id;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to delete unit';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 
 export const fetchTeacherStats = createAsyncThunk(
   'teacher/fetchTeacherStats',
@@ -354,6 +432,7 @@ export const togglePublishExam = createAsyncThunk(
 const initialState = {
   stats: null,
   subjects: [],
+  units: [],
   lessons: [],
   questions: [],
   questionDetail: null,
@@ -492,6 +571,32 @@ const teacherSlice = createSlice({
         state.exams = state.exams.map((ex) =>
           (ex._id || ex.id) === (updatedExam._id || updatedExam.id) ? updatedExam : ex
         );
+      })
+      // Units
+      .addCase(fetchSubjectUnits.fulfilled, (state, action) => {
+        state.units = action.payload?.units || (Array.isArray(action.payload) ? action.payload : []);
+      })
+      .addCase(createUnit.fulfilled, (state, action) => {
+        const newUnit = action.payload?.unit || action.payload;
+        if (newUnit) state.units = [...state.units, newUnit];
+      })
+      .addCase(updateUnit.fulfilled, (state, action) => {
+        const updatedUnit = action.payload?.unit || action.payload;
+        if (updatedUnit) {
+          state.units = state.units.map((u) => (u._id === updatedUnit._id ? updatedUnit : u));
+        }
+      })
+      .addCase(deleteUnit.fulfilled, (state, action) => {
+        state.units = state.units.filter((u) => u._id !== action.payload);
+      })
+      // Banner Upload
+      .addCase(uploadSubjectBanner.fulfilled, (state, action) => {
+        const updatedSubject = action.payload?.subject;
+        if (updatedSubject) {
+          state.subjects = state.subjects.map((s) =>
+            (s._id || s.id) === (updatedSubject._id || updatedSubject.id) ? updatedSubject : s
+          );
+        }
       });
   },
 });

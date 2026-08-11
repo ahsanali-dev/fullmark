@@ -143,6 +143,10 @@ const router = createBrowserRouter([
         element: <TeacherAddQuestion />,
       },
       {
+        path: '/teacher/questions/add',
+        element: <TeacherAddQuestion />,
+      },
+      {
         path: '/teacher/subjects/:subjectId/edit-question/:questionId',
         element: <TeacherEditQuestion />,
       },
@@ -155,11 +159,27 @@ const router = createBrowserRouter([
         element: <TeacherCreateExam />,
       },
       {
+        path: '/teacher/exams/add',
+        element: <TeacherCreateExam />,
+      },
+      {
+        path: '/teacher/exams/create',
+        element: <TeacherCreateExam />,
+      },
+      {
         path: '/teacher/subjects/:subjectId/add-lesson',
         element: <TeacherAddLesson />,
       },
       {
+        path: '/teacher/subjects/:subjectId/lessons/add',
+        element: <TeacherAddLesson />,
+      },
+      {
         path: '/teacher/subjects/:subjectId/edit-lesson/:lessonId',
+        element: <TeacherAddLesson />,
+      },
+      {
+        path: '/teacher/subjects/:subjectId/lessons/:lessonId/edit',
         element: <TeacherAddLesson />,
       },
       {

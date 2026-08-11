@@ -24,6 +24,7 @@ import Button from '../../components/ui/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchTeacherSubjects,
+  fetchSubjectUnits,
   fetchLessons,
   createLesson,
   updateLesson,
@@ -37,7 +38,7 @@ const AddLesson = () => {
   const isEditing = !!lessonId;
   const dispatch = useDispatch();
 
-  const { subjects = [], lessons = [], isLoading } = useSelector((state) => state.teacher);
+  const { subjects = [], units = [], lessons = [], isLoading } = useSelector((state) => state.teacher);
 
   const [selectedSubjectId, setSelectedSubjectId] = useState(() => {
     if (subjectId === 'select') {
@@ -46,6 +47,8 @@ const AddLesson = () => {
     return subjectId;
   });
 
+  const [selectedUnitId, setSelectedUnitId] = useState('');
+
   useEffect(() => {
     dispatch(fetchTeacherSubjects());
   }, [dispatch]);
@@ -53,6 +56,7 @@ const AddLesson = () => {
   useEffect(() => {
     if (selectedSubjectId) {
       dispatch(fetchLessons(selectedSubjectId));
+      dispatch(fetchSubjectUnits(selectedSubjectId));
     }
   }, [dispatch, selectedSubjectId]);
 
@@ -142,6 +146,7 @@ const AddLesson = () => {
       setLessonDescription(existingLesson.description || '');
       setLessonDuration(existingLesson.duration || '');
       setLessonOrder(existingLesson.order || 1);
+      setSelectedUnitId(existingLesson.unit?._id || existingLesson.unit || '');
       setExplanationVideoUrl(existingLesson.videoUrl || '');
       setVideoLength(existingLesson.videoLength || '');
       setThumbnailUrl(existingLesson.thumbnailUrl || '');
@@ -204,6 +209,9 @@ const AddLesson = () => {
 
     const payload = {
       subject: selectedSubjectId,
+      subjectId: selectedSubjectId,
+      unitId: selectedUnitId || null,
+      unit: selectedUnitId || null,
       title: lessonTitle,
       description: lessonDescription,
       duration: lessonDuration,
@@ -355,6 +363,28 @@ const AddLesson = () => {
                   icon={FiType}
                   roleColor="teacher"
                 />
+
+                {/* Unit Selector */}
+                <div className="flex flex-col gap-1 text-left">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider px-1">
+                    Assign to Unit (Optional)
+                  </span>
+                  <div className="relative w-full">
+                    <select
+                      value={selectedUnitId}
+                      onChange={(e) => setSelectedUnitId(e.target.value)}
+                      className="w-full px-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 appearance-none cursor-pointer text-sm"
+                    >
+                      <option value="">No Unit (General Lesson)</option>
+                      {units.map((u) => (
+                        <option key={u._id || u.id} value={u._id || u.id}>
+                          {u.title} {u.titleAr ? `(${u.titleAr})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <FiChevronDown className="text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
 
                 {/* Description */}
                 <textarea

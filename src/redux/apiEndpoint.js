@@ -84,6 +84,9 @@ export const apiEndpoints = {
     profile: `${BASE_URL}/teacher/profile`,
     stats: `${BASE_URL}/teacher/stats`,
     subjects: `${BASE_URL}/teacher/subjects`,
+    subjectUnits: (subjectId) => `${BASE_URL}/teacher/subjects/${subjectId}/units`,
+    units: `${BASE_URL}/teacher/units`,
+    unitById: (id) => `${BASE_URL}/teacher/units/${id}`,
     lessons: `${BASE_URL}/teacher/lessons`,
     lessonById: (id) => `${BASE_URL}/teacher/lessons/${id}`,
     subjectLessons: (subjectId) => `${BASE_URL}/teacher/subjects/${subjectId}/lessons`,
@@ -110,6 +113,7 @@ export const apiEndpoints = {
 
   common: {
     uploadAvatar: `${BASE_URL}/upload/avatar`,
+    uploadSubjectBanner: `${BASE_URL}/upload/subject-banner`,
     uploadLessonPdf: `${BASE_URL}/upload/lesson-pdf`,
     deleteLessonPdf: (lessonId) => `${BASE_URL}/upload/lesson-pdf/${lessonId}`,
     uploadQuestionImage: `${BASE_URL}/upload/question-image`,

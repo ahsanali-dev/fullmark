@@ -8,7 +8,9 @@ import {
   FiStar, 
   FiTrendingUp, 
   FiChevronRight,
-  FiAward
+  FiAward,
+  FiPlay,
+  FiClock
 } from 'react-icons/fi';
 import { FaFire } from 'react-icons/fa';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -304,7 +306,7 @@ const StudentDashboard = () => {
             {/* 3. CONTINUE LEARNING SECTION */}
             <motion.div 
               variants={itemVariants}
-              className="flex flex-col gap-3 text-left mt-2"
+              className="flex flex-col gap-4 text-left mt-2"
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
@@ -317,6 +319,53 @@ const StudentDashboard = () => {
                   See all
                 </button>
               </div>
+
+              {/* Continue Learning Featured Card */}
+              {dashboard?.continueLearning && (
+                <div 
+                  onClick={() => navigate(`/student/courses/${dashboard.continueLearning.subject?._id}/lessons/${dashboard.continueLearning.lesson?._id}`)}
+                  className="w-full p-6 rounded-[2.5rem] bg-gradient-to-r from-blue-950/80 via-indigo-950/60 to-[#0c0d19] border border-blue-500/30 hover:border-blue-500/60 shadow-[0_15px_35px_rgba(0,0,0,0.5),_0_0_25px_rgba(59,130,246,0.15)] transition-all duration-300 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden group mb-2"
+                >
+                  <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                      <FiPlay size={28} className="fill-blue-400/30 ml-1" />
+                    </div>
+
+                    <div className="flex flex-col text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-black uppercase tracking-wider">
+                          {dashboard.continueLearning.subject?.name}
+                        </span>
+                        <span className="text-xs font-bold text-gray-400 flex items-center gap-1">
+                          <FiClock size={12} /> {Math.floor((dashboard.continueLearning.lastPosition || 0) / 60)}m watched
+                        </span>
+                      </div>
+                      <h4 className="text-lg md:text-xl font-black text-white mt-1.5 leading-tight group-hover:text-blue-300 transition-colors">
+                        {dashboard.continueLearning.lesson?.title}
+                      </h4>
+                      <span className="text-xs text-gray-400 font-semibold mt-1">
+                        Module {dashboard.continueLearning.lesson?.order || 1} • Resume Video
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col md:items-end gap-2 shrink-0 min-w-[180px]">
+                    <div className="flex items-center justify-between md:justify-end gap-3 text-xs font-black text-blue-400">
+                      <span>Watch Progress</span>
+                      <span>{dashboard.continueLearning.progressPercent || 0}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-gray-950 rounded-full overflow-hidden border border-gray-900">
+                      <div 
+                        className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full transition-all duration-500"
+                        style={{ width: `${dashboard.continueLearning.progressPercent || 0}%` }}
+                      />
+                    </div>
+                    <button className="mt-1 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white flex items-center justify-center gap-2 shadow-md transition-all group-hover:scale-105">
+                      <FiPlay size={14} className="fill-white" /> Resume Lesson
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {dashboard?.enrollments?.slice(0, 2).map((enrollment, idx) => (
@@ -341,7 +390,7 @@ const StudentDashboard = () => {
                     </div>
                   </div>
                 ))}
-                {(!dashboard?.enrollments || dashboard.enrollments.length === 0) && (
+                {(!dashboard?.enrollments || dashboard.enrollments.length === 0) && !dashboard?.continueLearning && (
                   <div 
                     onClick={() => navigate('/student/courses')}
                     className="col-span-2 p-6 rounded-3xl bg-[#0c0d19]/40 border border-gray-850 text-center font-bold text-gray-500 hover:text-white hover:border-gray-700 cursor-pointer transition-all"

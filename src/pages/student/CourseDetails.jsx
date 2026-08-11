@@ -20,6 +20,7 @@ import {
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { fetchBrowseSubjects, validateCoupon, redeemCoupon, enrollWithCoupon } from '../../redux/slices/studentSlice';
+import { getImageUrl } from '../../utils/imageUrl';
 
 const CourseDetails = () => {
   const { courseId } = useParams();
@@ -149,17 +150,28 @@ const CourseDetails = () => {
       isModalOpen={isEnrollModalOpen}
     >
       <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
-        {/* Header Box Card */}
-        <div className="p-6 rounded-[2.5rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 shadow-2xl flex flex-col gap-4 relative overflow-hidden">
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
+        {/* Header Box Card / Course Banner */}
+        <div className="rounded-[2.5rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 shadow-2xl overflow-hidden relative">
+          {course.bannerUrl && (
+            <div className="w-full h-48 sm:h-64 relative overflow-hidden">
+              <img 
+                src={getImageUrl(course.bannerUrl)} 
+                alt={course.name}
+                className="w-full h-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0d19] via-[#0c0d19]/50 to-transparent" />
+            </div>
+          )}
+          
+          <div className="p-6 sm:p-8 flex items-start gap-5 relative z-10">
+            <div className="w-16 h-16 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0 shadow-lg">
               <FiBookOpen size={28} />
             </div>
             <div className="flex flex-col text-left">
-              <h3 className="text-xl font-black text-white capitalize leading-tight">
+              <h3 className="text-xl sm:text-2xl font-black text-white capitalize leading-tight">
                 {course.name}
               </h3>
-              <p className="text-sm text-gray-500 font-semibold mt-1.5 leading-normal">
+              <p className="text-sm text-gray-400 font-semibold mt-1.5 leading-normal">
                 {course.description}
               </p>
             </div>
