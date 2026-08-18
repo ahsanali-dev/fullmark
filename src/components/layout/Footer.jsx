@@ -112,7 +112,7 @@ export default function Footer() {
           © 2026 FullMark. Smart Digital Assessment Ecosystem. All Rights Reserved.
         </p>
         <p className="text-[10px] text-gray-600 font-semibold flex items-center gap-1">
-          Made with <span className="text-red-500 animate-pulse">❤️</span> for modern education.
+          Made with <span className="text-red-500 animate-pulse">❤️</span> ZZ Solutions.
         </p>
       </div>
     </footer>
