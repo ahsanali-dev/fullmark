@@ -1,12 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import {
-  FiArrowRight, FiShield, FiBookOpen, FiUsers,
-  FiCheckCircle, FiZap, FiBarChart2, FiAward,
-  FiFileText, FiHelpCircle, FiStar, FiChevronDown,
-  FiUploadCloud, FiClipboard, FiGrid,
-  FiGithub, FiTwitter, FiLinkedin, FiYoutube, FiSend
+  FiArrowRight, FiShield, FiBookOpen,
+  FiCheckCircle, FiClipboard, FiPlayCircle,
+  FiTarget, FiCalendar, FiActivity, FiAward
 } from 'react-icons/fi';
 import Background3D from '../components/shared/Background3D';
 import { InteractiveDemo } from '../components/shared/InteractiveDemo';
@@ -14,23 +12,23 @@ import { FaqAccordion } from '../components/shared/FaqAccordion';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 
-/* ─── Floating Orb ─────────────────────────────────────────── */
+/* ─── Floating Orb Background Effect ────────────────────────── */
 const Orb = ({ color, size, top, left, blur, delay }) => (
   <motion.div
-    className="absolute rounded-full pointer-events-none"
+    className="absolute rounded-full pointer-events-none z-0"
     style={{
       width: size, height: size,
       top, left,
       background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
       filter: `blur(${blur})`,
-      opacity: 0.35,
+      opacity: 0.4,
     }}
-    animate={{ y: [0, -30, 0], scale: [1, 1.08, 1] }}
+    animate={{ y: [0, -25, 0], scale: [1, 1.05, 1] }}
     transition={{ duration: 7 + delay, repeat: Infinity, ease: 'easeInOut', delay }}
   />
 );
 
-/* ─── Animated Counter ─────────────────────────────────────── */
+/* ─── Animated Counter Component ────────────────────────────── */
 const Counter = ({ target, suffix = '' }) => {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -65,12 +63,9 @@ const RoleCard = ({ role, icon: Icon, color, gradient, glow, features, delay }) 
         style={{
           background: `radial-gradient(circle at top left, ${gradient[0]} 0%, #080911 60%)`,
           borderColor: gradient[1],
-          boxShadow: hovered ? `0 0 50px ${glow}, 0 25px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)` : `0 0 20px ${glow}55, 0 20px 40px rgba(0,0,0,0.6)`,
+          boxShadow: hovered ? `0 0 50px ${glow}, 0 25px 50px rgba(0,0,0,0.7)` : `0 0 20px ${glow}44`,
         }}
       >
-        {/* Glow accent top */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-px" style={{ background: `linear-gradient(90deg, transparent, ${gradient[1]}, transparent)` }} />
-
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: `${glow}20`, border: `1.5px solid ${glow}50`, boxShadow: `0 0 20px ${glow}40` }}>
             <Icon size={26} style={{ color }} />
@@ -83,8 +78,7 @@ const RoleCard = ({ role, icon: Icon, color, gradient, glow, features, delay }) 
 
         <ul className="flex flex-col gap-2.5">
           {features.map((f, i) => (
-            <motion.li key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: delay + i * 0.07 }}
-              className="flex items-center gap-3 text-sm font-semibold text-gray-300">
+            <motion.li key={i} className="flex items-center gap-3 text-sm font-semibold text-gray-300">
               <FiCheckCircle size={15} style={{ color, flexShrink: 0 }} />
               {f}
             </motion.li>
@@ -95,76 +89,77 @@ const RoleCard = ({ role, icon: Icon, color, gradient, glow, features, delay }) 
   );
 };
 
-/* ─── Feature Tile ──────────────────────────────────────────── */
-const FeatureTile = ({ icon: Icon, title, desc, color, glow, delay }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5, delay }}
-    whileHover={{ y: -4 }}
-    className="p-5 rounded-2xl border border-gray-800/80 bg-[#0e101a]/80 flex flex-col gap-3 group"
-  >
-    <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: `${glow}15`, border: `1.5px solid ${glow}30` }}>
-      <Icon size={20} style={{ color }} />
-    </div>
-    <h4 className="text-sm font-black text-white">{title}</h4>
-    <p className="text-xs text-gray-500 font-semibold leading-relaxed">{desc}</p>
-  </motion.div>
-);
-
-/* ─── Main Landing ──────────────────────────────────────────── */
+/* ─── Main Landing Page ──────────────────────────────────────── */
 export default function Landing() {
   const navigate = useNavigate();
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 100]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
   const [activeSection, setActiveSection] = useState('');
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setActiveSection('');
-  };
-
   useEffect(() => {
     const sections = ['hero', 'features', 'roles', 'stats'];
-    const observerOptions = {
-      root: null,
-      rootMargin: '-30% 0px -50% 0px',
-      threshold: 0.1
-    };
-
+    const observerOptions = { root: null, rootMargin: '-30% 0px -50% 0px', threshold: 0.1 };
     const observerCallback = (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          if (entry.target.id === 'hero') {
-            setActiveSection('');
-          } else {
-            setActiveSection(entry.target.id);
-          }
+          setActiveSection(entry.target.id === 'hero' ? '' : entry.target.id);
         }
       });
     };
-
     const observer = new IntersectionObserver(observerCallback, observerOptions);
     sections.forEach((id) => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     });
-
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (window.location.hash) {
-      const id = window.location.hash.substring(1);
-      setTimeout(() => {
-        const el = document.getElementById(id);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 350);
+  // 5 Sub-Hero Cards matching the reference design
+  const subHeroCards = [
+    {
+      title: "Interactive Animations",
+      desc: "Watch concepts move right in front of your eyes",
+      icon: FiActivity,
+      gradient: "from-cyan-500/20 to-blue-600/20",
+      borderColor: "border-cyan-500/40",
+      glowColor: "rgba(34, 211, 238, 0.3)"
+    },
+    {
+      title: "Smart Exams",
+      desc: "Train & adapt according to your target level",
+      icon: FiClipboard,
+      gradient: "from-blue-600/20 to-indigo-600/20",
+      borderColor: "border-blue-500/40",
+      glowColor: "rgba(59, 130, 246, 0.3)"
+    },
+    {
+      title: "Weakness Analysis",
+      desc: "Discover exactly what needs strengthening",
+      icon: FiTarget,
+      gradient: "from-purple-600/20 to-pink-600/20",
+      borderColor: "border-purple-500/40",
+      glowColor: "rgba(168, 85, 247, 0.3)"
+    },
+    {
+      title: "Personalized Review",
+      desc: "Retain your knowledge at optimal schedules",
+      icon: FiCalendar,
+      gradient: "from-indigo-600/20 to-blue-500/20",
+      borderColor: "border-indigo-500/40",
+      glowColor: "rgba(99, 102, 241, 0.3)"
+    },
+    {
+      title: "Student Challenges",
+      desc: "Compete and learn in a fun interactive way",
+      icon: FiAward,
+      gradient: "from-fuchsia-600/20 to-purple-600/20",
+      borderColor: "border-fuchsia-500/40",
+      glowColor: "rgba(217, 70, 239, 0.3)"
     }
-  }, []);
+  ];
 
   const roles = [
     {
@@ -180,250 +175,210 @@ export default function Landing() {
     {
       role: 'Student', icon: FiAward, color: '#34d399', gradient: ['rgba(16,185,129,0.15)', 'rgba(16,185,129,0.3)'],
       glow: '#10b981', delay: 0.2,
-      features: ['Attempt scheduled exams', 'View scores & feedback', 'Study material access', 'Progress dashboard', 'Result history'],
+      features: ['Attempt scheduled exams', 'View scores & feedback', 'Weakness tracker & SRS', 'Progress dashboard', 'Result history'],
     },
   ];
 
-  const features = [
-    { icon: FiZap, title: 'AI Question Parsing', desc: 'Upload any PDF and let AI extract questions automatically.', color: '#facc15', glow: '#eab308', delay: 0 },
-    { icon: FiClipboard, title: 'Exam Scheduling', desc: 'Schedule, manage and auto-grade assessments in seconds.', color: '#60a5fa', glow: '#3b82f6', delay: 0.05 },
-    { icon: FiBarChart2, title: 'Deep Analytics', desc: 'Real-time platform reports for admins and teachers.', color: '#a78bfa', glow: '#8b5cf6', delay: 0.1 },
-    { icon: FiHelpCircle, title: 'MCQ Engine', desc: 'Build rich question banks with multiple choice & difficulty levels.', color: '#34d399', glow: '#10b981', delay: 0.15 },
-    { icon: FiUploadCloud, title: 'PDF Import', desc: 'Seamlessly import curriculum content from PDF documents.', color: '#f87171', glow: '#ef4444', delay: 0.2 },
-    { icon: FiGrid, title: 'Multi-Role System', desc: 'Admin, Teacher & Student portals — one unified platform.', color: '#fb923c', glow: '#f97316', delay: 0.25 },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#080911] text-gray-100 overflow-x-hidden font-sans relative">
-      <Background3D roleColor="admin" />
+    <div className="min-h-screen bg-[#06070d] text-gray-100 overflow-x-hidden font-sans relative">
+      <Background3D roleColor="student" />
 
       {/* ── NAVBAR ── */}
       <Navbar activeSection={activeSection} />
 
-      {/* ── HERO ── */}
-      <section id="hero" ref={heroRef} className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 pt-24 pb-16 overflow-hidden">
+      {/* ── HERO SECTION ── */}
+      <section id="hero" ref={heroRef} className="relative pt-32 pb-16 px-6 md:px-12 overflow-hidden min-h-screen flex flex-col justify-center">
 
-        {/* Background orbs */}
-        <Orb color="rgba(239,68,68,0.6)" size="500px" top="10%" left="-10%" blur="120px" delay={0} />
-        <Orb color="rgba(59,130,246,0.6)" size="450px" top="20%" left="70%" blur="130px" delay={1.5} />
-        <Orb color="rgba(168,85,247,0.4)" size="350px" top="60%" left="40%" blur="100px" delay={3} />
-        <Orb color="rgba(16,185,129,0.35)" size="300px" top="70%" left="10%" blur="90px" delay={2} />
+        {/* Ambient Glowing Background Orbs */}
+        <Orb color="rgba(34,211,238,0.4)" size="550px" top="5%" left="-15%" blur="140px" delay={0} />
+        <Orb color="rgba(147,51,234,0.45)" size="500px" top="15%" left="65%" blur="150px" delay={1.5} />
+        <Orb color="rgba(59,130,246,0.35)" size="400px" top="55%" left="30%" blur="120px" delay={3} />
 
-        {/* Grid overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        {/* Subtle Background Grid Line Overlay */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '70px 70px' }} />
 
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center text-center lg:text-left px-4">
+        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 w-full max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
-          {/* LEFT: TEXT CONTENT */}
-          <div className="lg:col-span-7 flex flex-col items-center lg:items-start gap-6">
+          {/* LEFT COLUMN: HERO TRANSPARENT TEACHER & AI BOT COMPOSITION */}
+          <div className="lg:col-span-6 relative flex items-center justify-center order-2 lg:order-1">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
+              className="relative w-full max-w-[580px] flex items-center justify-center"
+            >
+              {/* 100% Transparent Background Composition Image (No floating HTML badges) */}
+              <img
+                src="/images/hero_teacher_chemistry_transparent.png"
+                alt="FullMark Chemistry Teacher & AI Assistant"
+                className="w-full h-auto object-contain drop-shadow-[0_0_60px_rgba(34,211,238,0.25)] pointer-events-none"
+              />
+            </motion.div>
+          </div>
 
-            {/* Badge */}
-            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/5 text-red-400 text-xs font-black uppercase tracking-widest self-center lg:self-start">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-              Next-Gen Assessment Platform
+          {/* RIGHT COLUMN: HEADLINE, DESCRIPTION & CTAs */}
+          <div className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left gap-6 order-1 lg:order-2">
+
+            {/* Smart Platform Pill Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-4.5 py-2 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 text-xs font-black tracking-wide"
+            >
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
+              Smart Chemistry Platform for Tawjihi & High School Students
             </motion.div>
 
-            {/* Headline */}
-            <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
-              className="text-5xl sm:text-7xl lg:text-8xl font-black leading-none tracking-tight">
-              <span className="text-white">Full</span>
-              <span className="color-flow-text">Mark</span>
-              <br />
-              <span className="text-3xl sm:text-4xl lg:text-5xl text-gray-400 font-bold mt-2 block">
-                Smart Education Platform
-              </span>
+            {/* Main Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.1 }}
+              className="text-4xl sm:text-6xl lg:text-7xl font-black leading-tight tracking-tight text-white"
+            >
+              Your Path to <span className="text-white">Full Marks</span> in <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(34,211,238,0.4)]">Chemistry</span> Starts Here
             </motion.h1>
 
-            {/* Sub */}
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}
-              className="text-base md:text-lg text-gray-400 font-semibold max-w-xl leading-relaxed">
-              Empower admins, teachers & students with a unified portal. Create exams, manage questions, track performance — all in one place.
+            {/* Subheadline */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="text-base sm:text-lg text-gray-400 font-semibold max-w-xl leading-relaxed"
+            >
+              Learn Chemistry with expert teachers through organized courses and AI-powered smart exams that reveal your exact weakness points and turn every mistake into real progress.
             </motion.p>
 
-            {/* CTAs */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4 mt-2 w-full sm:w-auto justify-center lg:justify-start">
+            {/* Call To Action Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-col sm:flex-row items-center gap-4 mt-2 w-full sm:w-auto"
+            >
               <button
                 onClick={() => navigate('/login')}
-                className="group flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 text-white font-black text-sm shadow-[0_0_40px_rgba(239,68,68,0.5)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-base shadow-[0_0_35px_rgba(79,70,229,0.5)] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                Launch Platform
-                <FiArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                <span>Start Now</span>
+                <FiArrowRight size={18} />
               </button>
+
               <button
-                onClick={() => document.getElementById('roles').scrollIntoView({ behavior: 'smooth' })}
-                className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl border border-gray-700 text-gray-300 font-black text-sm hover:border-gray-500 hover:text-white transition-all cursor-pointer"
+                onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
+                className="w-full sm:w-auto px-7 py-4 rounded-2xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-extrabold text-base transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                Explore Portals
+                <span>Explore Chemistry Courses</span>
               </button>
             </motion.div>
+
           </div>
 
-          {/* RIGHT: 3D PREVIEW GRAPHICS */}
-          <div className="lg:col-span-5 relative w-full h-[450px] flex items-center justify-center mt-8 lg:mt-0">
-            {/* 3D Perspective Wrapper */}
-            <div className="w-full max-w-[400px] h-[340px] relative" style={{ perspective: 1200 }}>
-              <motion.div
-                initial={{ transform: 'rotateY(-25deg) rotateX(15deg) translateZ(0px)', opacity: 0 }}
-                animate={{ transform: 'rotateY(-15deg) rotateX(10deg) translateZ(0px)', opacity: 1 }}
-                transition={{ duration: 1 }}
-                className="w-full h-full rounded-3xl border border-red-500/20 bg-gradient-to-br from-gray-950 via-[#0e101a] to-gray-950 p-5 shadow-[0_30px_70px_rgba(0,0,0,0.8),0_0_50px_rgba(239,68,68,0.1)] relative"
-              >
-                {/* Accent lines/corners */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-red-500/40 rounded-tl-3xl" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-blue-500/40 rounded-br-3xl" />
-
-                {/* Title Bar mock */}
-                <div className="flex items-center justify-between pb-4 border-b border-gray-800/60 mb-4">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500/60" />
-                    <span className="w-2 h-2 rounded-full bg-yellow-500/60" />
-                    <span className="w-2 h-2 rounded-full bg-emerald-500/60" />
-                  </div>
-                  <span className="text-[9px] text-gray-600 uppercase font-black tracking-widest">Dashboard V1.0</span>
-                </div>
-
-                {/* Dashboard mock graphs */}
-                <div className="flex flex-col gap-4">
-                  <div className="flex justify-between items-center bg-gray-900/50 p-3 rounded-2xl border border-gray-800/40">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
-                        <FiBookOpen size={16} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-gray-500 font-bold uppercase">Recent Quiz</p>
-                        <p className="text-xs font-black text-white">Mathematics Midterm</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-black text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20">Active</span>
-                  </div>
-
-                  <div className="bg-gray-900/50 p-3 rounded-2xl border border-gray-800/40 flex flex-col gap-2">
-                    <div className="flex justify-between text-[10px] text-gray-400 font-bold">
-                      <span>AVERAGE STUDENT SCORE</span>
-                      <span className="text-emerald-400">88.4%</span>
-                    </div>
-                    {/* Glowing progress bar */}
-                    <div className="h-2 w-full bg-gray-950 rounded-full overflow-hidden p-0.5 border border-gray-900">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: '88%' }}
-                        transition={{ duration: 1.5, delay: 0.5 }}
-                        className="h-full rounded-full bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-gray-900/30 p-2.5 rounded-xl border border-gray-850 flex flex-col">
-                      <span className="text-[8px] text-gray-500 font-bold uppercase">Evaluated</span>
-                      <span className="text-sm font-black text-white">412 Students</span>
-                    </div>
-                    <div className="bg-gray-900/30 p-2.5 rounded-xl border border-gray-850 flex flex-col">
-                      <span className="text-[8px] text-gray-500 font-bold uppercase">Accuracy</span>
-                      <span className="text-sm font-black text-emerald-400">99.2% AI</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Floating Orbiting elements */}
-              {/* Floating Card 1: AI Parser */}
-              <motion.div
-                animate={{ y: [0, -12, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-10 -right-6 p-3 rounded-2xl bg-[#090911]/90 border border-emerald-500/30 shadow-[0_15px_30px_rgba(0,0,0,0.6),0_0_20px_rgba(16,185,129,0.15)] flex items-center gap-2 z-25 max-w-[170px]"
-              >
-                <div className="w-5 h-5 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                  <FiCheckCircle size={12} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] text-gray-500 font-bold uppercase">AI Parsing</span>
-                  <span className="text-[10px] font-black text-white">PDF Imported!</span>
-                </div>
-              </motion.div>
-
-              {/* Floating Card 2: Exams count */}
-              <motion.div
-                animate={{ y: [0, 14, 0] }}
-                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                className="absolute -bottom-8 -left-6 p-3 rounded-2xl bg-[#090911]/90 border border-blue-500/30 shadow-[0_15px_30px_rgba(0,0,0,0.6),0_0_20px_rgba(59,130,246,0.15)] flex items-center gap-2.5 z-25"
-              >
-                <div className="w-5 h-5 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
-                  <FiStar size={12} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[8px] text-gray-500 font-bold uppercase">Active Portals</span>
-                  <span className="text-[10px] font-black text-white">Admin + Teacher</span>
-                </div>
-              </motion.div>
-
-              {/* Floating Badge 3: A+ Grade */}
-              <motion.div
-                animate={{ y: [0, -10, 0], x: [0, 8, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute top-1/2 -left-12 p-2.5 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-black text-xs shadow-[0_10px_25px_rgba(168,85,247,0.4)] flex items-center justify-center w-10 h-10 border border-purple-400/30 z-20"
-              >
-                A+
-              </motion.div>
-            </div>
-          </div>
         </motion.div>
+
+        {/* ── SUB-HERO 5 FEATURE CARDS BAR (Matching Navbar Width) ── */}
+        <div className="w-full max-w-[1400px] mx-auto mt-16 pt-8 border-t border-gray-800/60 relative z-10">
+          
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            <h3 className="text-base md:text-lg font-black text-white tracking-wide text-center">
+              Everything You Need to Excel in Chemistry <span className="text-cyan-400">•</span>
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {subHeroCards.map((card, idx) => {
+              const Icon = card.icon;
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 25 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 * idx }}
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  className={`p-5 rounded-3xl border ${card.borderColor} bg-gradient-to-b ${card.gradient} bg-[#0a0c18]/90 backdrop-blur-xl flex flex-col justify-between gap-4 relative overflow-hidden group shadow-lg`}
+                  style={{ boxShadow: `0 10px 30px ${card.glowColor}` }}
+                >
+                  {/* Top Left Play Icon Badge matching reference image */}
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white group-hover:bg-cyan-400 group-hover:text-black transition-all">
+                      <FiPlayCircle size={18} />
+                    </div>
+                    <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-cyan-300">
+                      <Icon size={20} />
+                    </div>
+                  </div>
+
+                  {/* Text Content */}
+                  <div className="text-left flex flex-col gap-1">
+                    <h4 className="text-base font-black text-white group-hover:text-cyan-300 transition-colors">
+                      {card.title}
+                    </h4>
+                    <p className="text-xs font-semibold text-gray-400 leading-relaxed">
+                      {card.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+        </div>
+
       </section>
 
-      {/* ── INTERACTIVE PLAYGROUND ── */}
-      <section className="relative py-12 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col gap-8 relative z-10">
+      {/* ── LIVE INTERACTIVE SIMULATOR SECTION (Matching Navbar Width) ── */}
+      <section className="relative py-16 px-6 md:px-12">
+        <div className="w-full max-w-[1400px] mx-auto flex flex-col gap-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center flex flex-col gap-3"
           >
-            <span className="text-xs font-black uppercase tracking-widest text-red-400">Live Simulator</span>
-            <h2 className="text-3xl md:text-5xl font-black text-white">Experience the Interface</h2>
-            <p className="text-gray-500 font-semibold max-w-xl mx-auto">Click the views below to interact with our simulated portal dashboards in real-time.</p>
+            <span className="text-xs font-black uppercase tracking-widest text-cyan-400">Live Simulator</span>
+            <h2 className="text-3xl md:text-5xl font-black text-white">Experience the Platform Interface</h2>
+            <p className="text-gray-400 font-semibold max-w-xl mx-auto">Interact with our live simulated portals for Admin, Teacher, and Student roles.</p>
           </motion.div>
           <InteractiveDemo />
         </div>
       </section>
 
-      {/* ── STATS ── */}
-      <section id="stats" className="relative py-20 px-6">
-        <div className="max-w-5xl mx-auto">
+      {/* ── PLATFORM STATS SECTION (Matching Navbar Width) ── */}
+      <section id="stats" className="relative py-20 px-6 md:px-12">
+        <div className="w-full max-w-[1400px] mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { val: 500, suffix: '+', label: 'Students', color: '#34d399', glow: '#10b981' },
-              { val: 50, suffix: '+', label: 'Teachers', color: '#60a5fa', glow: '#3b82f6' },
-              { val: 1000, suffix: '+', label: 'Questions', color: '#facc15', glow: '#eab308' },
-              { val: 200, suffix: '+', label: 'Exams Created', color: '#f87171', glow: '#ef4444' },
+              { val: 1200, suffix: '+', label: 'Active Students', color: '#22d3ee', glow: '#06b6d4' },
+              { val: 85, suffix: '+', label: 'Expert Teachers', color: '#60a5fa', glow: '#3b82f6' },
+              { val: 3500, suffix: '+', label: 'Questions in Bank', color: '#c084fc', glow: '#a855f7' },
+              { val: 98, suffix: '%', label: 'Success Rate', color: '#34d399', glow: '#10b981' },
             ].map((s, i) => (
               <motion.div key={i}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
                 className="relative p-6 rounded-3xl text-center overflow-hidden"
-                style={{ background: `radial-gradient(circle at top, ${s.glow}15 0%, #0e101a 60%)`, border: `1px solid ${s.glow}25`, boxShadow: `0 0 30px ${s.glow}15` }}
+                style={{ background: `radial-gradient(circle at top, ${s.glow}20 0%, #0a0c18 60%)`, border: `1px solid ${s.glow}35`, boxShadow: `0 0 30px ${s.glow}20` }}
               >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-20" style={{ background: `linear-gradient(90deg,transparent,${s.glow},transparent)` }} />
                 <div className="text-3xl md:text-4xl font-black mb-1" style={{ color: s.color }}>
                   <Counter target={s.val} suffix={s.suffix} />
                 </div>
-                <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">{s.label}</div>
+                <div className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">{s.label}</div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── ROLE CARDS ── */}
-      <section id="roles" className="relative py-20 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col gap-12">
+      {/* ── PORTAL ROLES SECTION (Matching Navbar Width) ── */}
+      <section id="roles" className="relative py-20 px-6 md:px-12">
+        <div className="w-full max-w-[1400px] mx-auto flex flex-col gap-12">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
             className="text-center flex flex-col gap-3">
-            <span className="text-xs font-black uppercase tracking-widest text-red-400">Three Portals</span>
-            <h2 className="text-3xl md:text-5xl font-black text-white">One Unified Platform</h2>
-            <p className="text-gray-500 font-semibold max-w-xl mx-auto">Every role gets a tailor-made experience with the tools they need.</p>
+            <span className="text-xs font-black uppercase tracking-widest text-purple-400">Three Tailored Portals</span>
+            <h2 className="text-3xl md:text-5xl font-black text-white">One Complete Ecosystem</h2>
+            <p className="text-gray-400 font-semibold max-w-xl mx-auto">Every role gets dedicated tools designed specifically for their goals.</p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {roles.map((r) => <RoleCard key={r.role} {...r} />)}
@@ -431,93 +386,41 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section id="features" className="relative py-20 px-6">
-        <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-        <div className="max-w-6xl mx-auto flex flex-col gap-12 relative">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-            className="text-center flex flex-col gap-3">
-            <span className="text-xs font-black uppercase tracking-widest text-blue-400">Platform Features</span>
-            <h2 className="text-3xl md:text-5xl font-black text-white">Everything You Need</h2>
-            <p className="text-gray-500 font-semibold max-w-xl mx-auto">Built for modern education — powerful tools, beautiful design.</p>
-          </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((f) => <FeatureTile key={f.title} {...f} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section className="py-20 px-6 relative z-10">
-        <div className="max-w-4xl mx-auto flex flex-col gap-12">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-            className="text-center flex flex-col gap-3">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">How It Works</span>
-            <h2 className="text-3xl md:text-5xl font-black text-white">Get Started in Minutes</h2>
-          </motion.div>
-          <div className="flex flex-col gap-4">
-            {[
-              { step: '01', title: 'Admin sets up the platform', desc: 'Create subjects, assign teachers, and onboard students in the admin panel.', color: '#f87171' },
-              { step: '02', title: 'Teachers build question banks', desc: 'Add MCQ questions manually or upload PDFs for AI-based extraction.', color: '#60a5fa' },
-              { step: '03', title: 'Exams are scheduled', desc: 'Schedule assessments with duration, date, and question count control.', color: '#a78bfa' },
-              { step: '04', title: 'Students attempt & get results', desc: 'Students take exams and instantly receive scores and detailed feedback.', color: '#34d399' },
-            ].map((s, i) => (
-              <motion.div key={i}
-                initial={{ opacity: 0, x: i % 2 === 0 ? -40 : 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="flex items-start gap-5 p-6 rounded-3xl border border-gray-800/60 bg-[#0e101a]/60"
-              >
-                <div className="text-2xl font-black shrink-0" style={{ color: s.color, textShadow: `0 0 20px ${s.color}80` }}>{s.step}</div>
-                <div>
-                  <h4 className="text-base font-black text-white mb-1">{s.title}</h4>
-                  <p className="text-sm text-gray-500 font-semibold">{s.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA BANNER ── */}
-      <section className="py-20 px-6 relative z-10">
-        <div className="max-w-4xl mx-auto">
+      {/* ── CTA BANNER (Matching Navbar Width) ── */}
+      <section className="py-20 px-6 md:px-12 relative z-10">
+        <div className="w-full max-w-[1400px] mx-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative rounded-[2.5rem] p-10 md:p-14 text-center overflow-hidden"
-            style={{ background: 'radial-gradient(circle at 50% 0%, rgba(239,68,68,0.2) 0%, #0c0d19 60%)', border: '1px solid rgba(239,68,68,0.3)', boxShadow: '0 0 80px rgba(239,68,68,0.15)' }}
+            className="relative rounded-[2.5rem] p-10 md:p-14 text-center overflow-hidden bg-gradient-to-br from-blue-950/60 via-[#0a0c18] to-purple-950/60 border border-cyan-500/30 shadow-[0_0_80px_rgba(34,211,238,0.15)]"
           >
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-px bg-gradient-to-r from-transparent via-red-500 to-transparent" />
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-red-600/10 blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-blue-600/10 blur-3xl" />
             <div className="relative z-10 flex flex-col items-center gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-rose-500 flex items-center justify-center font-black text-white text-2xl shadow-[0_0_30px_rgba(239,68,68,0.6)]">FM</div>
-              <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">Ready to Transform<br />Your Classroom?</h2>
-              <p className="text-gray-400 font-semibold max-w-md">Join FullMark today and experience the future of digital assessments.</p>
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center font-black text-white text-2xl shadow-[0_0_30px_rgba(34,211,238,0.5)]">FM</div>
+              <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">Ready to Achieve Full Marks<br />in Chemistry & Beyond?</h2>
+              <p className="text-gray-400 font-semibold max-w-md">Join FullMark today and experience AI-driven weakness tracking assessment.</p>
               <button
-                onClick={() => navigate('/login')}
-                className="group flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 text-white font-black text-sm shadow-[0_0_40px_rgba(239,68,68,0.5)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                onClick={() => navigate('/register')}
+                className="flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-base shadow-[0_0_40px_rgba(79,70,229,0.5)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
               >
-                Start Now — It's Free
-                <FiArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                <span>Get Started Now</span>
+                <FiArrowRight size={18} />
               </button>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* ── FAQ SECTION ── */}
-      <section className="py-20 px-6 relative">
-        <div className="max-w-4xl mx-auto flex flex-col gap-12 relative z-10">
+      {/* ── FAQ SECTION (Matching Navbar Width) ── */}
+      <section className="py-20 px-6 md:px-12 relative">
+        <div className="w-full max-w-[1400px] mx-auto flex flex-col gap-12 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center flex flex-col gap-3"
           >
-            <span className="text-xs font-black uppercase tracking-widest text-purple-400">Questions & Answers</span>
-            <h2 className="text-3xl md:text-5xl font-black text-white font-sans">Frequently Asked Questions</h2>
-            <p className="text-gray-500 font-semibold max-w-xl mx-auto">Everything you need to know about FullMark platform features.</p>
+            <span className="text-xs font-black uppercase tracking-widest text-cyan-400">Questions & Answers</span>
+            <h2 className="text-3xl md:text-5xl font-black text-white">Frequently Asked Questions</h2>
+            <p className="text-gray-400 font-semibold max-w-xl mx-auto">Everything you need to know about FullMark platform features.</p>
           </motion.div>
           <FaqAccordion />
         </div>

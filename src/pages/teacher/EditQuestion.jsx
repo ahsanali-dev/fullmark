@@ -19,7 +19,16 @@ import toast from 'react-hot-toast';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchTeacherSubjects, fetchQuestions, updateQuestion, uploadQuestionImage } from '../../redux/slices/teacherSlice';
+import {
+  fetchTeacherSubjects,
+  fetchQuestions,
+  updateQuestion,
+  uploadQuestionImage,
+  fetchWeaknessTopics,
+  approveQuestion,
+  generateVariants,
+  fetchVariantsStatus
+} from '../../redux/slices/teacherSlice';
 
 const getImageUrl = (path) => {
   if (!path) return '';
@@ -48,12 +57,18 @@ const EditQuestion = () => {
   });
 
   const dispatch = useDispatch();
-  const { subjects = [], questions = [], isLoading } = useSelector((state) => state.teacher);
+  const { subjects = [], questions = [], weaknessTopics = [], variantsStatus, isLoading } = useSelector((state) => state.teacher);
 
   useEffect(() => {
     dispatch(fetchTeacherSubjects());
     dispatch(fetchQuestions());
-  }, [dispatch]);
+    if (subjectId) {
+      dispatch(fetchWeaknessTopics(subjectId));
+    }
+    if (questionId) {
+      dispatch(fetchVariantsStatus(questionId));
+    }
+  }, [dispatch, subjectId, questionId]);
 
   const subject = subjects.find((sub) => (sub._id || sub.id) === subjectId) || { name: 'Unknown Subject' };
   const existingQuestion = questions.find((q) => (q._id || q.id) === questionId);
@@ -71,6 +86,11 @@ const EditQuestion = () => {
   const [correctOption, setCorrectOption] = useState('B');
   const [explanation, setExplanation] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [weaknessTopicId, setWeaknessTopicId] = useState('');
+  const [useGeneralVideo, setUseGeneralVideo] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [isGeneratingVariants, setIsGeneratingVariants] = useState(false);
+
   // image = base64 preview; imageFile = new File chosen by user (null = no new file chosen)
   const [image, setImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -101,6 +121,9 @@ const EditQuestion = () => {
       setExplanation(existingQuestion.explanation || '');
       setVideoUrl(existingQuestion.videoUrl || '');
       setImage(existingQuestion.image || null);
+      setWeaknessTopicId(existingQuestion.weaknessTopic?._id || existingQuestion.weaknessTopic || '');
+      setUseGeneralVideo(!!existingQuestion.useGeneralVideo);
+      setIsApproved(!!existingQuestion.isApproved);
 
       const optImgs = existingQuestion.optionImages || [];
       setOptionImages({
@@ -111,6 +134,34 @@ const EditQuestion = () => {
       });
     }
   }, [existingQuestion]);
+
+  const handleApprove = async () => {
+    const loadingToast = toast.loading('Approving question...');
+    try {
+      await dispatch(approveQuestion(questionId)).unwrap();
+      setIsApproved(true);
+      toast.success('Question approved!', { id: loadingToast });
+      dispatch(fetchQuestions());
+    } catch (err) {
+      toast.error(err || 'Failed to approve question', { id: loadingToast });
+    }
+  };
+
+  const handleGenerateVariantsAction = async () => {
+    setIsGeneratingVariants(true);
+    const loadingToast = toast.loading('Triggering AI variant generation...');
+    try {
+      const res = await dispatch(generateVariants(questionId)).unwrap();
+      toast.success(res.message || 'Variant generation started!', { id: loadingToast });
+      setTimeout(() => {
+        dispatch(fetchVariantsStatus(questionId));
+        setIsGeneratingVariants(false);
+      }, 3000);
+    } catch (err) {
+      setIsGeneratingVariants(false);
+      toast.error(err || 'Failed to trigger variant generation', { id: loadingToast });
+    }
+  };
 
   // Handle errors or missing questions after loading
   useEffect(() => {
@@ -239,6 +290,8 @@ const EditQuestion = () => {
         videoUrl: videoUrl,
         image: finalImagePath || null,
         optionImages: currentOptPaths.map(p => p || ''),
+        weaknessTopic: weaknessTopicId || null,
+        useGeneralVideo: !!useGeneralVideo,
       };
 
       await dispatch(updateQuestion({ id: questionId, questionData: payload })).unwrap();
@@ -277,7 +330,7 @@ const EditQuestion = () => {
         />
 
         {/* Header Block */}
-        <div className="flex justify-between items-center pb-2 border-b border-gray-800/40">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-800/40">
           <div className="flex items-center">
             <button 
               onClick={() => navigate(`/teacher/subjects/${subjectId}`)}
@@ -286,25 +339,91 @@ const EditQuestion = () => {
               <FiChevronLeft size={20} />
             </button>
             <div>
-              <h2 className="text-2xl md:text-3xl font-black text-white">Edit Question</h2>
+              <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
+                Edit Question
+                {isApproved ? (
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black flex items-center gap-1">
+                    <FiCheck size={14} /> Approved
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black">
+                    Pending Approval
+                  </span>
+                )}
+              </h2>
               <p className="text-sm text-gray-500 font-semibold mt-1">Modify question details for {subject.name || subject.title}</p>
             </div>
           </div>
 
-          {/* Difficulty Level Indicator */}
-          <div className={`px-4.5 py-1.5 rounded-full text-sm font-black border flex items-center gap-1.5 ${
-            difficulty === 'Easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-            difficulty === 'Medium' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-            'bg-red-500/10 border-red-500/20 text-red-400'
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
-              difficulty === 'Easy' ? 'bg-emerald-400' :
-              difficulty === 'Medium' ? 'bg-blue-400' :
-              'bg-red-400'
-            }`} />
-            <span>{difficulty}</span>
+          <div className="flex items-center gap-3">
+            {!isApproved && (
+              <button
+                type="button"
+                onClick={handleApprove}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-600/20"
+              >
+                <FiCheck size={16} /> Approve Question
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleGenerateVariantsAction}
+              disabled={isGeneratingVariants}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white text-xs font-black flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-purple-600/20 disabled:opacity-50"
+            >
+              <FiPlus size={16} /> {isGeneratingVariants ? 'Generating...' : 'Generate Practice Variants'}
+            </button>
+
+            {/* Difficulty Level Indicator */}
+            <div className={`px-4.5 py-2 rounded-full text-xs font-black border flex items-center gap-1.5 ${
+              difficulty === 'Easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+              difficulty === 'Medium' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+              'bg-red-500/10 border-red-500/20 text-red-400'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                difficulty === 'Easy' ? 'bg-emerald-400' :
+                difficulty === 'Medium' ? 'bg-blue-400' :
+                'bg-red-400'
+              }`} />
+              <span>{difficulty}</span>
+            </div>
           </div>
         </div>
+
+        {/* AI Variants Status Card (if status returned) */}
+        {variantsStatus && (
+          <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between text-left">
+            <div>
+              <span className="text-xs font-black text-purple-400 uppercase tracking-wider block">AI Variant Generator Status</span>
+              <span className="text-sm font-bold text-white mt-0.5 block">
+                Status: <span className="capitalize text-purple-300">{variantsStatus.status || variantsStatus.state || 'Completed'}</span>
+                {variantsStatus.variantsCount !== undefined && ` • Generated: ${variantsStatus.variantsCount} variants`}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Weakness Topic Selector */}
+        {weaknessTopics.length > 0 && (
+          <div className="flex flex-col gap-2 text-left">
+            <span className="text-xs font-black tracking-widest text-amber-500 uppercase px-1 flex items-center gap-1.5">
+              <span>🎯</span> Target Weakness Topic (Optional)
+            </span>
+            <select
+              value={weaknessTopicId}
+              onChange={(e) => setWeaknessTopicId(e.target.value)}
+              className="w-full p-4 bg-[#0e101a] border border-gray-800 focus:border-amber-500/50 rounded-2xl text-white font-semibold text-sm outline-none cursor-pointer"
+            >
+              <option value="">-- No Specific Weakness Topic --</option>
+              {weaknessTopics.map((topic) => (
+                <option key={topic._id || topic.id} value={topic._id || topic.id}>
+                  {topic.title} {topic.titleAr ? `(${topic.titleAr})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* 1. Difficulty Level Selector */}
         <div className="flex flex-col gap-3 text-left">
@@ -548,10 +667,23 @@ const EditQuestion = () => {
                     type="text"
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder="Explanation Video URL"
-                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0"
+                    disabled={useGeneralVideo}
+                    placeholder={useGeneralVideo ? "Using Weakness Topic General Video" : "Explanation Video URL"}
+                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0 disabled:opacity-50"
                   />
                 </div>
+
+                <label className="flex items-center gap-3 p-3 bg-white/5 border border-gray-800 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
+                  <input
+                    type="checkbox"
+                    checked={useGeneralVideo}
+                    onChange={(e) => setUseGeneralVideo(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-700 bg-gray-900 focus:ring-blue-500"
+                  />
+                  <span className="text-xs font-semibold text-gray-300">
+                    Use Weakness Topic's general video (if available) instead of question video
+                  </span>
+                </label>
               </div>
             )}
           </div>

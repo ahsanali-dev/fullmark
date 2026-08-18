@@ -63,6 +63,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
           menus: [
             { id: 'dashboard', label: 'Home', icon: FiHome },
             { id: 'courses', label: 'Courses', icon: FiBookOpen },
+            { id: 'weaknesses', label: 'Weaknesses', icon: FiHelpCircle },
             { id: 'exams', label: 'Exams', icon: FiClipboard },
             { id: 'results', label: 'Results', icon: FiBarChart2 },
             { id: 'profile', label: 'Profile', icon: FiUser }
@@ -82,6 +83,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
             { id: 'subjects', label: 'Subjects', icon: FiBookOpen },
             { id: 'questions', label: 'Questions', icon: FiHelpCircle },
             { id: 'exams', label: 'Exams', icon: FiClipboard },
+            { id: 'notifications/compose', label: 'Announce', icon: FiBell },
             { id: 'settings', label: 'Profile', icon: FiUser }
           ]
         };

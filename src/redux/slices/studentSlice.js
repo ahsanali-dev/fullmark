@@ -409,6 +409,70 @@ export const fetchLeaderboard = createAsyncThunk(
   }
 );
 
+// ─── Student Weakness Improvement Thunks ─────────────────────────────
+export const fetchSimilarQuestion = createAsyncThunk(
+  'student/fetchSimilarQuestion',
+  async (questionId, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.student.similarQuestion(questionId), getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch similar question';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const fetchWeaknesses = createAsyncThunk(
+  'student/fetchWeaknesses',
+  async (status, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.student.weaknesses, {
+        ...getAuthConfig(token),
+        params: status ? { status } : {},
+      });
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch weaknesses';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const fetchDailyImprovementTest = createAsyncThunk(
+  'student/fetchDailyImprovementTest',
+  async (_, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.student.dailyImprovementTest, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch daily improvement test';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const submitDailyImprovementTest = createAsyncThunk(
+  'student/submitDailyImprovementTest',
+  async ({ answers }, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(
+        apiEndpoints.student.submitDailyImprovementTest,
+        { answers },
+        getAuthConfig(token)
+      );
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to submit improvement test';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 const initialState = {
   dashboard: null,
   profile: null,
@@ -429,6 +493,10 @@ const initialState = {
   resultDetail: null,
   notificationsData: null, // contains notifications, unreadCount
   leaderboardData: null,
+  weaknesses: [],
+  dailyImprovementTest: null,
+  similarQuestion: null,
+  improvementTestResult: null,
   isLoading: false,
   isActionLoading: false,
   error: null,
@@ -683,6 +751,49 @@ const studentSlice = createSlice({
       // Leaderboard
       .addCase(fetchLeaderboard.fulfilled, (state, action) => {
         state.leaderboardData = action.payload;
+      })
+
+      // Weaknesses
+      .addCase(fetchWeaknesses.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchWeaknesses.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.weaknesses = action.payload?.weaknesses || (Array.isArray(action.payload) ? action.payload : []);
+      })
+      .addCase(fetchWeaknesses.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
+      // Similar Question
+      .addCase(fetchSimilarQuestion.fulfilled, (state, action) => {
+        state.similarQuestion = action.payload?.variant || action.payload?.question || action.payload;
+      })
+
+      // Daily Improvement Test
+      .addCase(fetchDailyImprovementTest.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchDailyImprovementTest.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.dailyImprovementTest = action.payload;
+      })
+      .addCase(fetchDailyImprovementTest.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
+      // Submit Daily Improvement Test
+      .addCase(submitDailyImprovementTest.pending, (state) => {
+        state.isActionLoading = true;
+      })
+      .addCase(submitDailyImprovementTest.fulfilled, (state, action) => {
+        state.isActionLoading = false;
+        state.improvementTestResult = action.payload;
+      })
+      .addCase(submitDailyImprovementTest.rejected, (state) => {
+        state.isActionLoading = false;
       });
   },
 });

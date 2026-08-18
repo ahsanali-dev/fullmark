@@ -78,6 +78,10 @@ export const apiEndpoints = {
     notifications: `${BASE_URL}/student/notifications`,
     readNotification: (id) => `${BASE_URL}/student/notifications/${id}/read`,
     leaderboard: `${BASE_URL}/student/leaderboard`,
+    similarQuestion: (id) => `${BASE_URL}/student/questions/${id}/similar`,
+    weaknesses: `${BASE_URL}/student/weaknesses`,
+    dailyImprovementTest: `${BASE_URL}/student/daily-improvement-test`,
+    submitDailyImprovementTest: `${BASE_URL}/student/daily-improvement-test/submit`,
   },
 
   teacher: {
@@ -87,6 +91,10 @@ export const apiEndpoints = {
     subjectUnits: (subjectId) => `${BASE_URL}/teacher/subjects/${subjectId}/units`,
     units: `${BASE_URL}/teacher/units`,
     unitById: (id) => `${BASE_URL}/teacher/units/${id}`,
+    weaknessTopics: (subjectId) => `${BASE_URL}/teacher/subjects/${subjectId}/weakness-topics`,
+    createWeaknessTopic: `${BASE_URL}/teacher/weakness-topics`,
+    updateWeaknessTopic: (id) => `${BASE_URL}/teacher/weakness-topics/${id}`,
+    deleteWeaknessTopic: (id) => `${BASE_URL}/teacher/weakness-topics/${id}`,
     lessons: `${BASE_URL}/teacher/lessons`,
     lessonById: (id) => `${BASE_URL}/teacher/lessons/${id}`,
     subjectLessons: (subjectId) => `${BASE_URL}/teacher/subjects/${subjectId}/lessons`,
@@ -94,6 +102,10 @@ export const apiEndpoints = {
     questions: `${BASE_URL}/teacher/questions`,
     questionById: (id) => `${BASE_URL}/teacher/questions/${id}`,
     extractPdf: `${BASE_URL}/teacher/questions/extract-pdf`,
+    approveQuestion: (id) => `${BASE_URL}/teacher/questions/${id}/approve`,
+    generateVariants: (id) => `${BASE_URL}/teacher/questions/${id}/generate-variants`,
+    getVariants: (id) => `${BASE_URL}/teacher/questions/${id}/variants`,
+    sendNotification: `${BASE_URL}/teacher/notifications`,
     exams: `${BASE_URL}/teacher/exams`,
     examById: (id) => `${BASE_URL}/teacher/exams/${id}`,
     togglePublishExam: (id) => `${BASE_URL}/teacher/exams/${id}/toggle-publish`,
@@ -125,6 +137,7 @@ export const apiEndpoints = {
     markAllNotificationsRead: `${BASE_URL}/notifications/mark-all-read`,
     notificationById: (id) => `${BASE_URL}/notifications/${id}`,
     readNotification: (id) => `${BASE_URL}/notifications/${id}/read`,
+    fcmToken: `${BASE_URL}/notifications/fcm-token`,
   },
 
   public: {

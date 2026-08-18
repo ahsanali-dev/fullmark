@@ -38,6 +38,9 @@ import StudentTakeExam from '../pages/student/TakeExam';
 import StudentResults from '../pages/student/Results';
 import StudentResultDetails from '../pages/student/ResultDetails';
 import StudentProfile from '../pages/student/Profile';
+import StudentWeaknessPoints from '../pages/student/WeaknessPoints';
+import StudentDailyImprovementTest from '../pages/student/DailyImprovementTest';
+import TeacherNotificationComposer from '../pages/teacher/TeacherNotificationComposer';
 
 import ParentDashboard from '../pages/parent/Dashboard';
 import ParentChildren from '../pages/parent/Children';
@@ -202,6 +205,10 @@ const router = createBrowserRouter([
         path: '/teacher/notifications',
         element: <Notifications />,
       },
+      {
+        path: '/teacher/notifications/compose',
+        element: <TeacherNotificationComposer />,
+      },
     ],
   },
 
@@ -212,6 +219,14 @@ const router = createBrowserRouter([
       {
         path: '/student/dashboard',
         element: <StudentDashboard />,
+      },
+      {
+        path: '/student/weaknesses',
+        element: <StudentWeaknessPoints />,
+      },
+      {
+        path: '/student/daily-improvement-test',
+        element: <StudentDailyImprovementTest />,
       },
       {
         path: '/student/courses',

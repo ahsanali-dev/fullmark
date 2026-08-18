@@ -20,7 +20,7 @@ import toast from 'react-hot-toast';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchTeacherSubjects, createQuestion, uploadQuestionImage } from '../../redux/slices/teacherSlice';
+import { fetchTeacherSubjects, fetchWeaknessTopics, createQuestion, uploadQuestionImage } from '../../redux/slices/teacherSlice';
 import { useEffect } from 'react';
 
 const getImageUrl = (path) => {
@@ -49,7 +49,7 @@ const AddQuestion = () => {
   const [optionImageFiles, setOptionImageFiles] = useState({ A: null, B: null, C: null, D: null });
 
   const dispatch = useDispatch();
-  const { subjects = [], isLoading } = useSelector((state) => state.teacher);
+  const { subjects = [], weaknessTopics = [], isLoading } = useSelector((state) => state.teacher);
 
   const [selectedSubjectId, setSelectedSubjectId] = useState(() => {
     if (subjectId === 'select') {
@@ -57,6 +57,9 @@ const AddQuestion = () => {
     }
     return subjectId;
   });
+
+  const [weaknessTopicId, setWeaknessTopicId] = useState('');
+  const [useGeneralVideo, setUseGeneralVideo] = useState(false);
 
   // Fetch subjects on mount
   useEffect(() => {
@@ -69,6 +72,13 @@ const AddQuestion = () => {
       setSelectedSubjectId(subjects[0]?._id || subjects[0]?.id || '');
     }
   }, [subjects, selectedSubjectId, subjectId]);
+
+  // Fetch weakness topics when subject changes
+  useEffect(() => {
+    if (selectedSubjectId) {
+      dispatch(fetchWeaknessTopics(selectedSubjectId));
+    }
+  }, [dispatch, selectedSubjectId]);
 
   const subject = subjects.find((sub) => (sub._id || sub.id) === selectedSubjectId) || { name: 'Unknown Subject' };
 
@@ -205,6 +215,8 @@ const AddQuestion = () => {
         videoUrl: videoUrl,
         image: uploadedImagePath || null,
         optionImages: uploadedOptionPaths,
+        weaknessTopic: weaknessTopicId || null,
+        useGeneralVideo: !!useGeneralVideo,
       };
 
       await dispatch(createQuestion(payload)).unwrap();
@@ -336,6 +348,27 @@ const AddQuestion = () => {
             </div>
           </div>
         </div>
+
+        {/* 1.5 Weakness Topic Selector */}
+        {weaknessTopics.length > 0 && (
+          <div className="flex flex-col gap-3 text-left">
+            <span className="text-xs font-black tracking-widest text-amber-500 uppercase px-1 flex items-center gap-1.5">
+              <span>🎯</span> Target Weakness Topic (Optional)
+            </span>
+            <select
+              value={weaknessTopicId}
+              onChange={(e) => setWeaknessTopicId(e.target.value)}
+              className="w-full p-4 bg-[#0e101a] border border-gray-800 focus:border-amber-500/50 rounded-2xl text-white font-semibold text-sm outline-none cursor-pointer"
+            >
+              <option value="">-- No Specific Weakness Topic --</option>
+              {weaknessTopics.map((topic) => (
+                <option key={topic._id || topic.id} value={topic._id || topic.id}>
+                  {topic.title} {topic.titleAr ? `(${topic.titleAr})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* 2. Accordions Section */}
         <div className="flex flex-col gap-4">
@@ -536,10 +569,23 @@ const AddQuestion = () => {
                     type="text"
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder="Explanation Video URL"
-                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0"
+                    disabled={useGeneralVideo}
+                    placeholder={useGeneralVideo ? "Using Weakness Topic General Video" : "Explanation Video URL"}
+                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0 disabled:opacity-50"
                   />
                 </div>
+
+                <label className="flex items-center gap-3 p-3 bg-white/5 border border-gray-800 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
+                  <input
+                    type="checkbox"
+                    checked={useGeneralVideo}
+                    onChange={(e) => setUseGeneralVideo(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-700 bg-gray-900 focus:ring-blue-500"
+                  />
+                  <span className="text-xs font-semibold text-gray-300">
+                    Use Weakness Topic's general video (if available) instead of question video
+                  </span>
+                </label>
               </div>
             )}
           </div>

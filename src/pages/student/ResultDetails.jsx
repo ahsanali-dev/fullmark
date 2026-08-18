@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -7,10 +7,16 @@ import {
   FiStar,
   FiClock,
   FiBarChart2,
-  FiHome
+  FiHome,
+  FiPlayCircle,
+  FiZap,
+  FiX,
+  FiCheck
 } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { fetchAttemptDetail } from '../../redux/slices/studentSlice';
+import { fetchAttemptDetail, fetchSimilarQuestion } from '../../redux/slices/studentSlice';
 
 const getImageUrl = (path) => {
   if (!path) return '';
@@ -28,11 +34,37 @@ const ResultDetails = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { resultDetail: attempt, isLoading } = useSelector((state) => state.student);
+  const { resultDetail: attempt, similarQuestion, isLoading } = useSelector((state) => state.student);
+
+  // Video Modal State
+  const [videoModalUrl, setVideoModalUrl] = useState(null);
+
+  // Similar Question Modal State
+  const [similarModalOpen, setSimilarModalOpen] = useState(false);
+  const [fetchingSimilar, setFetchingSimilar] = useState(false);
+  const [selectedPracticeOpt, setSelectedPracticeOpt] = useState(null);
+  const [submittedPractice, setSubmittedPractice] = useState(false);
 
   useEffect(() => {
     dispatch(fetchAttemptDetail(attemptId));
   }, [dispatch, attemptId]);
+
+  const handleOpenSimilarQuestion = async (questionId) => {
+    setFetchingSimilar(true);
+    setSelectedPracticeOpt(null);
+    setSubmittedPractice(false);
+    setSimilarModalOpen(true);
+    const loadingToast = toast.loading('Generating similar question variant...');
+    try {
+      await dispatch(fetchSimilarQuestion(questionId)).unwrap();
+      toast.dismiss(loadingToast);
+    } catch (err) {
+      toast.error(err || 'Failed to fetch similar question', { id: loadingToast });
+      setSimilarModalOpen(false);
+    } finally {
+      setFetchingSimilar(false);
+    }
+  };
 
   if (isLoading && !attempt) {
     return (
@@ -196,19 +228,45 @@ const ResultDetails = () => {
 
             const userAns = ans.selectedOption;
             const isCorrectAnswer = ans.isCorrect;
+            const videoLink = q.videoUrl || q.weaknessTopic?.generalVideoUrl;
 
             return (
               <div
                 key={ans._id || idx}
                 className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 shadow-md flex flex-col gap-4 text-left"
               >
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-xl bg-gray-900 border border-gray-800 text-xs font-black text-gray-400">
-                    Q{idx + 1}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-black text-emerald-400 capitalize">
-                    {q.difficulty || 'medium'}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-xl bg-gray-900 border border-gray-800 text-xs font-black text-gray-400">
+                      Q{idx + 1}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-black text-emerald-400 capitalize">
+                      {q.difficulty || 'medium'}
+                    </span>
+                  </div>
+
+                  {/* Actions for Incorrect Questions */}
+                  {!isCorrectAnswer && (
+                    <div className="flex items-center gap-2">
+                      {videoLink && (
+                        <button
+                          type="button"
+                          onClick={() => setVideoModalUrl(videoLink)}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <FiPlayCircle size={15} /> Watch Explanation Video
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenSimilarQuestion(q._id || q.id)}
+                        className="px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <FiZap size={15} /> Try Similar Question
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <h4 className="text-base font-bold text-white leading-relaxed">
@@ -314,6 +372,153 @@ const ResultDetails = () => {
         </div>
 
       </div>
+
+      {/* VIDEO MODAL */}
+      <AnimatePresence>
+        {videoModalUrl && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-2xl bg-[#0e101a] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 text-left relative"
+            >
+              <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <FiPlayCircle className="text-emerald-400" /> Question Explanation Video
+                </h3>
+                <button
+                  onClick={() => setVideoModalUrl(null)}
+                  className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white"
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black border border-gray-800 flex items-center justify-center">
+                {videoModalUrl.includes('youtube.com') || videoModalUrl.includes('youtu.be') ? (
+                  <iframe
+                    src={videoModalUrl.replace('watch?v=', 'embed/')}
+                    title="Explanation Video"
+                    className="w-full h-full"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video src={videoModalUrl} controls className="w-full h-full" />
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* SIMILAR QUESTION PRACTICE MODAL */}
+      <AnimatePresence>
+        {similarModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-xl bg-[#0e101a] border border-purple-500/30 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-left relative"
+            >
+              <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <FiZap className="text-purple-400" /> Practice Similar Variant Question
+                </h3>
+                <button
+                  onClick={() => setSimilarModalOpen(false)}
+                  className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white"
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              {fetchingSimilar ? (
+                <div className="py-12 flex items-center justify-center text-purple-400 font-bold">
+                  Generating similar question variant...
+                </div>
+              ) : similarQuestion ? (
+                <div className="flex flex-col gap-4">
+                  <h4 className="text-base font-bold text-white leading-relaxed">
+                    {similarQuestion.text || similarQuestion.questionText}
+                  </h4>
+
+                  {/* Options */}
+                  <div className="flex flex-col gap-2.5">
+                    {(similarQuestion.options || []).map((optText, optIdx) => {
+                      const letters = ['A', 'B', 'C', 'D'];
+                      const isSelected = selectedPracticeOpt === optIdx;
+                      const correctOpt = typeof similarQuestion.correctOption === 'number'
+                        ? similarQuestion.correctOption
+                        : ['A', 'B', 'C', 'D'].indexOf(similarQuestion.correctOption);
+
+                      let btnStyle = 'bg-[#121424] border-gray-800 text-gray-300';
+                      if (submittedPractice) {
+                        if (optIdx === correctOpt) btnStyle = 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold';
+                        else if (isSelected) btnStyle = 'bg-pink-500/20 border-pink-500 text-pink-300 font-bold';
+                      } else if (isSelected) {
+                        btnStyle = 'bg-purple-500/20 border-purple-500 text-white font-bold';
+                      }
+
+                      return (
+                        <button
+                          key={optIdx}
+                          disabled={submittedPractice}
+                          onClick={() => setSelectedPracticeOpt(optIdx)}
+                          className={`p-3.5 rounded-xl border flex items-center gap-3 text-left transition-all cursor-pointer ${btnStyle}`}
+                        >
+                          <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-black">
+                            {letters[optIdx]}
+                          </span>
+                          <span className="text-sm font-semibold">{optText}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {submittedPractice ? (
+                    <div className="p-4 rounded-2xl bg-white/5 border border-gray-800 flex flex-col gap-2 mt-2">
+                      {selectedPracticeOpt === (typeof similarQuestion.correctOption === 'number' ? similarQuestion.correctOption : ['A', 'B', 'C', 'D'].indexOf(similarQuestion.correctOption)) ? (
+                        <span className="text-sm font-black text-emerald-400 flex items-center gap-1.5">
+                          <FiCheck /> Correct! Great job mastering this concept!
+                        </span>
+                      ) : (
+                        <span className="text-sm font-black text-pink-400 flex items-center gap-1.5">
+                          <FiX /> Incorrect this time. Keep practicing!
+                        </span>
+                      )}
+                      {similarQuestion.explanation && (
+                        <p className="text-xs text-gray-400 font-medium">
+                          Explanation: {similarQuestion.explanation}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (selectedPracticeOpt === null) {
+                          toast.error('Please select an option first');
+                          return;
+                        }
+                        setSubmittedPractice(true);
+                      }}
+                      className="mt-2 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-black text-sm transition-all cursor-pointer"
+                    >
+                      Check Answer
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-gray-400 font-bold">
+                  No similar question available.
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </DashboardLayout>
   );
 };

@@ -32,7 +32,11 @@ import {
   fetchExams,
   fetchLessons,
   deleteExam,
-  uploadSubjectBanner
+  uploadSubjectBanner,
+  fetchWeaknessTopics,
+  createWeaknessTopic,
+  updateWeaknessTopic,
+  deleteWeaknessTopic
 } from '../../redux/slices/teacherSlice';
 import { ContentSkeleton } from '../../components/shared/SkeletonLoading';
 import { getImageUrl } from '../../utils/imageUrl';
@@ -43,9 +47,9 @@ const SubjectDetails = () => {
   const dispatch = useDispatch();
   const bannerInputRef = useRef(null);
 
-  const { subjects = [], units = [], questions = [], exams: examsList = [], lessons = [], isLoading } = useSelector((state) => state.teacher);
+  const { subjects = [], units = [], weaknessTopics = [], questions = [], exams: examsList = [], lessons = [], isLoading } = useSelector((state) => state.teacher);
 
-  const [activeTab, setActiveTab] = useState('lessons'); // 'units' | 'lessons' | 'questions' | 'exams'
+  const [activeTab, setActiveTab] = useState('lessons'); // 'units' | 'lessons' | 'questions' | 'exams' | 'weaknesses'
   const [isDeletingId, setIsDeletingId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingExam, setDeletingExam] = useState(null);
@@ -58,12 +62,22 @@ const SubjectDetails = () => {
   const [unitOrder, setUnitOrder] = useState(1);
   const [isSubmittingUnit, setIsSubmittingUnit] = useState(false);
 
+  // Weakness Topic Modal States
+  const [isWeaknessModalOpen, setIsWeaknessModalOpen] = useState(false);
+  const [editingTopic, setEditingTopic] = useState(null);
+  const [topicTitle, setTopicTitle] = useState('');
+  const [topicTitleAr, setTopicTitleAr] = useState('');
+  const [topicVideoUrl, setTopicVideoUrl] = useState('');
+  const [topicOrder, setTopicOrder] = useState(1);
+  const [isSubmittingTopic, setIsSubmittingTopic] = useState(false);
+
   // Banner upload state
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
   useEffect(() => {
     dispatch(fetchTeacherSubjects());
     dispatch(fetchSubjectUnits(subjectId));
+    dispatch(fetchWeaknessTopics(subjectId));
     dispatch(fetchQuestions());
     dispatch(fetchExams());
     dispatch(fetchLessons(subjectId));
@@ -231,6 +245,80 @@ const SubjectDetails = () => {
     }
   };
 
+  // Weakness Topic Handlers
+  const handleOpenAddTopic = () => {
+    setEditingTopic(null);
+    setTopicTitle('');
+    setTopicTitleAr('');
+    setTopicVideoUrl('');
+    setTopicOrder(weaknessTopics.length + 1);
+    setIsWeaknessModalOpen(true);
+  };
+
+  const handleOpenEditTopic = (topic) => {
+    setEditingTopic(topic);
+    setTopicTitle(topic.title || '');
+    setTopicTitleAr(topic.titleAr || '');
+    setTopicVideoUrl(topic.generalVideoUrl || '');
+    setTopicOrder(topic.order || 1);
+    setIsWeaknessModalOpen(true);
+  };
+
+  const handleSaveTopic = async (e) => {
+    e.preventDefault();
+    if (!topicTitle.trim()) {
+      toast.error('Weakness Topic title is required');
+      return;
+    }
+
+    setIsSubmittingTopic(true);
+    const loadingToast = toast.loading(editingTopic ? 'Updating topic...' : 'Creating topic...');
+
+    try {
+      if (editingTopic) {
+        await dispatch(updateWeaknessTopic({
+          id: editingTopic._id || editingTopic.id,
+          topicData: {
+            title: topicTitle,
+            titleAr: topicTitleAr,
+            generalVideoUrl: topicVideoUrl,
+            order: Number(topicOrder)
+          }
+        })).unwrap();
+        toast.success('Weakness topic updated successfully!', { id: loadingToast });
+      } else {
+        await dispatch(createWeaknessTopic({
+          subjectId,
+          title: topicTitle,
+          titleAr: topicTitleAr,
+          generalVideoUrl: topicVideoUrl,
+          order: Number(topicOrder)
+        })).unwrap();
+        toast.success('Weakness topic created successfully! 🎯', { id: loadingToast });
+      }
+
+      setIsWeaknessModalOpen(false);
+      dispatch(fetchWeaknessTopics(subjectId));
+    } catch (err) {
+      toast.error(err || 'Failed to save topic', { id: loadingToast });
+    } finally {
+      setIsSubmittingTopic(false);
+    }
+  };
+
+  const handleDeleteTopic = async (topicId) => {
+    if (!window.confirm('Are you sure you want to delete this weakness topic?')) return;
+    const loadingToast = toast.loading('Deleting weakness topic...');
+
+    try {
+      await dispatch(deleteWeaknessTopic(topicId)).unwrap();
+      toast.success('Topic deleted successfully!', { id: loadingToast });
+      dispatch(fetchWeaknessTopics(subjectId));
+    } catch (err) {
+      toast.error(err || 'Failed to delete topic', { id: loadingToast });
+    }
+  };
+
   if (isLoading && !lessons.length && !questions.length && !examsList.length) {
     return (
       <DashboardLayout
@@ -312,7 +400,7 @@ const SubjectDetails = () => {
           </div>
 
           {/* Stats Badge Grid */}
-          <div className="relative z-10 grid grid-cols-4 gap-1 border-t border-white/10 pt-4 mt-2">
+          <div className="relative z-10 grid grid-cols-5 gap-1 border-t border-white/10 pt-4 mt-2">
             <div className="flex flex-col items-center text-center">
               <FiFolder size={16} className="text-white/70" />
               <span className="text-lg font-black mt-1">{units.length}</span>
@@ -333,50 +421,65 @@ const SubjectDetails = () => {
               <span className="text-lg font-black mt-1">{subjectExams.length}</span>
               <span className="text-[10px] font-black tracking-wider uppercase text-white/50 mt-0.5">Exams</span>
             </div>
+            <div className="flex flex-col items-center text-center border-l border-white/10">
+              <span className="text-sm font-black text-amber-400">🎯</span>
+              <span className="text-lg font-black mt-1 text-amber-300">{weaknessTopics.length}</span>
+              <span className="text-[10px] font-black tracking-wider uppercase text-white/50 mt-0.5">Weaknesses</span>
+            </div>
           </div>
         </div>
 
         {/* Tab Selection Switch */}
-        <div className="p-1.5 bg-[#0a0b14]/80 backdrop-blur-md border border-gray-800/80 rounded-2xl w-full grid grid-cols-2 sm:grid-cols-4 gap-1.5 shadow-inner">
+        <div className="p-1.5 bg-[#0a0b14]/80 backdrop-blur-md border border-gray-800/80 rounded-2xl w-full grid grid-cols-2 sm:grid-cols-5 gap-1.5 shadow-inner">
           <button
             type="button"
             onClick={() => setActiveTab('units')}
-            className={`py-3 px-4 text-center font-black text-xs sm:text-sm rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${activeTab === 'units'
+            className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'units'
               ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
           >
-            <FiFolder size={16} /> Units ({units.length})
+            <FiFolder size={15} /> Units ({units.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('lessons')}
-            className={`py-3 px-4 text-center font-black text-xs sm:text-sm rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${activeTab === 'lessons'
+            className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'lessons'
               ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
           >
-            <FiBookOpen size={16} /> Lessons ({subjectLessons.length})
+            <FiBookOpen size={15} /> Lessons ({subjectLessons.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('questions')}
-            className={`py-3 px-4 text-center font-black text-xs sm:text-sm rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${activeTab === 'questions'
+            className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'questions'
               ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
           >
-            <FiHelpCircle size={16} /> Questions ({subjectQuestions.length})
+            <FiHelpCircle size={15} /> Questions ({subjectQuestions.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('exams')}
-            className={`py-3 px-4 text-center font-black text-xs sm:text-sm rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${activeTab === 'exams'
+            className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'exams'
               ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
           >
-            <FiFileText size={16} /> Exams ({subjectExams.length})
+            <FiFileText size={15} /> Exams ({subjectExams.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('weaknesses')}
+            className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'weaknesses'
+              ? 'bg-gradient-to-r from-amber-500 via-orange-600 to-amber-600 text-white shadow-[0_4px_20px_rgba(245,158,11,0.4)] border border-amber-400/30 scale-[1.01]'
+              : 'text-gray-400 hover:text-amber-400 hover:bg-white/5'
+              }`}
+          >
+            <span>🎯</span> Weaknesses ({weaknessTopics.length})
           </button>
         </div>
 
@@ -650,6 +753,87 @@ const SubjectDetails = () => {
               )}
             </div>
           )}
+          {/* TAB 5: WEAKNESS TOPICS */}
+          {activeTab === 'weaknesses' && (
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-black text-white">Weakness Topics</h3>
+                  <p className="text-xs text-gray-500 font-semibold">Categorize questions into target weakness areas for AI variant generation</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenAddTopic}
+                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black text-xs md:text-sm flex items-center gap-2 shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-amber-400/30"
+                >
+                  <FiPlus size={18} className="stroke-[3]" /> Add Weakness Topic
+                </button>
+              </div>
+
+              {weaknessTopics.length > 0 ? (
+                <div className="flex flex-col gap-4">
+                  {weaknessTopics.map((topic, index) => (
+                    <div
+                      key={topic._id || topic.id}
+                      className="p-5 rounded-2xl bg-[#0e101a] border border-gray-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md hover:border-amber-500/30 transition-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-black shrink-0">
+                          🎯 #{topic.order || index + 1}
+                        </div>
+                        <div>
+                          <h4 className="text-base font-extrabold text-white flex items-center gap-2">
+                            {topic.title}
+                            {topic.titleAr && <span className="text-xs font-normal text-gray-400">({topic.titleAr})</span>}
+                          </h4>
+                          {topic.generalVideoUrl ? (
+                            <span className="text-xs text-emerald-400 font-semibold mt-0.5 flex items-center gap-1">
+                              🎥 General Video Linked: <a href={topic.generalVideoUrl} target="_blank" rel="noreferrer" className="underline truncate max-w-xs">{topic.generalVideoUrl}</a>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-500 font-semibold mt-0.5">No general video linked</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditTopic(topic)}
+                          className="px-3.5 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-amber-500/20"
+                          title="Edit Topic"
+                        >
+                          <FiEdit3 size={15} /> Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTopic(topic._id || topic.id)}
+                          className="px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/20"
+                          title="Delete Topic"
+                        >
+                          <FiTrash2 size={15} /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-12 text-center bg-[#0e101a] border border-gray-800/80 rounded-3xl flex flex-col items-center justify-center">
+                  <span className="text-4xl mb-3">🎯</span>
+                  <span className="text-sm font-bold text-gray-400">No weakness topics created for this subject yet.</span>
+                  <span className="text-xs text-gray-600 mt-1">Add weakness topics to organize student weak points and auto-generate AI question variants.</span>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddTopic}
+                    className="mt-4 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer border border-amber-400/30"
+                  >
+                    <FiPlus size={16} /> Create First Weakness Topic
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -719,6 +903,89 @@ const SubjectDetails = () => {
                     className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-black text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all cursor-pointer border border-blue-400/30 disabled:opacity-50"
                   >
                     {isSubmittingUnit ? 'Saving...' : editingUnit ? 'Update Unit' : 'Create Unit'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* WEAKNESS TOPIC CREATION / EDIT MODAL */}
+      <AnimatePresence>
+        {isWeaknessModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-[#0e101a] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-left relative"
+            >
+              <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <span>🎯</span> {editingTopic ? 'Edit Weakness Topic' : 'Create Weakness Topic'}
+                </h3>
+                <button
+                  onClick={() => setIsWeaknessModalOpen(false)}
+                  className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white"
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveTopic} className="flex flex-col gap-4">
+                <Input
+                  label="Topic Title (English)"
+                  type="text"
+                  value={topicTitle}
+                  onChange={(e) => setTopicTitle(e.target.value)}
+                  placeholder="e.g. Quadratic Equations Concept"
+                  required
+                  roleColor="teacher"
+                />
+
+                <Input
+                  label="Topic Title (Arabic - Optional)"
+                  type="text"
+                  value={topicTitleAr}
+                  onChange={(e) => setTopicTitleAr(e.target.value)}
+                  placeholder="مثال: المعادلات التربيعية"
+                  roleColor="teacher"
+                />
+
+                <Input
+                  label="General Explanation Video URL (Optional)"
+                  type="url"
+                  value={topicVideoUrl}
+                  onChange={(e) => setTopicVideoUrl(e.target.value)}
+                  placeholder="https://youtube.com/watch?v=..."
+                  roleColor="teacher"
+                />
+
+                <Input
+                  label="Display Order"
+                  type="number"
+                  value={topicOrder}
+                  onChange={(e) => setTopicOrder(e.target.value)}
+                  min={1}
+                  required
+                  roleColor="teacher"
+                />
+
+                <div className="flex items-center justify-end gap-3 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsWeaknessModalOpen(false)}
+                    className="px-5 py-2.5 rounded-2xl bg-gray-900/80 hover:bg-gray-800 border border-gray-800 text-xs font-black text-gray-400 hover:text-white transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingTopic}
+                    className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-xs font-black text-white shadow-[0_4px_15px_rgba(245,158,11,0.3)] transition-all cursor-pointer border border-amber-400/30 disabled:opacity-50"
+                  >
+                    {isSubmittingTopic ? 'Saving...' : editingTopic ? 'Update Topic' : 'Create Topic'}
                   </button>
                 </div>
               </form>

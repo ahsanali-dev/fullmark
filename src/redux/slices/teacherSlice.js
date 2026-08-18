@@ -429,13 +429,130 @@ export const togglePublishExam = createAsyncThunk(
   }
 );
 
+// ─── Weakness Topics Thunks ──────────────────────────────────────────
+export const fetchWeaknessTopics = createAsyncThunk(
+  'teacher/fetchWeaknessTopics',
+  async (subjectId, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.teacher.weaknessTopics(subjectId), getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch weakness topics';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const createWeaknessTopic = createAsyncThunk(
+  'teacher/createWeaknessTopic',
+  async (topicData, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(apiEndpoints.teacher.createWeaknessTopic, topicData, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to create weakness topic';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const updateWeaknessTopic = createAsyncThunk(
+  'teacher/updateWeaknessTopic',
+  async ({ id, topicData }, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.put(apiEndpoints.teacher.updateWeaknessTopic(id), topicData, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to update weakness topic';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const deleteWeaknessTopic = createAsyncThunk(
+  'teacher/deleteWeaknessTopic',
+  async (id, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      await axios.delete(apiEndpoints.teacher.deleteWeaknessTopic(id), getAuthConfig(token));
+      return id;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to delete weakness topic';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// ─── Question Approval & Variant Generation Thunks ─────────────────
+export const approveQuestion = createAsyncThunk(
+  'teacher/approveQuestion',
+  async (id, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.patch(apiEndpoints.teacher.approveQuestion(id), {}, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to approve question';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const generateVariants = createAsyncThunk(
+  'teacher/generateVariants',
+  async (id, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(apiEndpoints.teacher.generateVariants(id), {}, getAuthConfig(token));
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to trigger variant generation';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const fetchVariantsStatus = createAsyncThunk(
+  'teacher/fetchVariantsStatus',
+  async (id, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.get(apiEndpoints.teacher.getVariants(id), getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to fetch variants status';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// ─── Teacher Notification Thunk ────────────────────────────────────
+export const sendTeacherNotification = createAsyncThunk(
+  'teacher/sendNotification',
+  async (payload, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(apiEndpoints.teacher.sendNotification, payload, getAuthConfig(token));
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to send notification';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 const initialState = {
   stats: null,
   subjects: [],
   units: [],
+  weaknessTopics: [],
   lessons: [],
   questions: [],
   questionDetail: null,
+  variantsStatus: null,
   exams: [],
   examDetail: null,
   isLoading: false,
@@ -597,6 +714,36 @@ const teacherSlice = createSlice({
             (s._id || s.id) === (updatedSubject._id || updatedSubject.id) ? updatedSubject : s
           );
         }
+      })
+      // Weakness Topics
+      .addCase(fetchWeaknessTopics.fulfilled, (state, action) => {
+        state.weaknessTopics = action.payload?.topics || (Array.isArray(action.payload) ? action.payload : []);
+      })
+      .addCase(createWeaknessTopic.fulfilled, (state, action) => {
+        const newTopic = action.payload?.topic || action.payload;
+        if (newTopic) state.weaknessTopics = [...state.weaknessTopics, newTopic];
+      })
+      .addCase(updateWeaknessTopic.fulfilled, (state, action) => {
+        const updatedTopic = action.payload?.topic || action.payload;
+        if (updatedTopic) {
+          state.weaknessTopics = state.weaknessTopics.map((t) => ((t._id || t.id) === (updatedTopic._id || updatedTopic.id) ? updatedTopic : t));
+        }
+      })
+      .addCase(deleteWeaknessTopic.fulfilled, (state, action) => {
+        state.weaknessTopics = state.weaknessTopics.filter((t) => (t._id || t.id) !== action.payload);
+      })
+      // Approve & Variants
+      .addCase(approveQuestion.fulfilled, (state, action) => {
+        const approvedQ = action.payload?.question || action.payload;
+        if (approvedQ) {
+          state.questions = state.questions.map((q) => ((q._id || q.id) === (approvedQ._id || approvedQ.id) ? approvedQ : q));
+          if (state.questionDetail && (state.questionDetail._id || state.questionDetail.id) === (approvedQ._id || approvedQ.id)) {
+            state.questionDetail = approvedQ;
+          }
+        }
+      })
+      .addCase(fetchVariantsStatus.fulfilled, (state, action) => {
+        state.variantsStatus = action.payload;
       });
   },
 });
