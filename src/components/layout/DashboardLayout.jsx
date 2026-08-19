@@ -249,7 +249,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
   const handleLogout = () => {
     dispatch(logoutUser());
     toast.success('Logged out successfully!');
-    navigate('/login');
+    navigate('/');
   };
 
 
@@ -283,12 +283,16 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
       }`}>
         <div className="flex flex-col gap-8">
           {/* Logo / Header */}
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-white text-lg bg-gradient-to-r ${config.gradientClass}`}>
+          <div 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-3 cursor-pointer group hover:opacity-90 transition-opacity"
+            title="Go to Landing Page"
+          >
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-white text-lg bg-gradient-to-r ${config.gradientClass} group-hover:scale-105 transition-transform duration-200`}>
               FM
             </div>
             <div>
-              <h2 className="font-extrabold tracking-wide text-white text-lg">FullMark</h2>
+              <h2 className="font-extrabold tracking-wide text-white text-lg group-hover:text-white/90 transition-colors">FullMark</h2>
               <span className="text-[10px] text-gray-500 font-bold tracking-wider uppercase">Portal Access</span>
             </div>
           </div>

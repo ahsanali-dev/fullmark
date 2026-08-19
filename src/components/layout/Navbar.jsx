@@ -1,15 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FiGlobe, FiChevronDown } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiGlobe, FiChevronDown, FiGrid, FiLogOut, FiUser } from 'react-icons/fi';
+import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
+import { logoutUser, getMe } from '../../redux/slices/authSlice';
 
 export default function Navbar({ activeSection, onNavClick }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
+
+  const { isAuthenticated, user, token } = useSelector((state) => state.auth);
+
   const isBoyleActive = location.pathname === '/boyle-law';
 
   const [langOpen, setLangOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState('EN');
+
+  const langMenuRef = useRef(null);
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (token && !user) {
+      dispatch(getMe());
+    }
+  }, [dispatch, token, user]);
 
   useEffect(() => {
     if (document.cookie.includes('googtrans=/en/ar')) {
@@ -17,6 +34,20 @@ export default function Navbar({ activeSection, onNavClick }) {
     } else {
       setCurrentLang('EN');
     }
+  }, []);
+
+  // Close dropdowns if clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target)) {
+        setLangOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const changeLanguage = (langCode) => {
@@ -56,6 +87,20 @@ export default function Navbar({ activeSection, onNavClick }) {
       } else {
         navigate(`/#${sectionId}`);
       }
+    }
+  };
+
+  const getDashboardPath = (role) => {
+    switch (role) {
+      case 'admin':
+        return '/admin/dashboard';
+      case 'teacher':
+        return '/teacher/dashboard';
+      case 'parent':
+        return '/parent/dashboard';
+      case 'student':
+      default:
+        return '/student/dashboard';
     }
   };
 
@@ -125,9 +170,12 @@ export default function Navbar({ activeSection, onNavClick }) {
         {/* RIGHT ACTION BUTTONS */}
         <div className="flex items-center gap-3">
           {/* LANGUAGE DROPDOWN */}
-          <div className="relative">
+          <div className="relative" ref={langMenuRef}>
             <button
-              onClick={() => setLangOpen(!langOpen)}
+              onClick={() => {
+                setLangOpen(!langOpen);
+                setUserMenuOpen(false);
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-900/90 border border-gray-700/80 text-xs font-black text-gray-200 hover:text-white hover:border-cyan-400/50 cursor-pointer transition-all shadow-sm"
             >
               <FiGlobe className="text-cyan-400 text-sm" />
@@ -155,19 +203,96 @@ export default function Navbar({ activeSection, onNavClick }) {
             )}
           </div>
 
-          <button
-            onClick={() => navigate('/login')}
-            className="px-4.5 py-2 rounded-2xl border border-gray-700/80 bg-gray-900/60 hover:bg-gray-800 text-gray-200 hover:text-white text-xs font-black transition-all cursor-pointer"
-          >
-            Sign In
-          </button>
+          {/* AUTH USER DROPDOWN / SIGN IN BUTTONS */}
+          {(isAuthenticated || token) ? (
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => {
+                  setUserMenuOpen(!userMenuOpen);
+                  setLangOpen(false);
+                }}
+                className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-gray-900/90 border border-gray-700/80 hover:border-cyan-500/50 text-gray-200 hover:text-white transition-all cursor-pointer shadow-md group"
+              >
+                <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center font-black text-white text-xs shadow-sm">
+                  {user?.name ? user.name.substring(0, 2).toUpperCase() : <FiUser size={13} />}
+                </div>
+                <span className="text-xs font-black max-w-[120px] truncate text-white">
+                  {user?.name || user?.fullName || user?.email?.split('@')[0] || 'Account'}
+                </span>
+                <FiChevronDown className={`text-gray-400 text-xs transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
 
-          <button
-            onClick={() => navigate('/register')}
-            className="px-5 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-xs font-black shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
-          >
-            Create Account
-          </button>
+              <AnimatePresence>
+                {userMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 mt-2.5 w-56 rounded-2xl bg-[#0b0c18] border border-gray-800 shadow-[0_15px_40px_rgba(0,0,0,0.8)] p-2 z-50 backdrop-blur-2xl text-left"
+                  >
+                    {/* User Info Header */}
+                    <div className="px-3 py-2.5 border-b border-gray-800/80 mb-1.5 flex flex-col gap-0.5">
+                      <p className="text-xs font-black text-white truncate">
+                        {user?.name || user?.fullName || 'Logged In User'}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                          {user?.role || 'User'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Dashboard Navigation Button */}
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate(getDashboardPath(user?.role));
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-extrabold text-gray-200 hover:text-white hover:bg-cyan-500/15 rounded-xl transition-all cursor-pointer group mb-1 text-left"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform shrink-0">
+                        <FiGrid size={14} />
+                      </div>
+                      <span>Go to Dashboard</span>
+                    </button>
+
+                    {/* Logout Button */}
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        dispatch(logoutUser());
+                        toast.success('Logged out successfully!');
+                        navigate('/');
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-xs font-extrabold text-red-400 hover:bg-red-500/15 rounded-xl transition-all cursor-pointer group text-left"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-105 transition-transform shrink-0">
+                        <FiLogOut size={14} />
+                      </div>
+                      <span>Log Out</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate('/login')}
+                className="px-4.5 py-2 rounded-2xl border border-gray-700/80 bg-gray-900/60 hover:bg-gray-800 text-gray-200 hover:text-white text-xs font-black transition-all cursor-pointer"
+              >
+                Sign In
+              </button>
+
+              <button
+                onClick={() => navigate('/register')}
+                className="px-5 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-xs font-black shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              >
+                Create Account
+              </button>
+            </>
+          )}
         </div>
       </div>
     </motion.nav>

@@ -154,7 +154,7 @@ const Profile = () => {
   const handleLogout = () => {
     dispatch(logoutUser());
     toast.success('Logged out successfully!');
-    navigate('/login');
+    navigate('/');
   };
 
   // Initials for avatar

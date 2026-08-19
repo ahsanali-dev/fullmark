@@ -125,7 +125,7 @@ const Settings = () => {
   const handleLogout = () => {
     dispatch(logoutUser());
     toast.success('Logged out successfully!');
-    navigate('/login');
+    navigate('/');
   };
 
   const isModalOpen = isEditProfileOpen || isChangePasswordOpen;

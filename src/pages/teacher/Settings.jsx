@@ -124,7 +124,7 @@ const TeacherSettings = () => {
   const handleLogout = () => {
     dispatch(logoutUser());
     toast.success('Logged out successfully!');
-    navigate('/login');
+    navigate('/');
   };
 
   const isModalActive = isEditProfileOpen || isChangePasswordOpen;
