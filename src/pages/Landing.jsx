@@ -117,47 +117,52 @@ export default function Landing() {
     return () => observer.disconnect();
   }, []);
 
-  // 5 Sub-Hero Cards matching the reference design
+  // 5 Sub-Hero Cards using 3D rendered icon assets matching reference image exactly
   const subHeroCards = [
     {
-      title: "Interactive Animations",
-      desc: "Watch concepts move right in front of your eyes",
-      icon: FiActivity,
-      gradient: "from-cyan-500/20 to-blue-600/20",
-      borderColor: "border-cyan-500/40",
-      glowColor: "rgba(34, 211, 238, 0.3)"
+      titleAr: "أنيميشن تفاعلي",
+      titleEn: "Interactive Animations",
+      descAr: "شاهد المفاهيم تتحرك أمامك",
+      descEn: "Watch concepts move in front of you",
+      iconImg: "/assets/icons/icon_interactive_animations.png",
+      glowColor: "rgba(34, 211, 238, 0.4)",
+      borderColor: "border-cyan-500/40"
     },
     {
-      title: "Smart Exams",
-      desc: "Train & adapt according to your target level",
-      icon: FiClipboard,
-      gradient: "from-blue-600/20 to-indigo-600/20",
-      borderColor: "border-blue-500/40",
-      glowColor: "rgba(59, 130, 246, 0.3)"
+      titleAr: "امتحانات ذكية",
+      titleEn: "Smart Exams",
+      descAr: "تدرّب حسب مستواك",
+      descEn: "Train according to your level",
+      iconImg: "/assets/icons/icon_smart_exams.png",
+      glowColor: "rgba(192, 132, 252, 0.4)",
+      borderColor: "border-purple-500/40"
     },
     {
-      title: "Weakness Analysis",
-      desc: "Discover exactly what needs strengthening",
-      icon: FiTarget,
-      gradient: "from-purple-600/20 to-pink-600/20",
-      borderColor: "border-purple-500/40",
-      glowColor: "rgba(168, 85, 247, 0.3)"
+      titleAr: "تحليل نقاط الضعف",
+      titleEn: "Weakness Analysis",
+      descAr: "اعرف ما يحتاج إلى تقوية",
+      descEn: "Know what needs strengthening",
+      iconImg: "/assets/icons/icon_weakness_analysis.png",
+      glowColor: "rgba(56, 189, 248, 0.4)",
+      borderColor: "border-sky-500/40"
     },
     {
-      title: "Personalized Review",
-      desc: "Retain your knowledge at optimal schedules",
-      icon: FiCalendar,
-      gradient: "from-indigo-600/20 to-blue-500/20",
-      borderColor: "border-indigo-500/40",
-      glowColor: "rgba(99, 102, 241, 0.3)"
+      titleAr: "مراجعة مخصصة",
+      titleEn: "Dedicated Revision",
+      descAr: "ثبّت معلوماتك في الوقت المناسب",
+      descEn: "Consolidate knowledge at right time",
+      iconImg: "/assets/icons/icon_dedicated_revision.png",
+      glowColor: "rgba(168, 85, 247, 0.4)",
+      borderColor: "border-purple-500/40"
     },
     {
-      title: "Student Challenges",
-      desc: "Compete and learn in a fun interactive way",
-      icon: FiAward,
-      gradient: "from-fuchsia-600/20 to-purple-600/20",
-      borderColor: "border-fuchsia-500/40",
-      glowColor: "rgba(217, 70, 239, 0.3)"
+      titleAr: "تحديات الطلاب",
+      titleEn: "Student Challenges",
+      descAr: "نافس وتعلّم بطريقة ممتعة",
+      descEn: "Compete & learn in a fun way",
+      iconImg: "/assets/icons/icon_student_challenges.png",
+      glowColor: "rgba(129, 140, 248, 0.4)",
+      borderColor: "border-indigo-500/40"
     }
   ];
 
@@ -180,22 +185,22 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#06070d] text-gray-100 overflow-x-hidden font-sans relative">
+    <div className="min-h-screen bg-[#030614] text-gray-100 overflow-x-hidden font-sans relative">
       <Background3D roleColor="student" />
 
       {/* ── NAVBAR ── */}
       <Navbar activeSection={activeSection} />
 
       {/* ── HERO SECTION ── */}
-      <section id="hero" ref={heroRef} className="relative pt-32 pb-16 px-6 md:px-12 overflow-hidden min-h-screen flex flex-col justify-center">
+      <section id="hero" ref={heroRef} className="relative pt-32 pb-16 px-6 md:px-12 overflow-hidden min-h-screen flex flex-col justify-center bg-gradient-to-b from-[#030614] via-[#060c24] to-[#030614]">
 
         {/* Ambient Glowing Background Orbs */}
-        <Orb color="rgba(34,211,238,0.4)" size="550px" top="5%" left="-15%" blur="140px" delay={0} />
+        <Orb color="rgba(34,211,238,0.45)" size="550px" top="5%" left="-15%" blur="140px" delay={0} />
         <Orb color="rgba(147,51,234,0.45)" size="500px" top="15%" left="65%" blur="150px" delay={1.5} />
-        <Orb color="rgba(59,130,246,0.35)" size="400px" top="55%" left="30%" blur="120px" delay={3} />
+        <Orb color="rgba(59,130,246,0.4)" size="400px" top="55%" left="30%" blur="120px" delay={3} />
 
         {/* Subtle Background Grid Line Overlay */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '70px 70px' }} />
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '70px 70px' }} />
 
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 w-full max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
@@ -207,12 +212,17 @@ export default function Landing() {
               transition={{ duration: 0.8 }}
               className="relative w-full max-w-[580px] flex items-center justify-center"
             >
-              {/* 100% Transparent Background Composition Image (No floating HTML badges) */}
-              <img
-                src="/images/hero_teacher_chemistry_transparent.png"
-                alt="FullMark Chemistry Teacher & AI Assistant"
-                className="w-full h-auto object-contain drop-shadow-[0_0_60px_rgba(34,211,238,0.25)] pointer-events-none"
-              />
+              {/* Chemistry Teacher & Full AI Smart Widgets Composition */}
+              <div className="relative w-full flex items-center justify-center">
+                {/* Ambient Soft Glow Behind Teacher */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/25 via-blue-500/20 to-purple-500/20 blur-3xl rounded-full opacity-70 pointer-events-none" />
+                
+                <img
+                  src="/images/hero_teacher_chemistry_transparent.png"
+                  alt="FullMark Chemistry Teacher & AI Assistant"
+                  className="w-full h-auto object-contain pointer-events-none relative z-10 drop-shadow-[0_0_50px_rgba(34,211,238,0.35)]"
+                />
+              </div>
             </motion.div>
           </div>
 
@@ -277,46 +287,54 @@ export default function Landing() {
 
         </motion.div>
 
-        {/* ── SUB-HERO 5 FEATURE CARDS BAR (Matching Navbar Width) ── */}
+        {/* ── SUB-HERO 5 FEATURE CARDS BAR (Matching Reference Image) ── */}
         <div className="w-full max-w-[1400px] mx-auto mt-16 pt-8 border-t border-gray-800/60 relative z-10">
           
           <div className="flex items-center justify-center gap-2 mb-8">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <h3 className="text-base md:text-lg font-black text-white tracking-wide text-center">
-              Everything You Need to Excel in Chemistry <span className="text-cyan-400">•</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_#22d3ee]" />
+            <h3 className="text-lg md:text-xl font-black text-white tracking-wide text-center">
+              Everything You Need to Excel in Chemistry
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4.5">
             {subHeroCards.map((card, idx) => {
-              const Icon = card.icon;
               return (
                 <motion.div
                   key={idx}
                   initial={{ opacity: 0, y: 25 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 * idx }}
+                  transition={{ duration: 0.5, delay: 0.08 * idx }}
                   whileHover={{ y: -6, scale: 1.02 }}
-                  className={`p-5 rounded-3xl border ${card.borderColor} bg-gradient-to-b ${card.gradient} bg-[#0a0c18]/90 backdrop-blur-xl flex flex-col justify-between gap-4 relative overflow-hidden group shadow-lg`}
-                  style={{ boxShadow: `0 10px 30px ${card.glowColor}` }}
+                  className={`p-5 rounded-2xl border-2 ${card.borderColor} bg-[#060a1d]/90 backdrop-blur-2xl flex flex-col justify-between items-center text-center gap-3 relative overflow-hidden group transition-all duration-300 min-h-[220px]`}
+                  style={{ boxShadow: `0 8px 30px ${card.glowColor}` }}
                 >
-                  {/* Top Left Play Icon Badge matching reference image */}
-                  <div className="flex items-center justify-between">
-                    <div className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white group-hover:bg-cyan-400 group-hover:text-black transition-all">
-                      <FiPlayCircle size={18} />
-                    </div>
-                    <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-cyan-300">
-                      <Icon size={20} />
+                  {/* Top Left Play Icon Badge matching reference screenshot */}
+                  <div className="flex items-center justify-start w-full">
+                    <div className="w-8 h-8 rounded-full bg-[#08102b] border-2 border-cyan-400 flex items-center justify-center text-cyan-300 shadow-[0_0_12px_#22d3ee] group-hover:bg-cyan-400 group-hover:text-black transition-all">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current ml-0.5">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
                     </div>
                   </div>
 
+                  {/* Center High-Resolution 3D Rendered Graphic */}
+                  <div className="relative w-24 h-24 flex items-center justify-center my-1 group-hover:scale-110 transition-transform duration-300">
+                    <div className="absolute inset-0 blur-2xl rounded-full opacity-60 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: card.glowColor }} />
+                    <img 
+                      src={card.iconImg} 
+                      alt={card.titleEn} 
+                      className="w-22 h-22 object-contain relative z-10 filter drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]" 
+                    />
+                  </div>
+
                   {/* Text Content */}
-                  <div className="text-left flex flex-col gap-1">
+                  <div className="text-center flex flex-col gap-1">
                     <h4 className="text-base font-black text-white group-hover:text-cyan-300 transition-colors">
-                      {card.title}
+                      {card.titleEn}
                     </h4>
-                    <p className="text-xs font-semibold text-gray-400 leading-relaxed">
-                      {card.desc}
+                    <p className="text-xs font-semibold text-gray-400 leading-snug">
+                      {card.descEn}
                     </p>
                   </div>
                 </motion.div>
@@ -328,106 +346,6 @@ export default function Landing() {
 
       </section>
 
-      {/* ── LIVE INTERACTIVE SIMULATOR SECTION (Matching Navbar Width) ── */}
-      <section className="relative py-16 px-6 md:px-12">
-        <div className="w-full max-w-[1400px] mx-auto flex flex-col gap-8 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center flex flex-col gap-3"
-          >
-            <span className="text-xs font-black uppercase tracking-widest text-cyan-400">Live Simulator</span>
-            <h2 className="text-3xl md:text-5xl font-black text-white">Experience the Platform Interface</h2>
-            <p className="text-gray-400 font-semibold max-w-xl mx-auto">Interact with our live simulated portals for Admin, Teacher, and Student roles.</p>
-          </motion.div>
-          <InteractiveDemo />
-        </div>
-      </section>
-
-      {/* ── PLATFORM STATS SECTION (Matching Navbar Width) ── */}
-      <section id="stats" className="relative py-20 px-6 md:px-12">
-        <div className="w-full max-w-[1400px] mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { val: 1200, suffix: '+', label: 'Active Students', color: '#22d3ee', glow: '#06b6d4' },
-              { val: 85, suffix: '+', label: 'Expert Teachers', color: '#60a5fa', glow: '#3b82f6' },
-              { val: 3500, suffix: '+', label: 'Questions in Bank', color: '#c084fc', glow: '#a855f7' },
-              { val: 98, suffix: '%', label: 'Success Rate', color: '#34d399', glow: '#10b981' },
-            ].map((s, i) => (
-              <motion.div key={i}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="relative p-6 rounded-3xl text-center overflow-hidden"
-                style={{ background: `radial-gradient(circle at top, ${s.glow}20 0%, #0a0c18 60%)`, border: `1px solid ${s.glow}35`, boxShadow: `0 0 30px ${s.glow}20` }}
-              >
-                <div className="text-3xl md:text-4xl font-black mb-1" style={{ color: s.color }}>
-                  <Counter target={s.val} suffix={s.suffix} />
-                </div>
-                <div className="text-xs font-extrabold text-gray-400 uppercase tracking-wider">{s.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PORTAL ROLES SECTION (Matching Navbar Width) ── */}
-      <section id="roles" className="relative py-20 px-6 md:px-12">
-        <div className="w-full max-w-[1400px] mx-auto flex flex-col gap-12">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-            className="text-center flex flex-col gap-3">
-            <span className="text-xs font-black uppercase tracking-widest text-purple-400">Three Tailored Portals</span>
-            <h2 className="text-3xl md:text-5xl font-black text-white">One Complete Ecosystem</h2>
-            <p className="text-gray-400 font-semibold max-w-xl mx-auto">Every role gets dedicated tools designed specifically for their goals.</p>
-          </motion.div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {roles.map((r) => <RoleCard key={r.role} {...r} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA BANNER (Matching Navbar Width) ── */}
-      <section className="py-20 px-6 md:px-12 relative z-10">
-        <div className="w-full max-w-[1400px] mx-auto">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative rounded-[2.5rem] p-10 md:p-14 text-center overflow-hidden bg-gradient-to-br from-blue-950/60 via-[#0a0c18] to-purple-950/60 border border-cyan-500/30 shadow-[0_0_80px_rgba(34,211,238,0.15)]"
-          >
-            <div className="relative z-10 flex flex-col items-center gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center font-black text-white text-2xl shadow-[0_0_30px_rgba(34,211,238,0.5)]">FM</div>
-              <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">Ready to Achieve Full Marks<br />in Chemistry & Beyond?</h2>
-              <p className="text-gray-400 font-semibold max-w-md">Join FullMark today and experience AI-driven weakness tracking assessment.</p>
-              <button
-                onClick={() => navigate('/register')}
-                className="flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-base shadow-[0_0_40px_rgba(79,70,229,0.5)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
-              >
-                <span>Get Started Now</span>
-                <FiArrowRight size={18} />
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── FAQ SECTION (Matching Navbar Width) ── */}
-      <section className="py-20 px-6 md:px-12 relative">
-        <div className="w-full max-w-[1400px] mx-auto flex flex-col gap-12 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center flex flex-col gap-3"
-          >
-            <span className="text-xs font-black uppercase tracking-widest text-cyan-400">Questions & Answers</span>
-            <h2 className="text-3xl md:text-5xl font-black text-white">Frequently Asked Questions</h2>
-            <p className="text-gray-400 font-semibold max-w-xl mx-auto">Everything you need to know about FullMark platform features.</p>
-          </motion.div>
-          <FaqAccordion />
-        </div>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <Footer />
     </div>
   );
 }

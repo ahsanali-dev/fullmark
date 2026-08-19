@@ -1,12 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiGlobe } from 'react-icons/fi';
+import { FiGlobe, FiChevronDown } from 'react-icons/fi';
 
 export default function Navbar({ activeSection, onNavClick }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isBoyleActive = location.pathname === '/boyle-law';
+
+  const [langOpen, setLangOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState('EN');
+
+  useEffect(() => {
+    if (document.cookie.includes('googtrans=/en/ar')) {
+      setCurrentLang('AR');
+    } else {
+      setCurrentLang('EN');
+    }
+  }, []);
+
+  const changeLanguage = (langCode) => {
+    const langUpper = langCode.toUpperCase();
+    setCurrentLang(langUpper);
+    setLangOpen(false);
+
+    const targetCookie = langCode === 'ar' ? '/en/ar' : '/en/en';
+    document.cookie = `googtrans=${targetCookie}; path=/;`;
+    document.cookie = `googtrans=${targetCookie}; path=/; domain=${window.location.hostname};`;
+
+    const selectElem = document.querySelector('.goog-te-combo');
+    if (selectElem) {
+      selectElem.value = langCode;
+      selectElem.dispatchEvent(new Event('change'));
+    } else {
+      window.location.reload();
+    }
+  };
 
   const scrollToTop = () => {
     if (location.pathname === '/') {
@@ -50,8 +79,8 @@ export default function Navbar({ activeSection, onNavClick }) {
 
         {/* CENTER NAV LINKS */}
         <div className="hidden lg:flex items-center gap-7 text-sm font-extrabold">
-          <a 
-            href="#hero" 
+          <a
+            href="#hero"
             onClick={scrollToTop}
             className={`hover:text-cyan-400 transition-all duration-200 cursor-pointer relative py-1.5 ${!activeSection || activeSection === 'hero' ? 'text-cyan-400' : 'text-gray-300'}`}
           >
@@ -61,24 +90,24 @@ export default function Navbar({ activeSection, onNavClick }) {
             )}
           </a>
 
-          <a 
-            href="#teachers" 
+          <a
+            href="#teachers"
             onClick={(e) => handleNavClick('roles', e)}
             className={`hover:text-cyan-400 transition-all duration-200 cursor-pointer relative py-1.5 ${activeSection === 'roles' ? 'text-cyan-400' : 'text-gray-300'}`}
           >
             About Teachers
           </a>
 
-          <a 
-            href="#features" 
+          <a
+            href="#features"
             onClick={(e) => handleNavClick('features', e)}
             className={`hover:text-cyan-400 transition-all duration-200 cursor-pointer relative py-1.5 ${activeSection === 'features' ? 'text-cyan-400' : 'text-gray-300'}`}
           >
             Chemistry Courses
           </a>
 
-          <a 
-            href="#stats" 
+          <a
+            href="#stats"
             onClick={(e) => handleNavClick('stats', e)}
             className={`hover:text-cyan-400 transition-all duration-200 cursor-pointer relative py-1.5 ${activeSection === 'stats' ? 'text-cyan-400' : 'text-gray-300'}`}
           >
@@ -95,9 +124,35 @@ export default function Navbar({ activeSection, onNavClick }) {
 
         {/* RIGHT ACTION BUTTONS */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gray-900/80 border border-gray-800 text-xs font-black text-gray-300 hover:text-white cursor-pointer transition-colors">
-            <FiGlobe className="text-cyan-400" />
-            <span>EN</span>
+          {/* LANGUAGE DROPDOWN */}
+          <div className="relative">
+            <button
+              onClick={() => setLangOpen(!langOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-900/90 border border-gray-700/80 text-xs font-black text-gray-200 hover:text-white hover:border-cyan-400/50 cursor-pointer transition-all shadow-sm"
+            >
+              <FiGlobe className="text-cyan-400 text-sm" />
+              <span>{currentLang}</span>
+              <FiChevronDown className={`text-gray-400 text-xs transition-transform ${langOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {langOpen && (
+              <div className="absolute right-0 mt-2 w-36 rounded-xl bg-[#0a0c18] border border-cyan-500/30 shadow-[0_10px_30px_rgba(0,0,0,0.8)] py-1.5 z-50 flex flex-col gap-1 backdrop-blur-2xl">
+                <button
+                  onClick={() => changeLanguage('en')}
+                  className={`flex items-center gap-2 px-3 py-2 text-xs font-bold text-left hover:bg-cyan-500/20 hover:text-cyan-300 transition-colors cursor-pointer ${currentLang === 'EN' ? 'text-cyan-400 bg-cyan-500/10' : 'text-gray-300'}`}
+                >
+                  <span>🇬🇧</span>
+                  <span>English (EN)</span>
+                </button>
+                <button
+                  onClick={() => changeLanguage('ar')}
+                  className={`flex items-center gap-2 px-3 py-2 text-xs font-bold text-left hover:bg-cyan-500/20 hover:text-cyan-300 transition-colors cursor-pointer ${currentLang === 'AR' ? 'text-cyan-400 bg-cyan-500/10' : 'text-gray-300'}`}
+                >
+                  <span>🇸🇦</span>
+                  <span>العربية (AR)</span>
+                </button>
+              </div>
+            )}
           </div>
 
           <button

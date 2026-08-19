@@ -12,6 +12,16 @@
   }
 }
 
+.VIpgJd-ZVi9od-ORHb,
+.VIpgJd-ZVi9od-ORHb-OEVmcd {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important; 
+  pointer-events: none !important;
+  z-index: -9999 !important;
+  overflow: hidden !important;
+}
+
 /* 3D Card Themes (Deep 3D shadows, dynamic color backgrounds and inner glows) */
 /* Stat Cards (Dashboard) */
 .stat-card-student {
@@ -345,6 +355,10 @@ input:-webkit-autofill:active {
   background-color: #f1f5f9 !important;
 }
 
+.light .bg-\[\#090b17\] {
+  background-color: #ffffff !important;
+}
+
 .light .bg-\[\#0c0d19\] {
   background-color: #ffffff !important;
 }
@@ -496,6 +510,27 @@ input:-webkit-autofill:active {
 
 .light .hover\:bg-red-500\/10:hover {
   background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Helper classes for forced contrasting colors in hero cards */
+.light .keep-white,
+.keep-white {
+  color: #ffffff !important;
+}
+
+.light .keep-purple-light,
+.keep-purple-light {
+  color: #e9d5ff !important;
+}
+
+.light .keep-cyan-light,
+.keep-cyan-light {
+  color: #a5f3fc !important;
+}
+
+.light .keep-blue-light,
+.keep-blue-light {
+  color: #bfdbfe !important;
 }
 
 /* Light Mode 3D Card Radial Gradients */
@@ -1012,6 +1047,7 @@ input:-webkit-autofill:active {
 .light .bg-gradient-to-br.from-emerald-950\/60 {
   background-image: linear-gradient(to bottom right, rgba(209, 250, 229, 0.8), rgba(240, 253, 244, 0.95)) !important;
 }
+
 .light .bg-gradient-to-br.from-pink-950\/40 {
   background-image: linear-gradient(to bottom right, rgba(253, 242, 248, 0.8), rgba(253, 242, 248, 0.95)) !important;
 }
@@ -1021,15 +1057,19 @@ input:-webkit-autofill:active {
   background-image: linear-gradient(to bottom right, #f8fafc, #f1f5f9) !important;
   border-color: #cbd5e1 !important;
 }
+
 .light .from-\[\#0a0f26\] .text-white {
   color: #0f172a !important;
 }
+
 .light .from-\[\#0a0f26\] .text-gray-300 {
   color: #334155 !important;
 }
+
 .light .from-\[\#0a0f26\] .text-purple-300 {
   color: #6d28d9 !important;
 }
+
 .light .from-\[\#0a0f26\] .text-blue-300 {
   color: #1d4ed8 !important;
 }
@@ -1045,12 +1085,15 @@ input:-webkit-autofill:active {
 .light .from-purple-600 .text-purple-300 {
   color: #ffffff !important;
 }
+
 .light .from-purple-600 .text-purple-200 {
   color: #e9d5ff !important;
 }
+
 .light .from-purple-600 .text-purple-300 {
   color: #d8b4fe !important;
 }
+
 .light .from-purple-600 .text-gray-400 {
   color: #cbd5e1 !important;
 }
@@ -1059,6 +1102,7 @@ input:-webkit-autofill:active {
 .light .text-cyan-400 {
   color: #0891b2 !important;
 }
+
 .light .text-pink-400 {
   color: #db2777 !important;
 }
@@ -1073,6 +1117,7 @@ input:-webkit-autofill:active {
   background-color: #8b5cf6 !important;
   color: #ffffff !important;
 }
+
 .light .bg-purple-500 * {
   color: #ffffff !important;
 }

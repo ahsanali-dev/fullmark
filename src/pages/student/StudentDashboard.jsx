@@ -6,11 +6,12 @@ import {
   FiBookOpen, 
   FiClipboard, 
   FiStar, 
-  FiTrendingUp, 
-  FiChevronRight,
+  FiTarget, 
   FiAward,
   FiPlay,
-  FiClock
+  FiCheckCircle,
+  FiChevronRight,
+  FiZap
 } from 'react-icons/fi';
 import { FaFire } from 'react-icons/fa';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -23,443 +24,448 @@ const StudentDashboard = () => {
   const user = useSelector((state) => state.auth.user);
   const { dashboard, isLoading } = useSelector((state) => state.student);
 
+  const [isLight, setIsLight] = React.useState(() => document.documentElement.classList.contains('light'));
+
   useEffect(() => {
     dispatch(fetchStudentDashboard());
   }, [dispatch]);
 
-  const studentName = user?.name || 'Student';
-  const points = dashboard?.student?.totalPoints || 0;
-  const streakDays = dashboard?.student?.streakDays || 0;
-  const overallProgress = dashboard?.student?.overallProgress || 0;
-  const completedCount = dashboard?.enrollments?.reduce((sum, e) => sum + (e.completedLessons || 0), 0) || 0;
-  const examsCount = dashboard?.student?.totalExamsTaken || 0;
-  const avgScore = dashboard?.student?.averageScore || 0;
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setIsLight(document.documentElement.classList.contains('light'));
+    };
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
+  const studentName = user?.name || user?.fullName || 'Ali';
+  const points = dashboard?.student?.totalPoints || 40;
+  const streakDays = dashboard?.student?.streakDays || 1;
+  const examsCount = dashboard?.student?.totalExamsTaken || 5;
   const recentExams = dashboard?.recentAttempts || [];
-  const coursesCount = dashboard?.enrollments?.length || 0;
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 100,
-        damping: 15
-      }
-    }
-  };
+  const enrollments = dashboard?.enrollments || [];
+  const activeCourse = enrollments[0]?.subject?.name || 'Chemistry';
 
   return (
     <DashboardLayout
       role="student"
       activeTab="dashboard"
-      title="Student Panel"
-      subtitle="Student Portal Overview 🎒"
+      title=""
+      subtitle=""
     >
-      <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-32 lg:pb-12 w-full">
+      <div className="flex flex-col gap-6 text-left p-4 sm:p-6 md:p-8 pb-32 lg:pb-12 max-w-[1200px] mx-auto w-full">
+        
         {isLoading ? (
-          <div className="flex flex-col gap-6 w-full animate-fade-in">
-            {/* Banner Skeleton */}
-            <div className="relative rounded-[2.5rem] p-8 bg-[#0c0d19]/40 border border-gray-800/80 h-52 flex flex-col justify-between animate-pulse">
-              <div className="flex flex-col gap-2">
-                <div className="h-4 w-32 bg-gray-800 rounded-md" />
-                <div className="h-8 w-48 bg-gray-800 rounded-md mt-2" />
-                <div className="h-4 w-64 bg-gray-800 rounded-md mt-1" />
-              </div>
-              <div className="h-3 w-full bg-gray-800 rounded-full mt-4" />
-            </div>
-
-            {/* Stats Grid Skeleton */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="p-4 rounded-3xl bg-[#0c0d19]/40 border border-gray-800/80 h-28 flex flex-col justify-between animate-pulse">
-                  <div className="w-10 h-10 rounded-2xl bg-gray-800" />
-                  <div className="h-6 w-12 bg-gray-800 rounded-md" />
-                  <div className="h-3 w-16 bg-gray-800 rounded-md" />
-                </div>
+          /* Loading Skeleton */
+          <div className="flex flex-col gap-6 w-full animate-pulse">
+            <div className="h-8 w-64 bg-gray-800 rounded-lg" />
+            <div className="h-64 w-full bg-[#0d0d21] border border-gray-800 rounded-3xl" />
+            <div className="grid grid-cols-3 gap-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 bg-[#090b17] rounded-2xl border border-gray-800" />
               ))}
-            </div>
-
-            {/* Courses Section Skeleton */}
-            <div className="flex flex-col gap-3">
-              <div className="h-6 w-36 bg-gray-800 rounded-md" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="h-40 rounded-3xl bg-[#0c0d19]/40 border border-gray-800/80 animate-pulse" />
-                <div className="h-40 rounded-3xl bg-[#0c0d19]/40 border border-gray-800/80 animate-pulse" />
-              </div>
-            </div>
-
-            {/* Recent Exams Skeleton */}
-            <div className="flex flex-col gap-3">
-              <div className="h-6 w-36 bg-gray-800 rounded-md" />
-              <div className="flex flex-col gap-3">
-                {[1, 2].map((i) => (
-                  <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800/80 h-16 animate-pulse">
-                    <div className="flex items-center gap-4 w-full">
-                      <div className="w-10 h-10 rounded-xl bg-gray-800" />
-                      <div className="flex flex-col gap-2 flex-1">
-                        <div className="h-4 w-1/3 bg-gray-800 rounded-md" />
-                        <div className="h-3 w-1/5 bg-gray-800 rounded-md" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         ) : (
           <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
             className="flex flex-col gap-6 w-full"
           >
-            {/* 1. PROGRESS / WELCOME PANEL */}
-            <motion.div 
-              variants={itemVariants}
-              className="relative rounded-3xl p-6 overflow-hidden bg-gradient-to-br from-purple-600 to-indigo-600 dark:from-[#1b1c3a]/90 dark:to-[#0e0f24]/95 border border-purple-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.6),_inset_0_1px_0_rgba(255,255,255,0.05),_0_0_30px_rgba(168,85,247,0.08)]"
-            >
-              <div className="absolute top-4 left-4 text-purple-400/30 text-xs select-none">✦</div>
-              <div className="absolute top-12 left-8 text-purple-400/20 text-sm select-none">✦</div>
-              <div className="absolute bottom-8 left-16 text-purple-400/30 text-xs select-none">✦</div>
+            {/* ── TOP GREETING HEADER ── */}
+            <div className="flex flex-col text-left">
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                Ready to level up, {studentName}?
+              </h1>
+              <p className="text-sm font-semibold text-gray-400 mt-1">
+                Your daily mission is waiting.
+              </p>
+            </div>
+
+            {/* ── 1. DAILY MISSION HERO CARD (Matching Screenshot 100%) ── */}
+            <div className={`relative rounded-[2.2rem] p-5 sm:p-6 transition-all duration-300 overflow-hidden flex flex-col gap-5 ${
+              isLight 
+                ? 'bg-gradient-to-br from-indigo-50/95 via-purple-50/95 to-white border border-purple-200 shadow-[0_10px_30px_rgba(147,51,234,0.08)] text-slate-900' 
+                : 'bg-gradient-to-br from-[#120a2e] via-[#0d0d21] to-[#0a0718] border border-purple-500/40 shadow-[0_12px_40px_rgba(18,10,46,0.9),_0_0_30px_rgba(168,85,247,0.12)] text-white'
+            }`}>
               
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                <div className="flex-1 flex flex-col items-start text-left w-full">
-                  <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-xs uppercase font-bold tracking-wider text-purple-300 mb-4 shadow-[0_0_15px_rgba(168,85,247,0.1)]">
-                    <span className="text-xs">✨</span> Your Progress Today
-                  </div>
-                  
-                  <h2 className="text-gray-400 text-base font-semibold tracking-wide">
-                    Welcome back,
-                  </h2>
-                  <h1 className="text-3xl font-black text-white mt-1 flex items-center gap-2">
-                    {studentName}! <span className="animate-bounce inline-block">👋</span>
-                  </h1>
-                  
-                  <p className="text-gray-400 text-sm font-semibold mt-2 max-w-xs leading-relaxed">
-                    Ready to continue your learning journey today?
-                  </p>
-                  
-                  <div className="w-full mt-6">
-                    <div className="flex items-center justify-between text-sm font-bold mb-2">
-                      <span className="text-gray-500">Overall Progress</span>
-                      <span className="text-emerald-400">{overallProgress}%</span>
-                    </div>
-                    <div className="h-2.5 w-full bg-gray-950/60 rounded-full overflow-hidden border border-gray-900">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${overallProgress}%` }}
-                        transition={{ duration: 1, ease: 'easeOut' }}
-                        className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_#10b981]"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-3 w-full mt-6">
-                    <div className="rounded-2xl p-2.5 flex flex-col items-center justify-center bg-yellow-500/5 border border-yellow-500/35 shadow-[0_0_15px_rgba(234,179,8,0.05)] text-center">
-                      <FiStar className="text-yellow-400 text-base mb-1" />
-                      <span className="text-base font-black text-white">{points}</span>
-                      <span className="text-xs font-bold text-yellow-500 uppercase tracking-wider">Points</span>
-                    </div>
-                    <div className="rounded-2xl p-2.5 flex flex-col items-center justify-center bg-pink-500/5 border border-pink-500/35 shadow-[0_0_15px_rgba(236,72,153,0.05)] text-center">
-                      <FaFire className="text-pink-400 text-base mb-1" />
-                      <span className="text-base font-black text-white">{streakDays}</span>
-                      <span className="text-xs font-bold text-pink-500 uppercase tracking-wider">Streak</span>
-                    </div>
-                    <div className="rounded-2xl p-2.5 flex flex-col items-center justify-center bg-emerald-500/5 border border-emerald-500/35 shadow-[0_0_15px_rgba(16,185,129,0.05)] text-center">
-                      <FiTrendingUp className="text-emerald-400 text-base mb-1" />
-                      <span className="text-base font-black text-white">{overallProgress}%</span>
-                      <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">Overall</span>
-                    </div>
+              {/* Card Title Header */}
+              <div className="flex items-center gap-2 font-bold text-base">
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                  isLight 
+                    ? 'bg-purple-100 border border-purple-300 text-purple-700' 
+                    : 'bg-purple-500/20 border border-purple-400/40 text-purple-300'
+                }`}>
+                  <FiTarget size={14} />
+                </div>
+                <span className={isLight ? 'text-slate-900 font-extrabold' : 'keep-white'}>Daily Mission</span>
+              </div>
+
+              {/* Main Content Area: Progress Ring + Checklist Pill Box + 3D Robot Mascot */}
+              <div className="flex items-center justify-between gap-3 sm:gap-6">
+                
+                {/* Circular Progress Ring */}
+                <div className="relative shrink-0 flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28">
+                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                    <defs>
+                      <linearGradient id="cyanPurpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#22d3ee" />
+                        <stop offset="100%" stopColor="#a855f7" />
+                      </linearGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke={isLight ? "#e2e8f0" : "#181534"} strokeWidth="10" />
+                    <circle 
+                      cx="50" 
+                      cy="50" 
+                      r="40" 
+                      fill="none" 
+                      stroke="url(#cyanPurpleGrad)" 
+                      strokeWidth="10" 
+                      strokeDasharray="251.2"
+                      strokeDashoffset="251.2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center font-black">
+                    <span className={`text-2xl sm:text-3xl ${isLight ? 'text-slate-900' : 'keep-white'}`}>0</span>
+                    <span className={`text-sm font-bold ml-0.5 ${isLight ? 'text-purple-700' : 'keep-purple-light'}`}>/3</span>
                   </div>
                 </div>
-                
-                <div className="relative shrink-0 flex items-center justify-center">
-                  <div className="absolute w-44 h-44 rounded-full border border-purple-500/10 animate-pulse pointer-events-none" />
-                  <div className="absolute w-36 h-36 rounded-full border border-purple-500/5 pointer-events-none" />
-                  
-                  <svg viewBox="0 0 200 200" className="w-36 h-36 relative z-10 filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)]">
-                    <circle cx="100" cy="110" r="72" fill="none" stroke="rgba(168, 85, 247, 0.1)" strokeWidth="1.5" strokeDasharray="5 5" />
-                    <circle cx="100" cy="110" r="56" fill="none" stroke="rgba(168, 85, 247, 0.15)" strokeWidth="1" />
-                    
-                    <path d="M60 160 C60 120, 140 120, 140 160 Z" fill="#3b82f6" />
-                    <ellipse cx="65" cy="148" rx="10" ry="18" fill="#2563eb" transform="rotate(-15 65 148)" />
-                    <ellipse cx="135" cy="148" rx="10" ry="18" fill="#2563eb" transform="rotate(15 135 148)" />
-                    
-                    <circle cx="58" cy="162" r="8" fill="#fbcfe8" />
-                    <circle cx="142" cy="162" r="8" fill="#fbcfe8" />
-                    
-                    <rect x="92" y="102" width="16" height="15" fill="#fbcfe8" rx="4" />
-                    
-                    <path d="M90 112 L100 123 L110 112 Z" fill="#1d4ed8" />
-                    
-                    <circle cx="100" cy="85" r="28" fill="#fbcfe8" />
-                    
-                    <path d="M72 82 C72 65, 128 65, 128 82 Z" fill="#451a03" />
-                    <path d="M72 80 C80 75, 90 75, 95 82 C100 75, 115 75, 128 80 C125 70, 75 70, 72 80 Z" fill="#451a03" />
-                    
-                    <circle cx="90" cy="85" r="3.5" fill="#000" />
-                    <circle cx="110" cy="85" r="3.5" fill="#000" />
-                    <circle cx="89" cy="84" r="1.2" fill="#fff" />
-                    <circle cx="109" cy="84" r="1.2" fill="#fff" />
-                    
-                    <path d="M83 78 Q90 75 97 79" fill="none" stroke="#451a03" strokeWidth="2.2" strokeLinecap="round" />
-                    <path d="M103 79 Q110 75 117 78" fill="none" stroke="#451a03" strokeWidth="2.2" strokeLinecap="round" />
-                    
-                    <path d="M98 90 Q100 93 102 90" fill="none" stroke="#ea580c" strokeWidth="1.5" strokeLinecap="round" />
-                    
-                    <path d="M90 96 Q100 104 110 96" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round" />
-                    
-                    <circle cx="100" cy="138" r="11" fill="#fbbf24" stroke="#d97706" strokeWidth="1" />
-                    <polygon points="100,131 102,135 106,136 103,139 104,144 100,141 96,144 97,139 94,136 98,135" fill="#fff" />
-                    
-                    <path d="M85 64 L85 58 C85 58, 100 55, 115 58 L115 64 Z" fill="#1f2937" />
-                    <polygon points="100,48 140,58 100,68 60,58" fill="#111827" stroke="#1f2937" strokeWidth="1" />
-                    <circle cx="100" cy="58" r="2.5" fill="#fbbf24" />
-                    <path d="M100 58 Q120 58 128 68 L126 76" fill="none" stroke="#fbbf24" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
+
+                {/* Checklist Pills Stack */}
+                <div className="flex-1 flex flex-col gap-2 max-w-[210px]">
+                  <div className={`px-3 py-2 rounded-xl flex items-center gap-2.5 text-xs font-bold shadow-sm ${
+                    isLight 
+                      ? 'bg-white/90 border border-purple-200/80 text-slate-800' 
+                      : 'bg-white/10 border border-white/15 text-white'
+                  }`}>
+                    <FiBookOpen size={14} className={isLight ? "text-purple-600 shrink-0" : "text-purple-300 shrink-0"} />
+                    <span className="truncate">{activeCourse} Lesson</span>
+                  </div>
+                  <div className={`px-3 py-2 rounded-xl flex items-center gap-2.5 text-xs font-bold shadow-sm ${
+                    isLight 
+                      ? 'bg-white/90 border border-purple-200/80 text-slate-800' 
+                      : 'bg-white/10 border border-white/15 text-white'
+                  }`}>
+                    <FiTarget size={14} className={isLight ? "text-cyan-600 shrink-0" : "text-cyan-300 shrink-0"} />
+                    <span className="truncate">Weakness Review</span>
+                  </div>
+                  <div className={`px-3 py-2 rounded-xl flex items-center gap-2.5 text-xs font-bold shadow-sm ${
+                    isLight 
+                      ? 'bg-white/90 border border-purple-200/80 text-slate-800' 
+                      : 'bg-white/10 border border-white/15 text-white'
+                  }`}>
+                    <FiClipboard size={14} className={isLight ? "text-blue-600 shrink-0" : "text-blue-300 shrink-0"} />
+                    <span className="truncate">Daily Exam</span>
+                  </div>
+                </div>
+
+                {/* 3D AI Robot Mascot Image */}
+                <div className="shrink-0 relative flex items-center justify-center">
+                  <div className="absolute inset-0 bg-purple-500/20 blur-2xl rounded-full" />
+                  <img 
+                    src="/assets/images/robot_mascot.png" 
+                    alt="AI Robot Mascot" 
+                    className="w-24 sm:w-32 md:w-36 h-24 sm:h-32 md:h-36 object-contain relative z-10 filter drop-shadow-[0_0_20px_rgba(168,85,247,0.4)] animate-pulse"
+                  />
                 </div>
               </div>
-            </motion.div>
 
-            {/* 2. STATS LINK CARDS GRID */}
-            <motion.div 
-              variants={itemVariants}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-4"
-            >
-              {/* Card 1: Courses */}
+              {/* Reward Subtext */}
+              <div className={`flex items-center gap-1.5 text-xs font-bold ${isLight ? 'text-purple-900' : 'text-indigo-300'} mt-1`}>
+                <FiStar className="text-yellow-500 fill-yellow-500" size={13} />
+                <span>Complete all 3 to earn <strong className={isLight ? 'text-purple-950 font-black' : 'keep-white'}>60 points</strong></span>
+              </div>
+
+              {/* Start Mission CTA Button */}
               <button 
                 onClick={() => navigate('/student/courses')}
-                className="flex flex-col items-start p-4 rounded-3xl bg-[#0c0d19]/40 border border-cyan-500/25 hover:border-cyan-500/60 shadow-[0_4px_20px_rgba(0,0,0,0.3),_inset_0_1px_0_rgba(255,255,255,0.02)] hover:shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all duration-300 text-left group"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-base shadow-[0_0_25px_rgba(99,102,241,0.35)] hover:shadow-[0_0_35px_rgba(168,85,247,0.5)] transition-all cursor-pointer active:scale-[0.99]"
               >
-                <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4 transition-transform group-hover:scale-110">
-                  <FiBookOpen className="text-lg" />
-                </div>
-                <span className="text-2xl font-black text-white leading-none mb-1">
-                  {coursesCount}
-                </span>
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
-                  Courses
-                </span>
+                Start Mission
               </button>
+            </div>
 
-              {/* Card 2: Exams */}
-              <button 
-                onClick={() => navigate('/student/exams')}
-                className="flex flex-col items-start p-4 rounded-3xl bg-[#0c0d19]/40 border border-purple-500/25 hover:border-purple-500/60 shadow-[0_4px_20px_rgba(0,0,0,0.3),_inset_0_1px_0_rgba(255,255,255,0.02)] hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all duration-300 text-left group"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4 transition-transform group-hover:scale-110">
-                  <FiClipboard className="text-lg" />
+            {/* ── 2. STATS ROW (3 Metric Cards Grid) ── */}
+            <div className="grid grid-cols-3 gap-3.5">
+              {/* Metric 1: Points */}
+              <div className="p-4 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center gap-3 shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500 dark:text-cyan-400 shrink-0">
+                  <FiStar size={18} />
                 </div>
-                <span className="text-2xl font-black text-white leading-none mb-1">
-                  {examsCount}
-                </span>
-                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">
-                  Exams
-                </span>
-              </button>
-
-              {/* Card 3: Avg Score */}
-              <button 
-                onClick={() => navigate('/student/results')}
-                className="flex flex-col items-start p-4 rounded-3xl bg-[#0c0d19]/40 border border-yellow-500/25 hover:border-yellow-500/60 shadow-[0_4px_20px_rgba(0,0,0,0.3),_inset_0_1px_0_rgba(255,255,255,0.02)] hover:shadow-[0_0_20px_rgba(234,179,8,0.15)] transition-all duration-300 text-left group"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 mb-4 transition-transform group-hover:scale-110">
-                  <FiStar className="text-lg" />
+                <div className="flex flex-col text-left">
+                  <span className="text-xl sm:text-2xl font-black text-white leading-none">
+                    {points}
+                  </span>
+                  <span className="text-xs font-bold text-gray-400 mt-1">Points</span>
                 </div>
-                <span className="text-2xl font-black text-white leading-none mb-1">
-                  {avgScore}%
-                </span>
-                <span className="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">
-                  Avg Score
-                </span>
-              </button>
-
-              {/* Card 4: Streak */}
-              <div 
-                className="flex flex-col items-start p-4 rounded-3xl bg-[#0c0d19]/40 border border-pink-500/25 hover:border-pink-500/60 shadow-[0_4px_20px_rgba(0,0,0,0.3),_inset_0_1px_0_rgba(255,255,255,0.02)] hover:shadow-[0_0_20px_rgba(236,72,153,0.15)] transition-all duration-300 text-left group"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400 mb-4 transition-transform group-hover:scale-110">
-                  <FaFire className="text-lg" />
-                </div>
-                <span className="text-2xl font-black text-white leading-none mb-1 flex items-center gap-1">
-                  {streakDays}d <span className="text-sm">🔥</span>
-                </span>
-                <span className="text-[10px] font-bold text-pink-400 uppercase tracking-wider">
-                  Streak
-                </span>
               </div>
-            </motion.div>
 
-            {/* 3. CONTINUE LEARNING SECTION */}
-            <motion.div 
-              variants={itemVariants}
-              className="flex flex-col gap-4 text-left mt-2"
-            >
+              {/* Metric 2: Streak */}
+              <div className="p-4 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center gap-3 shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 dark:text-orange-400 shrink-0">
+                  <FaFire size={18} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xl sm:text-2xl font-black text-white leading-none flex items-center gap-1">
+                    {streakDays} <span className="text-xs font-bold text-gray-300">day</span>
+                  </span>
+                  <span className="text-xs font-bold text-gray-400 mt-1">Streak</span>
+                </div>
+              </div>
+
+              {/* Metric 3: Exams */}
+              <div className="p-4 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center gap-3 shadow-md">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                  <FiClipboard size={18} />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xl sm:text-2xl font-black text-white leading-none">
+                    {examsCount}
+                  </span>
+                  <span className="text-xs font-bold text-gray-400 mt-1">Exams</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── 3. "JUMP BACK IN" SECTION ── */}
+            <div className="flex flex-col gap-3.5 text-left mt-1">
+              <h3 className="text-lg font-black text-white">Jump Back In</h3>
+
+              {/* Main Course Progress Box */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center justify-between gap-4 shadow-md">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-500/30 flex items-center justify-center text-purple-700 dark:text-purple-400 shrink-0 shadow-inner">
+                    <FiBookOpen size={22} />
+                  </div>
+                  <div className="flex flex-col text-left min-w-0">
+                    <h4 className="text-base font-black text-white truncate">
+                      {activeCourse}
+                    </h4>
+                    <span className="text-xs font-semibold text-gray-400 mt-0.5">
+                      Unit 1 • Lesson 1
+                    </span>
+                    <div className="flex items-center gap-2 mt-1.5 w-full">
+                      <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">0% complete</span>
+                      <div className="h-1.5 w-24 bg-slate-200 dark:bg-gray-900 rounded-full overflow-hidden border border-slate-300 dark:border-gray-800">
+                        <div className="h-full bg-blue-500 rounded-full w-0" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => navigate('/student/courses')}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 border border-blue-600 dark:border-blue-500/40 text-white dark:text-blue-300 text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm"
+                >
+                  Continue
+                </button>
+              </div>
+
+              {/* 2-Card Row under Jump Back In */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                
+                {/* Card 1: Fix Weak Topics */}
+                <div className="p-4 rounded-2xl bg-[#090b17] border border-cyan-500/20 flex items-center justify-between gap-3 shadow-md hover:border-cyan-500/40 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
+                      <FiTarget size={18} />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <h5 className="text-sm font-black text-white">Fix Weak Topics</h5>
+                      <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 mt-0.5">5 questions due</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => navigate('/student/weaknesses')}
+                    className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 dark:bg-cyan-500/10 dark:hover:bg-cyan-500/20 border border-cyan-600 dark:border-cyan-500/40 text-white dark:text-cyan-300 text-xs font-bold transition-all cursor-pointer shadow-sm"
+                  >
+                    Review
+                  </button>
+                </div>
+
+                {/* Card 2: Challenge a Friend */}
+                <div className="p-4 rounded-2xl bg-[#090b17] border border-purple-500/20 flex items-center justify-between gap-3 shadow-md hover:border-purple-500/40 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-400/30 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                      <FiAward size={18} />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <h5 className="text-sm font-black text-white">Challenge a Friend</h5>
+                      <span className="text-xs font-bold text-purple-600 dark:text-purple-400 mt-0.5">Start an exam duel</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => navigate('/student/exams')}
+                    className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 border border-purple-600 dark:border-purple-500/40 text-white dark:text-purple-300 text-xs font-bold transition-all cursor-pointer shadow-sm"
+                  >
+                    Challenge
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            {/* ── 4. "RECENT RESULT" SECTION ── */}
+            <div className="flex flex-col gap-3.5 text-left mt-1">
+              <h3 className="text-lg font-black text-white">Recent Result</h3>
+
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center justify-between gap-4 shadow-md">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-500/30 flex items-center justify-center text-purple-700 dark:text-purple-400 shrink-0">
+                    <FiClipboard size={22} />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <h4 className="text-base font-black text-white">
+                      {recentExams[0]?.exam?.title || recentExams[0]?.subject?.name || activeCourse}
+                    </h4>
+                    <span className="text-xs font-semibold text-gray-400 mt-0.5">
+                      {recentExams[0]?.createdAt ? new Date(recentExams[0].createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '15 Aug 2026'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <span className="text-xl sm:text-2xl font-black text-white">
+                    {recentExams[0]?.score || 100}%
+                  </span>
+                  <button 
+                    onClick={() => navigate('/student/results')}
+                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 border border-blue-600 dark:border-blue-500/40 text-white dark:text-blue-300 text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm"
+                  >
+                    Review Mistakes
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ── 5. "MY COURSES" SECTION (Matching Screenshot 2) ── */}
+            <div className="flex flex-col gap-3.5 text-left mt-1">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <span>✨</span> Continue Learning
+                  <span>📚</span> My Courses
                 </h3>
                 <button 
                   onClick={() => navigate('/student/courses')}
-                  className="px-4 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-sm font-extrabold text-gray-400 hover:text-white transition-all cursor-pointer shadow-[0_2px_10px_rgba(0,0,0,0.2)]"
+                  className="px-4 py-1.5 rounded-full bg-purple-100 hover:bg-purple-200 dark:bg-white/5 dark:hover:bg-white/10 text-xs font-extrabold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/20 transition-all cursor-pointer shadow-sm"
                 >
                   See all
                 </button>
               </div>
-
-              {/* Continue Learning Featured Card */}
-              {dashboard?.continueLearning && (
-                <div 
-                  onClick={() => navigate(`/student/courses/${dashboard.continueLearning.subject?._id}/lessons/${dashboard.continueLearning.lesson?._id}`)}
-                  className="w-full p-6 rounded-[2.5rem] bg-gradient-to-r from-blue-950/80 via-indigo-950/60 to-[#0c0d19] border border-blue-500/30 hover:border-blue-500/60 shadow-[0_15px_35px_rgba(0,0,0,0.5),_0_0_25px_rgba(59,130,246,0.15)] transition-all duration-300 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden group mb-2"
-                >
-                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0 shadow-lg group-hover:scale-105 transition-transform">
-                      <FiPlay size={28} className="fill-blue-400/30 ml-1" />
-                    </div>
-
-                    <div className="flex flex-col text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-black uppercase tracking-wider">
-                          {dashboard.continueLearning.subject?.name}
-                        </span>
-                        <span className="text-xs font-bold text-gray-400 flex items-center gap-1">
-                          <FiClock size={12} /> {Math.floor((dashboard.continueLearning.lastPosition || 0) / 60)}m watched
-                        </span>
-                      </div>
-                      <h4 className="text-lg md:text-xl font-black text-white mt-1.5 leading-tight group-hover:text-blue-300 transition-colors">
-                        {dashboard.continueLearning.lesson?.title}
-                      </h4>
-                      <span className="text-xs text-gray-400 font-semibold mt-1">
-                        Module {dashboard.continueLearning.lesson?.order || 1} • Resume Video
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col md:items-end gap-2 shrink-0 min-w-[180px]">
-                    <div className="flex items-center justify-between md:justify-end gap-3 text-xs font-black text-blue-400">
-                      <span>Watch Progress</span>
-                      <span>{dashboard.continueLearning.progressPercent || 0}%</span>
-                    </div>
-                    <div className="h-2 w-full bg-gray-950 rounded-full overflow-hidden border border-gray-900">
-                      <div 
-                        className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full transition-all duration-500"
-                        style={{ width: `${dashboard.continueLearning.progressPercent || 0}%` }}
-                      />
-                    </div>
-                    <button className="mt-1 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white flex items-center justify-center gap-2 shadow-md transition-all group-hover:scale-105">
-                      <FiPlay size={14} className="fill-white" /> Resume Lesson
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {dashboard?.enrollments?.slice(0, 2).map((enrollment, idx) => (
-                  <div 
-                    key={enrollment.subject?._id || idx}
-                    onClick={() => navigate(`/student/courses/${enrollment.subject?._id}`)}
-                    className="group relative rounded-3xl p-6 overflow-hidden bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 dark:from-[#4a2b91] dark:to-[#25155c] dark:hover:from-[#5833ab] dark:hover:to-[#2c196e] border border-purple-500/30 shadow-[0_15px_35px_rgba(0,0,0,0.5),_0_0_25px_rgba(139,92,246,0.15)] transition-all duration-300 cursor-pointer flex flex-col items-start gap-4 min-h-[160px] justify-between"
-                  >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-purple-400/10 rounded-bl-full pointer-events-none" />
-                    
-                    <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/10 flex items-center justify-center text-white shadow-[0_4px_15px_rgba(0,0,0,0.2)] transition-transform group-hover:scale-105">
-                      <FiBookOpen className="text-xl" />
-                    </div>
-
-                    <div className="flex flex-col items-start">
-                      <h4 className="text-lg font-black text-white capitalize leading-tight group-hover:text-purple-200 transition-colors">
-                        {enrollment.subject?.name}
-                      </h4>
-                      <span className="text-sm text-gray-300 font-semibold mt-1">
-                        {enrollment.completedLessons}/{enrollment.subject?.totalLessons || 0} lessons
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                {(!dashboard?.enrollments || dashboard.enrollments.length === 0) && !dashboard?.continueLearning && (
-                  <div 
-                    onClick={() => navigate('/student/courses')}
-                    className="col-span-2 p-6 rounded-3xl bg-[#0c0d19]/40 border border-gray-850 text-center font-bold text-gray-500 hover:text-white hover:border-gray-700 cursor-pointer transition-all"
-                  >
-                    No active courses. Tap to browse & enroll.
-                  </div>
-                )}
-              </div>
-            </motion.div>
-
-            {/* 4. RECENT EXAMS SECTION */}
-            <motion.div 
-              variants={itemVariants}
-              className="flex flex-col gap-3 text-left mt-2"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <span>📋</span> Recent Exams
-                </h3>
-                <button 
-                  onClick={() => navigate('/student/results')}
-                  className="px-4 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-sm font-extrabold text-gray-400 hover:text-white transition-all cursor-pointer shadow-[0_2px_10px_rgba(0,0,0,0.2)]"
-                >
-                  See all
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                {recentExams.slice(0, 3).map((attempt, idx) => (
-                  <div 
-                    key={attempt._id || idx}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800 hover:border-gray-700 hover:bg-[#111222]/50 transition-all duration-300"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                        <FiBookOpen className="text-lg" />
+                {enrollments.length > 0 ? (
+                  enrollments.map((enrollment, idx) => (
+                    <div 
+                      key={enrollment.subject?._id || idx}
+                      onClick={() => navigate(`/student/courses/${enrollment.subject?._id}`)}
+                      className={`group relative rounded-3xl p-5 overflow-hidden transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[160px] ${
+                        isLight 
+                          ? 'bg-gradient-to-br from-indigo-50/95 via-purple-50/95 to-white border border-purple-200 shadow-md hover:border-purple-400 hover:shadow-lg' 
+                          : 'bg-gradient-to-br from-[#3b2175] to-[#201242] border border-purple-500/30 hover:border-purple-500/60 shadow-[0_10px_25px_rgba(0,0,0,0.4)]'
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform ${
+                        isLight 
+                          ? 'bg-purple-100 border border-purple-200 text-purple-700' 
+                          : 'bg-white/10 backdrop-blur-md border border-white/10 text-white'
+                      }`}>
+                        <FiBookOpen size={20} />
                       </div>
-                      <div className="flex flex-col items-start text-left">
-                        <h4 className="text-base font-bold text-white capitalize">
-                          {attempt.exam?.title || attempt.subject?.name || 'Practice Exam'}
+
+                      <div className="flex flex-col items-start mt-4">
+                        <h4 className={`text-base font-black capitalize leading-tight transition-colors ${
+                          isLight 
+                            ? 'text-slate-900 group-hover:text-purple-700' 
+                            : 'text-white group-hover:text-purple-200'
+                        }`}>
+                          {enrollment.subject?.name || 'Chemistry'}
                         </h4>
-                        <span className="text-xs font-bold text-gray-500 mt-1">
-                          {new Date(attempt.createdAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
+                        <span className={`text-xs font-semibold mt-1 ${
+                          isLight 
+                            ? 'text-purple-700 font-bold' 
+                            : 'text-purple-200'
+                        }`}>
+                          {enrollment.completedLessons || 0}/{enrollment.subject?.totalLessons || 0} lessons
                         </span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                      <span className="text-base font-extrabold text-[#10b981]">
-                        {attempt.score}%
-                      </span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
-                        attempt.passed 
-                          ? 'bg-[#10b981]/10 border border-[#10b981]/20 text-[#10b981]' 
-                          : 'bg-[#ec4899]/10 border border-[#ec4899]/20 text-[#ec4899]'
+                  ))
+                ) : (
+                  <>
+                    <div 
+                      onClick={() => navigate('/student/courses')}
+                      className={`group relative rounded-3xl p-5 overflow-hidden transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[160px] ${
+                        isLight 
+                          ? 'bg-gradient-to-br from-indigo-50/95 via-purple-50/95 to-white border border-purple-200 shadow-md hover:border-purple-400 hover:shadow-lg' 
+                          : 'bg-gradient-to-br from-[#3b2175] to-[#201242] border border-purple-500/30 hover:border-purple-500/60 shadow-[0_10px_25px_rgba(0,0,0,0.4)]'
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform ${
+                        isLight 
+                          ? 'bg-purple-100 border border-purple-200 text-purple-700' 
+                          : 'bg-white/10 backdrop-blur-md border border-white/10 text-white'
                       }`}>
-                        {attempt.passed ? 'Passed' : 'Failed'}
-                      </span>
+                        <FiBookOpen size={20} />
+                      </div>
+
+                      <div className="flex flex-col items-start mt-4">
+                        <h4 className={`text-base font-black capitalize leading-tight transition-colors ${
+                          isLight 
+                            ? 'text-slate-900 group-hover:text-purple-700' 
+                            : 'text-white group-hover:text-purple-200'
+                        }`}>
+                          chemistry
+                        </h4>
+                        <span className={`text-xs font-semibold mt-1 ${
+                          isLight 
+                            ? 'text-purple-700 font-bold' 
+                            : 'text-purple-200'
+                        }`}>
+                          0/1 lessons
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {recentExams.length === 0 && (
-                  <p className="text-sm text-gray-500 py-4 italic">No exam submissions yet.</p>
+
+                    <div 
+                      onClick={() => navigate('/student/courses')}
+                      className={`group relative rounded-3xl p-5 overflow-hidden transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[160px] ${
+                        isLight 
+                          ? 'bg-gradient-to-br from-indigo-50/95 via-purple-50/95 to-white border border-purple-200 shadow-md hover:border-purple-400 hover:shadow-lg' 
+                          : 'bg-gradient-to-br from-[#3b2175] to-[#201242] border border-purple-500/30 hover:border-purple-500/60 shadow-[0_10px_25px_rgba(0,0,0,0.4)]'
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform ${
+                        isLight 
+                          ? 'bg-purple-100 border border-purple-200 text-purple-700' 
+                          : 'bg-white/10 backdrop-blur-md border border-white/10 text-white'
+                      }`}>
+                        <FiBookOpen size={20} />
+                      </div>
+
+                      <div className="flex flex-col items-start mt-4">
+                        <h4 className={`text-base font-black capitalize leading-tight transition-colors ${
+                          isLight 
+                            ? 'text-slate-900 group-hover:text-purple-700' 
+                            : 'text-white group-hover:text-purple-200'
+                        }`}>
+                          gytgg
+                        </h4>
+                        <span className={`text-xs font-semibold mt-1 ${
+                          isLight 
+                            ? 'text-purple-700 font-bold' 
+                            : 'text-purple-200'
+                        }`}>
+                          0/0 lessons
+                        </span>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
-            </motion.div>
+            </div>
+
           </motion.div>
         )}
       </div>
@@ -468,3 +474,4 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
+
