@@ -82,7 +82,7 @@ const TakeExam = () => {
     );
   }
 
-  const questions = exam.questions || [];
+  const questions = exam?.questions || exam?.exam?.questions || [];
   const currentQuestion = questions[currentIdx];
   const totalQuestions = questions.length;
 
@@ -102,11 +102,11 @@ const TakeExam = () => {
     );
   }
 
-  const handleSelectOption = (optionKey) => {
+  const handleSelectOption = (optionIndex) => {
     if (isActionLoading) return;
     const updated = {
       ...selectedAnswers,
-      [currentIdx]: optionKey
+      [currentIdx]: optionIndex
     };
     setSelectedAnswers(updated);
 
@@ -139,17 +139,28 @@ const TakeExam = () => {
 
     if (timerRef.current) clearInterval(timerRef.current);
 
-    // Build the formatted answers payload for the backend
-    const answersPayload = questions.map((q, index) => ({
-      questionId: q._id,
-      selectedOption: selectedAnswers[index] || '',
-      timeTaken: Math.round(timeSpent / totalQuestions) // approximation per question
-    }));
+    // Build the formatted answers payload for the backend (selectedOption must be 0-3 index)
+    const answersPayload = questions.map((q, index) => {
+      const selected = selectedAnswers[index];
+      let selectedOptionNum = 0;
+      if (typeof selected === 'number') {
+        selectedOptionNum = selected;
+      } else if (typeof selected === 'string') {
+        const letterIdx = ['A', 'B', 'C', 'D'].indexOf(selected.toUpperCase());
+        selectedOptionNum = letterIdx !== -1 ? letterIdx : (parseInt(selected, 10) || 0);
+      }
+
+      return {
+        questionId: q._id || q.id,
+        selectedOption: selectedOptionNum,
+        timeTaken: Math.round(timeSpent / totalQuestions) // approximation per question
+      };
+    });
 
     const myToast = toast.loading(isRTL ? 'جاري تسليم إجابات الاختبار...' : 'Submitting exam answers...');
     try {
       const res = await dispatch(submitExam({
-        examId: exam._id,
+        examId: exam?._id || exam?.id || examId,
         answers: answersPayload,
         timeTaken: timeSpent
       })).unwrap();
@@ -182,7 +193,7 @@ const TakeExam = () => {
           >
             <FiX className="text-lg" />
           </button>
-          <h1 className="text-base sm:text-lg font-black capitalize tracking-tight">{exam.title}</h1>
+          <h1 className="text-base sm:text-lg font-black capitalize tracking-tight">{exam?.title}</h1>
         </div>
 
         {/* Question Counter Bullet pill */}
@@ -225,16 +236,16 @@ const TakeExam = () => {
                 Q{currentIdx + 1}
               </span>
               <span className="px-2.5 py-0.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 capitalize">
-                {currentQuestion.difficulty || (isRTL ? 'متوسط' : 'medium')}
+                {currentQuestion?.difficulty || (isRTL ? 'متوسط' : 'medium')}
               </span>
             </div>
 
             <h3 className="text-base sm:text-lg font-bold text-white leading-relaxed">
-              {currentQuestion.text}
+              {(isRTL && currentQuestion?.textAr) ? currentQuestion.textAr : currentQuestion?.text}
             </h3>
 
             {/* Optional Question Banner Image */}
-            {currentQuestion.image && (
+            {currentQuestion?.image && (
               <div className="w-full rounded-2xl overflow-hidden border border-gray-800 max-h-56 mt-2 flex items-center justify-center bg-black/40">
                 <img 
                   src={getImageUrl(currentQuestion.image)} 
@@ -248,14 +259,19 @@ const TakeExam = () => {
 
         {/* Question Options List */}
         <div className="flex flex-col gap-3 mt-1">
-          {(currentQuestion.options || []).map((opt) => {
-            const isSelected = selectedAnswers[currentIdx] === opt.key;
+          {(currentQuestion?.options || []).map((opt, optIdx) => {
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            const isObject = typeof opt === 'object' && opt !== null;
+            const optLetter = optionLetters[optIdx] || String(optIdx + 1);
+            const optText = isObject ? (opt.text || opt.val || opt.value || '') : opt;
+            const optImage = isObject ? opt.image : currentQuestion?.optionImages?.[optIdx];
+            const isSelected = selectedAnswers[currentIdx] === optIdx;
 
             return (
               <button
-                key={opt.key}
+                key={optIdx}
                 disabled={isActionLoading}
-                onClick={() => handleSelectOption(opt.key)}
+                onClick={() => handleSelectOption(optIdx)}
                 className={`w-full p-4 rounded-[1.5rem] border transition-all text-start flex flex-col gap-3 cursor-pointer ${
                   isSelected 
                     ? 'bg-purple-600/5 border-purple-500 shadow-md shadow-purple-500/5' 
@@ -270,10 +286,10 @@ const TakeExam = () => {
                         ? 'bg-purple-500 text-white' 
                         : 'bg-gray-800 text-gray-400'
                     }`}>
-                      {opt.key}
+                      {optLetter}
                     </span>
                     <span className="text-xs sm:text-sm font-bold text-white capitalize leading-tight">
-                      {opt.text}
+                      {optText}
                     </span>
                   </div>
 
@@ -286,11 +302,11 @@ const TakeExam = () => {
                 </div>
 
                 {/* Optional Option Banner Image */}
-                {opt.image && (
+                {optImage && (
                   <div className="w-full rounded-xl overflow-hidden border border-gray-800/80 max-h-32 mt-1 bg-black/20 flex items-center justify-center">
                     <img 
-                      src={getImageUrl(opt.image)} 
-                      alt={`option-${opt.key}`} 
+                      src={getImageUrl(optImage)} 
+                      alt={`option-${optLetter}`} 
                       className="w-full h-full object-cover max-h-32"
                     />
                   </div>

@@ -75,7 +75,7 @@ const Results = () => {
           ) : attempts.length > 0 ? (
             attempts.map((attempt) => {
               const isPassed = attempt.passed;
-              const totalQs = attempt.totalQuestions || 0;
+              const totalQs = attempt.totalQuestions || attempt.exam?.questionCount || 0;
               const correctCount = attempt.correctAnswers || 0;
               const formattedDate = attempt.createdAt 
                 ? new Date(attempt.createdAt).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -119,7 +119,7 @@ const Results = () => {
                       </h3>
                       {attempt.subject && (
                         <span className="text-xs text-gray-500 font-extrabold mt-1 inline-block uppercase">
-                          {attempt.subject.name}
+                          {(isRTL && attempt.subject.nameAr) ? attempt.subject.nameAr : attempt.subject.name}
                         </span>
                       )}
                     </div>

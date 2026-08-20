@@ -288,9 +288,23 @@ const ResultDetails = () => {
 
                 {/* Options list showing right/wrong badges */}
                 <div className="flex flex-col gap-2.5 mt-2">
-                  {(q.options || []).map((opt) => {
-                    const isCorrectOpt = opt.key === q.correctOption;
-                    const isUserChoice = opt.key === userAns;
+                  {(q.options || []).map((opt, optIdx) => {
+                    const letters = ['A', 'B', 'C', 'D'];
+                    const isObject = typeof opt === 'object' && opt !== null;
+                    const optLetter = isObject ? (opt.key || letters[optIdx] || String(optIdx + 1)) : (letters[optIdx] || String(optIdx + 1));
+                    const optText = isObject ? (opt.text || opt.val || opt.value || '') : opt;
+                    const optImage = isObject ? opt.image : q.optionImages?.[optIdx];
+
+                    const correctIndex = typeof q.correctOption === 'number'
+                      ? q.correctOption
+                      : letters.indexOf(q.correctOption);
+
+                    const userIndex = typeof userAns === 'number'
+                      ? userAns
+                      : letters.indexOf(userAns);
+
+                    const isCorrectOpt = optIdx === correctIndex || optLetter === q.correctOption;
+                    const isUserChoice = optIdx === userIndex || optLetter === userAns;
 
                     let cardClass = 'border-gray-800 bg-[#0c0d19]/40';
                     if (isCorrectOpt) {
@@ -301,7 +315,7 @@ const ResultDetails = () => {
 
                     return (
                       <div
-                        key={opt.key}
+                        key={optIdx}
                         className={`w-full p-4 rounded-xl border flex flex-col gap-3 transition-all ${cardClass}`}
                       >
                         <div className="flex items-center justify-between w-full">
@@ -312,10 +326,10 @@ const ResultDetails = () => {
                                   ? 'bg-pink-500 text-white'
                                   : 'bg-gray-800 text-gray-400'
                               }`}>
-                              {opt.key}
+                              {optLetter}
                             </span>
                             <span className="text-sm font-bold text-white capitalize leading-tight">
-                              {opt.text}
+                              {optText}
                             </span>
                           </div>
 
@@ -338,11 +352,11 @@ const ResultDetails = () => {
                         </div>
 
                         {/* Optional Option Banner Image */}
-                        {opt.image && (
+                        {optImage && (
                           <div className="w-full rounded-lg overflow-hidden border border-gray-800/80 max-h-32 mt-1 bg-black/20 flex items-center justify-center">
                             <img
-                              src={getImageUrl(opt.image)}
-                              alt={`option-${opt.key}`}
+                              src={getImageUrl(optImage)}
+                              alt={`option-${optLetter}`}
                               className="w-full h-full object-cover max-h-32"
                             />
                           </div>

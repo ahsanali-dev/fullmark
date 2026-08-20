@@ -257,7 +257,7 @@ export const fetchExamToTake = createAsyncThunk(
     try {
       const token = thunkAPI.getState().auth.token;
       const response = await axios.get(apiEndpoints.student.examToTake(id), getAuthConfig(token));
-      return response.data.data.exam;
+      return response.data.data?.exam || response.data.data;
     } catch (error) {
       const message = error.response?.data?.message || error.message || 'Failed to fetch exam';
       return thunkAPI.rejectWithValue(message);
@@ -359,7 +359,7 @@ export const fetchAttemptDetail = createAsyncThunk(
     try {
       const token = thunkAPI.getState().auth.token;
       const response = await axios.get(apiEndpoints.student.resultById(id), getAuthConfig(token));
-      return response.data.data.attempt;
+      return response.data.data?.attempt || response.data.data;
     } catch (error) {
       const message = error.response?.data?.message || error.message || 'Failed to fetch result detail';
       return thunkAPI.rejectWithValue(message);

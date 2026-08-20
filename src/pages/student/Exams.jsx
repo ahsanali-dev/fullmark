@@ -123,7 +123,7 @@ const Exams = () => {
                       </h3>
                       {exam.subject && (
                         <span className="text-xs text-gray-500 font-extrabold mt-1 uppercase">
-                          {exam.subject.name}
+                          {(isRTL && exam.subject.nameAr) ? exam.subject.nameAr : exam.subject.name}
                         </span>
                       )}
                     </div>
@@ -135,12 +135,12 @@ const Exams = () => {
                     <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold text-gray-400">
                       <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-900/30 border border-gray-800/80">
                         <FiHelpCircle className="text-blue-400" />
-                        {exam.totalQuestions || 0} {t('student.exams.qsCount')}
+                        {exam.questionCount ?? exam.totalQuestions ?? 0} {t('student.exams.qsCount')}
                       </span>
-                      {exam.duration && (
+                      {(exam.timerMinutes || exam.duration) && (
                         <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-900/30 border border-gray-800/80">
                           <FiClock className="text-blue-400" />
-                          {exam.duration} {t('student.exams.minDuration')}
+                          {exam.timerMinutes || exam.duration} {t('student.exams.minDuration')}
                         </span>
                       )}
                       <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-900/30 border border-gray-800/80 capitalize">
