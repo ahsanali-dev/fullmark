@@ -31,7 +31,9 @@ import {
   fetchQuestions,
   fetchExams,
   fetchLessons,
+  deleteLesson,
   deleteExam,
+  deleteQuestion,
   uploadSubjectBanner,
   fetchWeaknessTopics,
   createWeaknessTopic,
@@ -51,10 +53,9 @@ const SubjectDetails = () => {
 
   const { subjects = [], units = [], weaknessTopics = [], questions = [], exams: examsList = [], lessons = [], isLoading } = useSelector((state) => state.teacher);
 
-  const [activeTab, setActiveTab] = useState('lessons'); // 'units' | 'lessons' | 'questions' | 'exams' | 'weaknesses'
-  const [isDeletingId, setIsDeletingId] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletingExam, setDeletingExam] = useState(null);
+  const [activeTab, setActiveTab] = useState('units'); // 'units' | 'lessons' | 'questions' | 'exams' | 'weaknesses'
+  const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'unit'|'lesson'|'question'|'exam'|'topic', id, title, name }
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Unit Modal States
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
@@ -196,16 +197,39 @@ const SubjectDetails = () => {
     }
   };
 
-  const handleDeleteUnit = async (unitId) => {
-    if (!window.confirm(isRTL ? 'هل أنت تأكد من أنك تريد حذف هذه الوحدة؟' : 'Are you sure you want to delete this unit?')) return;
-    const loadingToast = toast.loading(isRTL ? 'جاري حذف الوحدة...' : 'Deleting unit...');
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { type, id } = deleteTarget;
+    setIsDeleting(true);
+    const loadingToast = toast.loading(isRTL ? 'جاري الحذف...' : 'Deleting...');
 
     try {
-      await dispatch(deleteUnit(unitId)).unwrap();
-      toast.success(isRTL ? 'تم حذف الوحدة بنجاح!' : 'Unit deleted successfully!', { id: loadingToast });
-      dispatch(fetchSubjectUnits(subjectId));
+      if (type === 'unit') {
+        await dispatch(deleteUnit(id)).unwrap();
+        toast.success(isRTL ? 'تم حذف الوحدة بنجاح!' : 'Unit deleted successfully!', { id: loadingToast });
+        dispatch(fetchSubjectUnits(subjectId));
+      } else if (type === 'lesson') {
+        await dispatch(deleteLesson(id)).unwrap();
+        toast.success(isRTL ? 'تم حذف الدرس بنجاح!' : 'Lesson deleted successfully!', { id: loadingToast });
+        dispatch(fetchLessons(subjectId));
+      } else if (type === 'question') {
+        await dispatch(deleteQuestion(id)).unwrap();
+        toast.success(isRTL ? 'تم حذف السؤال بنجاح!' : 'Question deleted successfully!', { id: loadingToast });
+        dispatch(fetchQuestions());
+      } else if (type === 'exam') {
+        await dispatch(deleteExam(id)).unwrap();
+        toast.success(isRTL ? 'تم إلغاء الامتحان بنجاح!' : 'Exam cancelled successfully!', { id: loadingToast });
+        dispatch(fetchExams());
+      } else if (type === 'topic') {
+        await dispatch(deleteWeaknessTopic(id)).unwrap();
+        toast.success(isRTL ? 'تم حذف موضوع التعثر بنجاح!' : 'Weakness topic deleted successfully!', { id: loadingToast });
+        dispatch(fetchWeaknessTopics(subjectId));
+      }
+      setDeleteTarget(null);
     } catch (err) {
-      toast.error(err || (isRTL ? 'فشل حذف الوحدة' : 'Failed to delete unit'), { id: loadingToast });
+      toast.error(err || (isRTL ? 'فشل الحذف' : 'Failed to delete'), { id: loadingToast });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -221,29 +245,6 @@ const SubjectDetails = () => {
       dispatch(fetchSubjectUnits(subjectId));
     } catch (err) {
       toast.error(isRTL ? 'فشل إعادة ترتيب الوحدة' : 'Failed to reorder unit');
-    }
-  };
-
-  const handleDeleteClick = (exam) => {
-    setDeletingExam(exam);
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!deletingExam) return;
-    const id = deletingExam._id || deletingExam.id;
-    setIsDeletingId(id);
-    setShowDeleteConfirm(false);
-    const loadingToast = toast.loading(isRTL ? 'جاري إلغاء الامتحان...' : 'Cancelling exam...');
-    try {
-      await dispatch(deleteExam(id)).unwrap();
-      toast.success(isRTL ? 'تم إلغاء الامتحان بنجاح!' : 'Exam cancelled successfully!', { id: loadingToast });
-      dispatch(fetchExams());
-      setDeletingExam(null);
-    } catch (err) {
-      toast.error(err || (isRTL ? 'فشل إلغاء الامتحان' : 'Failed to cancel exam'), { id: loadingToast });
-    } finally {
-      setIsDeletingId(null);
     }
   };
 
@@ -308,19 +309,6 @@ const SubjectDetails = () => {
     }
   };
 
-  const handleDeleteTopic = async (topicId) => {
-    if (!window.confirm(isRTL ? 'هل أنت تأكد من أنك تريد حذف موضوع التعثر هذا؟' : 'Are you sure you want to delete this weakness topic?')) return;
-    const loadingToast = toast.loading(isRTL ? 'جاري حذف موضوع التعثر...' : 'Deleting weakness topic...');
-
-    try {
-      await dispatch(deleteWeaknessTopic(topicId)).unwrap();
-      toast.success(isRTL ? 'تم حذف الموضوع بنجاح!' : 'Topic deleted successfully!', { id: loadingToast });
-      dispatch(fetchWeaknessTopics(subjectId));
-    } catch (err) {
-      toast.error(err || (isRTL ? 'فشل حذف الموضوع' : 'Failed to delete topic'), { id: loadingToast });
-    }
-  };
-
   if (isLoading && !lessons.length && !questions.length && !examsList.length) {
     return (
       <DashboardLayout
@@ -340,7 +328,7 @@ const SubjectDetails = () => {
       activeTab="subjects"
       title={subject.title}
       subtitle={isRTL ? "مركز المادة" : "Subject Hub"}
-      isModalOpen={showDeleteConfirm || isUnitModalOpen}
+      isModalOpen={!!deleteTarget || isUnitModalOpen || isWeaknessModalOpen}
     >
       <div className="w-full max-w-full p-6 md:p-8 pb-32 text-start flex flex-col gap-6 animate-fade-in relative">
 
@@ -560,7 +548,7 @@ const SubjectDetails = () => {
 
                           <button
                             type="button"
-                            onClick={() => handleDeleteUnit(unit._id || unit.id)}
+                            onClick={() => setDeleteTarget({ type: 'unit', id: unit._id || unit.id, title: unit.title, name: isRTL ? 'الوحدة' : 'Unit' })}
                             className="px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/20"
                             title={isRTL ? "حذف الوحدة" : "Delete Unit"}
                           >
@@ -624,7 +612,7 @@ const SubjectDetails = () => {
                             </h4>
                           </div>
 
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               type="button"
                               onClick={() => navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les._id || les.id}`)}
@@ -632,6 +620,14 @@ const SubjectDetails = () => {
                               title={isRTL ? "تعديل الدرس" : "Edit Lesson"}
                             >
                               <FiEdit3 size={15} /> {isRTL ? "تعديل" : "Edit"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' })}
+                              className="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/20"
+                              title={isRTL ? "حذف الدرس" : "Delete Lesson"}
+                            >
+                              <FiTrash2 size={15} /> {isRTL ? "حذف" : "Delete"}
                             </button>
                           </div>
                         </div>
@@ -675,31 +671,78 @@ const SubjectDetails = () => {
 
               {subjectQuestions.length > 0 ? (
                 <div className="flex flex-col gap-3">
-                  {subjectQuestions.map((q) => (
-                    <div
-                      key={q._id || q.id}
-                      className="p-4 rounded-2xl bg-[#0e101a] border border-gray-800/80 flex items-center justify-between gap-4 text-start"
-                    >
-                      <div className="flex flex-col text-start">
-                        <span className="text-sm font-bold text-white line-clamp-1">{q.questionText}</span>
-                        <span className="text-xs text-gray-500 font-semibold mt-0.5">
-                          {isRTL ? "النوع" : "Type"}: {q.type || 'MCQ'} • {isRTL ? "الصعوبة" : "Difficulty"}: {q.difficulty || 'Medium'}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/teacher/questions/${q._id || q.id}/edit`)}
-                        className="px-3 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-blue-500/20 shrink-0"
+                  {subjectQuestions.map((q) => {
+                    const diff = (q.difficulty || 'easy').toLowerCase();
+                    const diffBadge = diff === 'hard' 
+                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                      : diff === 'medium'
+                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+
+                    return (
+                      <div
+                        key={q._id || q.id}
+                        className="p-4 sm:p-5 rounded-2xl bg-[#0e101a] border border-gray-800/80 hover:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-start transition-all"
                       >
-                        <FiEdit3 size={15} /> {isRTL ? "تعديل" : "Edit"}
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-start gap-3.5 text-start min-w-0 flex-1">
+                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold shrink-0 mt-0.5">
+                            <FiHelpCircle size={18} />
+                          </div>
+                          <div className="flex flex-col text-start min-w-0 flex-1">
+                            <span className="text-sm sm:text-base font-bold text-white leading-snug line-clamp-2">
+                              {q.text || q.textAr || q.questionText || (isRTL ? 'بدون نص' : 'Untitled Question')}
+                            </span>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase border ${diffBadge}`}>
+                                {isRTL ? (diff === 'hard' ? 'صعب' : diff === 'medium' ? 'متوسط' : 'سهل') : diff}
+                              </span>
+                              {q.options && q.options.length > 0 && (
+                                <span className="text-[11px] text-gray-500 font-semibold">
+                                  {q.options.length} {isRTL ? "خيارات" : "options"}
+                                </span>
+                              )}
+                              {q.image && (
+                                <span className="text-[11px] text-blue-400 font-semibold flex items-center gap-1">
+                                  <FiImage size={12} /> {isRTL ? "صورة مرفقة" : "Image"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/teacher/subjects/${subjectId}/edit-question/${q._id || q.id}`)}
+                            className="px-3.5 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-blue-500/20"
+                            title={isRTL ? "تعديل السؤال" : "Edit Question"}
+                          >
+                            <FiEdit3 size={14} /> {isRTL ? "تعديل" : "Edit"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget({ type: 'question', id: q._id || q.id, title: q.text || q.textAr || q.questionText, name: isRTL ? 'السؤال' : 'Question' })}
+                            className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/20"
+                            title={isRTL ? "حذف السؤال" : "Delete Question"}
+                          >
+                            <FiTrash2 size={14} /> {isRTL ? "حذف" : "Delete"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="p-12 text-center bg-[#0e101a] border border-gray-800/80 rounded-3xl flex flex-col items-center justify-center">
                   <FiHelpCircle className="text-gray-600 mb-3" size={36} />
                   <span className="text-sm font-bold text-gray-400">{isRTL ? "لم يتم إضافة أسئلة لهذه المادة بعد." : "No questions added for this subject yet."}</span>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/teacher/subjects/${subjectId}/add-question`)}
+                    className="mt-4 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-all cursor-pointer border border-blue-400/30"
+                  >
+                    <FiPlus size={16} /> {isRTL ? "إضافة أول سؤال" : "Add First Question"}
+                  </button>
                 </div>
               )}
             </div>
@@ -737,7 +780,7 @@ const SubjectDetails = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => handleDeleteClick(ex)}
+                          onClick={() => setDeleteTarget({ type: 'exam', id: ex._id || ex.id, title: ex.title, name: isRTL ? 'الامتحان' : 'Exam' })}
                           className="px-3 py-2 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-extrabold text-xs flex items-center gap-1.5 transition-all border border-rose-500/20 cursor-pointer shrink-0"
                           title={isRTL ? "إلغاء الامتحان" : "Cancel Exam"}
                         >
@@ -811,7 +854,7 @@ const SubjectDetails = () => {
 
                         <button
                           type="button"
-                          onClick={() => handleDeleteTopic(topic._id || topic.id)}
+                          onClick={() => setDeleteTarget({ type: 'topic', id: topic._id || topic.id, title: topic.title, name: isRTL ? 'موضوع التعثر' : 'Weakness Topic' })}
                           className="px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/20"
                           title={isRTL ? "حذف الموضوع" : "Delete Topic"}
                         >
@@ -992,6 +1035,51 @@ const SubjectDetails = () => {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* GLOBAL DELETE CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <div
+            className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+            onClick={() => !isDeleting && setDeleteTarget(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 100, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 100, opacity: 0 }}
+              className="w-full sm:max-w-md bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-black text-white mb-3">
+                {isRTL ? `حذف ${deleteTarget.name}` : `Delete ${deleteTarget.name}`}
+              </h3>
+              <p className="text-sm text-gray-400 leading-relaxed font-semibold mb-6">
+                {isRTL 
+                  ? `هل أنت متأكد من أنك تريد حذف "${deleteTarget.title || deleteTarget.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
+                  : `Are you sure you want to delete "${deleteTarget.title || deleteTarget.name}"? This action cannot be undone.`}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 py-3.5 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center disabled:opacity-50"
+                >
+                  {isRTL ? "إلغاء" : "Cancel"}
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                  className="flex-1 py-3.5 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center shadow-[0_4px_15px_rgba(239,68,68,0.3)] disabled:opacity-50"
+                >
+                  {isDeleting ? (isRTL ? "جاري الحذف..." : "Deleting...") : (isRTL ? "حذف" : "Delete")}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

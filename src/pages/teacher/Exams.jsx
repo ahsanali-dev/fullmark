@@ -54,7 +54,7 @@ const SkeletonCard = () => (
       <div className="h-3 w-12 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
       <div className="h-3 w-12 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
     </div>
-    <div className="grid grid-cols-4 gap-2 mt-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
       {[1, 2, 3, 4].map(i => (
         <div key={i} className="h-12 bg-gray-850 rounded-xl" style={{ backgroundColor: '#161826' }} />
       ))}
@@ -283,7 +283,7 @@ const TeacherExams = () => {
         </div>
 
         {/* Summary Stat Grid */}
-        <div className="grid grid-cols-4 gap-2.5 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-4">
           <div className="p-3.5 bg-blue-500/[0.02] border border-blue-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-blue-400 block">{totalCount}</span>
             <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">{isRTL ? "الإجمالي" : "Total"}</span>
@@ -386,22 +386,22 @@ const TeacherExams = () => {
                   </div>
 
                   {/* Score Stats Grid */}
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div className="p-2.5 rounded-xl bg-amber-500/[0.05] border border-amber-500/10 text-center">
                       <span className="text-base font-black text-amber-400 block">{mockRes.stats.avgScore}</span>
-                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">{isRTL ? 'متوسط الدرجة' : 'Avg Score'}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider block mt-0.5 whitespace-nowrap">{isRTL ? 'متوسط الدرجة' : 'Avg Score'}</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/10 text-center">
                       <span className="text-base font-black text-emerald-400 block">{mockRes.stats.highScore}</span>
-                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">{isRTL ? 'أعلى درجة' : 'High Score'}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider block mt-0.5 whitespace-nowrap">{isRTL ? 'أعلى درجة' : 'High Score'}</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-red-500/[0.05] border border-red-500/10 text-center">
                       <span className="text-base font-black text-red-400 block">{mockRes.stats.lowScore}</span>
-                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">{isRTL ? 'أقل درجة' : 'Low Score'}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider block mt-0.5 whitespace-nowrap">{isRTL ? 'أقل درجة' : 'Low Score'}</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-blue-500/[0.05] border border-blue-500/10 text-center">
                       <span className="text-base font-black text-blue-400 block">{mockRes.stats.submitted}</span>
-                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">{isRTL ? 'المقدمين' : 'Submitted'}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider block mt-0.5 whitespace-nowrap">{isRTL ? 'المقدمين' : 'Submitted'}</span>
                     </div>
                   </div>
 

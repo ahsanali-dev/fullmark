@@ -184,12 +184,12 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout role="admin" activeTab="dashboard" isModalOpen={isBlurred}>
-      <div className={`px-6 md:px-8 py-4 flex flex-col gap-8 text-start animate-fade-in transition-all duration-300 ${
+      <div className={`px-4 sm:px-6 md:px-8 py-4 flex flex-col gap-6 sm:gap-8 text-start animate-fade-in transition-all duration-300 ${
         isBlurred ? 'blur-sm pointer-events-none' : ''
       }`}>
         {/* User Subscription Statistics */}
         <div className="flex flex-col gap-3">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
             <h3 className="text-lg md:text-xl font-black tracking-wide text-white">
               {t('admin.dashboard.userDistribution')}
             </h3>
@@ -197,23 +197,23 @@ const Dashboard = () => {
               {t('admin.dashboard.allUsers')}
             </span>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {/* 1. Total Registered Users */}
             <div 
               onClick={() => navigate('/admin/users?filter=all')}
-              className="p-5 bg-[#0e101a] border border-gray-800 hover:border-red-500/40 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group text-start"
+              className="p-3.5 sm:p-5 bg-[#0e101a] border border-gray-800 hover:border-red-500/40 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group text-start"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-11 h-11 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform">
-                  <FiUsers className="text-xl" />
+              <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform shrink-0">
+                  <FiUsers className="text-base sm:text-xl" />
                 </div>
-                <span className="text-[10px] font-extrabold text-red-400 bg-red-500/10 px-2.5 py-1 rounded-full border border-red-500/20">
+                <span className="text-[9px] sm:text-[10px] font-extrabold text-red-400 bg-red-500/10 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-red-500/20 whitespace-nowrap">
                   {t('admin.users.filterRoleAll')}
                 </span>
               </div>
               <div>
-                <h4 className="text-3xl font-black text-white">{stats?.subscription?.totalRegistered ?? stats?.totalStudents ?? 0}</h4>
-                <span className="text-xs font-bold text-gray-400 mt-1 block">
+                <h4 className="text-2xl sm:text-3xl font-black text-white">{stats?.subscription?.totalRegistered ?? stats?.totalStudents ?? 0}</h4>
+                <span className="text-[11px] sm:text-xs font-bold text-gray-400 mt-1 block truncate">
                   {t('admin.dashboard.totalUsers')}
                 </span>
               </div>
@@ -222,19 +222,19 @@ const Dashboard = () => {
             {/* 2. Total Subscribed Users */}
             <div 
               onClick={() => navigate('/admin/users?filter=subscribed')}
-              className="p-5 bg-[#0e101a] border border-gray-800 hover:border-emerald-500/40 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group text-start"
+              className="p-3.5 sm:p-5 bg-[#0e101a] border border-gray-800 hover:border-emerald-500/40 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group text-start"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
-                  <FiAward className="text-xl" />
+              <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shrink-0">
+                  <FiAward className="text-base sm:text-xl" />
                 </div>
-                <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                  {t('admin.reports.subscribedUsers')}
+                <span className="text-[9px] sm:text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-emerald-500/20 whitespace-nowrap">
+                  {isRTL ? 'مشترك' : 'Subscribed'}
                 </span>
               </div>
               <div>
-                <h4 className="text-3xl font-black text-emerald-400">{stats?.subscription?.totalSubscribed ?? 0}</h4>
-                <span className="text-xs font-bold text-gray-400 mt-1 block">
+                <h4 className="text-2xl sm:text-3xl font-black text-emerald-400">{stats?.subscription?.totalSubscribed ?? 0}</h4>
+                <span className="text-[11px] sm:text-xs font-bold text-gray-400 mt-1 block truncate">
                   {t('admin.reports.subscribedUsers')}
                 </span>
               </div>
@@ -243,19 +243,19 @@ const Dashboard = () => {
             {/* 3. Total Registered Non-Subscribed Users */}
             <div 
               onClick={() => navigate('/admin/users?filter=non_subscribed')}
-              className="p-5 bg-[#0e101a] border border-gray-800 hover:border-amber-500/40 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group text-start"
+              className="p-3.5 sm:p-5 bg-[#0e101a] border border-gray-800 hover:border-amber-500/40 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group text-start"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                  <FiUser className="text-xl" />
+              <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform shrink-0">
+                  <FiUser className="text-base sm:text-xl" />
                 </div>
-                <span className="text-[10px] font-extrabold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                <span className="text-[9px] sm:text-[10px] font-extrabold text-amber-400 bg-amber-500/10 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-amber-500/20 whitespace-nowrap">
                   {t('admin.users.inactive')}
                 </span>
               </div>
               <div>
-                <h4 className="text-3xl font-black text-amber-400">{stats?.subscription?.totalNonSubscribed ?? 0}</h4>
-                <span className="text-xs font-bold text-gray-400 mt-1 block">
+                <h4 className="text-2xl sm:text-3xl font-black text-amber-400">{stats?.subscription?.totalNonSubscribed ?? 0}</h4>
+                <span className="text-[11px] sm:text-xs font-bold text-gray-400 mt-1 block truncate">
                   {t('admin.reports.newRegistered')}
                 </span>
               </div>
@@ -264,19 +264,19 @@ const Dashboard = () => {
             {/* 4. Total Users Currently Active */}
             <div 
               onClick={() => navigate('/admin/users?filter=all&activeOnly=true')}
-              className="p-5 bg-[#0e101a] border border-gray-800 hover:border-blue-500/40 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group text-start"
+              className="p-3.5 sm:p-5 bg-[#0e101a] border border-gray-800 hover:border-blue-500/40 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300 group text-start"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-                  <FiActivity className="text-xl" />
+              <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform shrink-0">
+                  <FiActivity className="text-base sm:text-xl" />
                 </div>
-                <span className="text-[10px] font-extrabold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20">
+                <span className="text-[9px] sm:text-[10px] font-extrabold text-blue-400 bg-blue-500/10 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full border border-blue-500/20 whitespace-nowrap">
                   {t('admin.users.active')}
                 </span>
               </div>
               <div>
-                <h4 className="text-3xl font-black text-blue-400">{stats?.subscription?.totalActive ?? 0}</h4>
-                <span className="text-xs font-bold text-gray-400 mt-1 block">
+                <h4 className="text-2xl sm:text-3xl font-black text-blue-400">{stats?.subscription?.totalActive ?? 0}</h4>
+                <span className="text-[11px] sm:text-xs font-bold text-gray-400 mt-1 block truncate">
                   {t('admin.users.active')}
                 </span>
               </div>
@@ -285,56 +285,56 @@ const Dashboard = () => {
         </div>
 
         {/* Core Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {/* Students */}
           <div 
             onClick={() => navigate('/admin/users?filter=all')}
-            className="p-5 stat-card-student rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
+            className="p-3.5 sm:p-5 stat-card-student rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
           >
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] mb-4">
-              <FiAward className="text-xl" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] mb-3 sm:mb-4">
+              <FiAward className="text-lg sm:text-xl" />
             </div>
-            <span className="text-2xl md:text-3xl font-extrabold text-white">{stats?.totalStudents || 0}</span>
-            <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">
+            <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white">{stats?.totalStudents || 0}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-gray-400 tracking-wider mt-1 uppercase truncate max-w-full">
               {t('admin.users.filterRoleStudent')}
             </span>
           </div>
           {/* Teachers */}
           <div 
             onClick={() => navigate('/admin/users?filter=all')}
-            className="p-5 stat-card-teacher rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
+            className="p-3.5 sm:p-5 stat-card-teacher rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
           >
-            <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] mb-4">
-              <FiUsers className="text-xl" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] mb-3 sm:mb-4">
+              <FiUsers className="text-lg sm:text-xl" />
             </div>
-            <span className="text-2xl md:text-3xl font-extrabold text-white">{stats?.totalTeachers || 0}</span>
-            <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">
+            <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white">{stats?.totalTeachers || 0}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-gray-400 tracking-wider mt-1 uppercase truncate max-w-full">
               {t('admin.users.filterRoleTeacher')}
             </span>
           </div>
           {/* Subjects */}
           <div 
             onClick={() => navigate('/admin/content')}
-            className="p-5 stat-card-exam rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
+            className="p-3.5 sm:p-5 stat-card-exam rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
           >
-            <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)] mb-4">
-              <FiBookOpen className="text-xl" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)] mb-3 sm:mb-4">
+              <FiBookOpen className="text-lg sm:text-xl" />
             </div>
-            <span className="text-2xl md:text-3xl font-extrabold text-white">{stats?.totalSubjects || 0}</span>
-            <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">
+            <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white">{stats?.totalSubjects || 0}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-gray-400 tracking-wider mt-1 uppercase truncate max-w-full">
               {t('admin.dashboard.activeSubjects')}
             </span>
           </div>
           {/* Coupons */}
           <div 
             onClick={() => navigate('/admin/coupons')}
-            className="p-5 stat-card-question rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
+            className="p-3.5 sm:p-5 stat-card-question rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:scale-[1.02] transition-all duration-300"
           >
-            <div className="w-12 h-12 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)] mb-4">
-              <span className="text-lg font-bold">$</span>
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)] mb-3 sm:mb-4">
+              <span className="text-base sm:text-lg font-bold">$</span>
             </div>
-            <span className="text-2xl md:text-3xl font-extrabold text-white">{stats?.totalCoupons || 0}</span>
-            <span className="text-xs font-bold text-gray-500 tracking-wider mt-1 uppercase">
+            <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white">{stats?.totalCoupons || 0}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-gray-400 tracking-wider mt-1 uppercase truncate max-w-full">
               {isRTL ? "الكوبونات" : "Coupons"}
             </span>
           </div>
@@ -399,18 +399,18 @@ const Dashboard = () => {
           <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">
             {isRTL ? "الإجراءات السريعة" : "Quick Actions"}
           </h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
             <button 
               onClick={() => {
                 userFormik.setFieldValue('role', 'Teacher');
                 setIsUserModalOpen(true);
               }}
-              className="p-4 action-btn-teacher rounded-3xl flex flex-col items-center justify-center text-center gap-3 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.3)] group cursor-pointer"
+              className="p-3 sm:p-4 action-btn-teacher rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center gap-2 sm:gap-3 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.3)] group cursor-pointer"
             >
-              <div className="w-11 h-11 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 transition-transform duration-300 group-hover:scale-110">
-                <FiUserPlus className="text-lg" />
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 transition-transform duration-300 group-hover:scale-110">
+                <FiUserPlus className="text-base sm:text-lg" />
               </div>
-              <span className="text-xs font-bold text-white tracking-wide">
+              <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide">
                 {isRTL ? "إضافة معلم" : "Add Teacher"}
               </span>
             </button>
@@ -419,12 +419,12 @@ const Dashboard = () => {
                 userFormik.setFieldValue('role', 'Student');
                 setIsUserModalOpen(true);
               }}
-              className="p-4 action-btn-student rounded-3xl flex flex-col items-center justify-center text-center gap-3 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.3)] group cursor-pointer"
+              className="p-3 sm:p-4 action-btn-student rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center gap-2 sm:gap-3 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.3)] group cursor-pointer"
             >
-              <div className="w-11 h-11 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 transition-transform duration-300 group-hover:scale-110">
-                <FiAward className="text-lg" />
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 transition-transform duration-300 group-hover:scale-110">
+                <FiAward className="text-base sm:text-lg" />
               </div>
-              <span className="text-xs font-bold text-white tracking-wide">
+              <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide">
                 {isRTL ? "إضافة طالب" : "Add Student"}
               </span>
             </button>
@@ -432,12 +432,12 @@ const Dashboard = () => {
               onClick={() => {
                 setIsSubjectModalOpen(true);
               }}
-              className="p-4 action-btn-subject rounded-3xl flex flex-col items-center justify-center text-center gap-3 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.3)] group cursor-pointer"
+              className="p-3 sm:p-4 action-btn-subject rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center gap-2 sm:gap-3 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.3)] group cursor-pointer"
             >
-              <div className="w-11 h-11 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 transition-transform duration-300 group-hover:scale-110">
-                <FiPlusCircle className="text-lg" />
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 transition-transform duration-300 group-hover:scale-110">
+                <FiPlusCircle className="text-base sm:text-lg" />
               </div>
-              <span className="text-xs font-bold text-white tracking-wide">
+              <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide">
                 {isRTL ? "مادة جديدة" : "New Subject"}
               </span>
             </button>

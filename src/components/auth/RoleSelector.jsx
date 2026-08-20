@@ -16,7 +16,7 @@ const RoleSelector = ({ selectedRole, onChange, excludeAdmin = false }) => {
   const roles = [
     { id: 'student', name: t('auth.studentRole'), icon: FaGraduationCap, color: 'student', themeColor: 'emerald' },
     { id: 'teacher', name: t('auth.teacherRole'), icon: FaChalkboardTeacher, color: 'teacher', themeColor: 'blue' },
-    { id: 'admin', name: 'Admin', icon: FaShieldAlt, color: 'admin', themeColor: 'red' },
+    { id: 'admin', name: t('auth.adminRole'), icon: FaShieldAlt, color: 'admin', themeColor: 'red' },
     { id: 'parent', name: t('auth.parentRole'), icon: FaUsers, color: 'parent', themeColor: 'purple' },
   ];
 

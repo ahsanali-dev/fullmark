@@ -310,7 +310,7 @@ const Users = () => {
       subtitle={t('admin.users.subtitle')} 
       isModalOpen={isModalOpen || !!selectedUserDetail || !!editingUser || !!deleteConfirmUser}
     >
-      <div className={`w-full flex flex-col p-4 md:p-8 gap-5 animate-fade-in relative transition-all duration-300 ${
+      <div className={`w-full flex flex-col p-3.5 sm:p-6 md:p-8 gap-4 sm:gap-5 animate-fade-in relative transition-all duration-300 ${
         isModalOpen || selectedUserDetail || editingUser || deleteConfirmUser ? 'blur-sm pointer-events-none' : ''
       }`}>
 
@@ -423,7 +423,7 @@ const Users = () => {
           {/* Dual Filters Row: Role Filter + Subscription Filter */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Role Filter Tabs */}
-            <div className="grid grid-cols-4 p-1.5 bg-[#0c0d19]/90 border border-gray-800 rounded-2xl gap-1">
+            <div className="grid grid-cols-4 p-1 sm:p-1.5 bg-[#0c0d19]/90 border border-gray-800 rounded-2xl gap-1">
               {[
                 { id: 'all', label: isRTL ? 'جميع الأدوار' : 'All Roles' },
                 { id: 'student', label: isRTL ? 'الطلاب' : 'Students' },
@@ -433,7 +433,7 @@ const Users = () => {
                 <button
                   key={tab.id}
                   onClick={() => setSelectedRoleFilter(tab.id)}
-                  className={`py-2 px-1 rounded-xl text-xs font-extrabold transition-all duration-300 cursor-pointer ${
+                  className={`py-2 px-0.5 sm:px-1 rounded-xl text-[10px] sm:text-xs font-extrabold transition-all duration-300 cursor-pointer text-center truncate ${
                     selectedRoleFilter === tab.id
                       ? 'bg-blue-600 text-white shadow-md'
                       : 'text-gray-400 hover:text-white'
@@ -445,7 +445,7 @@ const Users = () => {
             </div>
 
             {/* Subscription Filter Tabs */}
-            <div className="grid grid-cols-3 p-1.5 bg-[#0c0d19]/90 border border-gray-800 rounded-2xl gap-1">
+            <div className="grid grid-cols-3 p-1 sm:p-1.5 bg-[#0c0d19]/90 border border-gray-800 rounded-2xl gap-1">
               {[
                 { id: 'all', label: isRTL ? 'جميع المستخدمين' : 'All Users' },
                 { id: 'subscribed', label: isRTL ? 'المشتركون' : 'Subscribed' },
@@ -454,7 +454,7 @@ const Users = () => {
                 <button
                   key={tab.id}
                   onClick={() => setSubscriptionFilter(tab.id)}
-                  className={`py-2 px-1 rounded-xl text-xs font-extrabold transition-all duration-300 cursor-pointer ${
+                  className={`py-2 px-0.5 sm:px-1 rounded-xl text-[10px] sm:text-xs font-extrabold transition-all duration-300 cursor-pointer text-center truncate ${
                     subscriptionFilter === tab.id
                       ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-md'
                       : 'text-gray-400 hover:text-white'
@@ -467,18 +467,18 @@ const Users = () => {
           </div>
 
           {/* Total Count Banner + Excel Export Button */}
-          <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 font-black">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 font-black shrink-0 text-sm">
                 {totalCount}
               </div>
-              <div className="flex flex-col text-start">
-                <span className="text-sm font-black text-white leading-tight">
+              <div className="flex flex-col text-start min-w-0">
+                <span className="text-xs sm:text-sm font-black text-white leading-tight">
                   {isRTL 
                     ? `إجمالي الفئة: ${totalCount} مستخدم` 
                     : `Category Total: ${totalCount} ${selectedRoleFilter !== 'all' ? selectedRoleFilter.toUpperCase() + 'S' : 'Users'}`}
                 </span>
-                <span className="text-xs text-gray-400 font-semibold mt-0.5">
+                <span className="text-[11px] sm:text-xs text-gray-400 font-semibold mt-0.5 leading-snug">
                   {isRTL ? "عرض السجلات الفردية أدناه. انقر على أي بطاقة للتفاصيل." : "Showing individual detailed records below. Click any card for full details."}
                 </span>
               </div>
@@ -488,7 +488,7 @@ const Users = () => {
             <button
               onClick={handleExportExcel}
               disabled={isExporting}
-              className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
             >
               <FiDownload size={16} />
               <span>{isExporting ? (isRTL ? 'جاري التصدير...' : 'Exporting...') : (isRTL ? 'تصدير Excel' : 'Export Excel')}</span>

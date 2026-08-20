@@ -77,16 +77,16 @@ const Register = () => {
       role: selectedRole,
     };
     
-    const loadToast = toast.loading('Creating your account...');
+    const loadToast = toast.loading(t('auth.creatingAccount'));
     try {
       await dispatch(registerUser(payload)).unwrap();
       toast.dismiss(loadToast);
-      toast.success(`Account created successfully! Please verify your email.`);
+      toast.success(t('auth.accountCreatedSuccess'));
       setSubmitting(false);
       navigate('/verify-otp', { state: { email: values.email } });
     } catch (err) {
       toast.dismiss(loadToast);
-      toast.error(err || 'Registration failed. Please try again.');
+      toast.error(err || t('auth.registrationFailed'));
       setSubmitting(false);
     }
   };

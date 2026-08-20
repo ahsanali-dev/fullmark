@@ -55,11 +55,11 @@ const Login = () => {
       role: selectedRole,
     };
     
-    const loadToast = toast.loading('Logging you in...');
+    const loadToast = toast.loading(t('auth.loggingIn'));
     try {
       const data = await dispatch(loginUser(payload)).unwrap();
       toast.dismiss(loadToast);
-      toast.success(`Logged in successfully!`);
+      toast.success(t('auth.loginSuccess'));
       setSubmitting(false);
       if (selectedRole === 'admin') {
         navigate('/admin/dashboard');
@@ -73,10 +73,10 @@ const Login = () => {
     } catch (err) {
       toast.dismiss(loadToast);
       if (err?.needsVerification) {
-        toast.error('Please verify your email first.');
+        toast.error(t('auth.verifyEmailFirst'));
         navigate('/verify-otp', { state: { email: err.email } });
       } else {
-        toast.error(err?.message || 'Login failed. Please check your credentials.');
+        toast.error(err?.message || t('auth.loginFailed'));
       }
       setSubmitting(false);
     }
@@ -113,7 +113,7 @@ const Login = () => {
             <motion.div 
               whileHover={{ scale: 1.05, rotate: [0, -3, 3, 0] }}
               onClick={() => navigate('/')}
-              className={`w-14 h-14 rounded-2xl bg-gradient-to-tr from-${themeColor}-600 to-indigo-600 flex items-center justify-center shadow-lg border border-white/10 mb-6 cursor-pointer`}
+              className={`w-14 h-14 rounded-2xl bg-linear-to-tr from-${themeColor}-600 to-indigo-600 flex items-center justify-center shadow-lg border border-white/10 mb-6 cursor-pointer`}
               style={{
                 boxShadow: `0 8px 20px rgba(var(--color-${themeColor}-500), 0.3)`
               }}
@@ -227,11 +227,11 @@ const Login = () => {
           {/* Create Account Link */}
           <div className="flex flex-col items-center justify-center">
             <div className="w-full flex items-center justify-center gap-4 mb-4">
-              <div className={`h-[1px] flex-1 ${isLight ? 'bg-slate-300' : 'bg-gradient-to-r from-transparent to-gray-800'}`} />
+              <div className={`h-px flex-1 ${isLight ? 'bg-slate-300' : 'bg-linear-to-r from-transparent to-gray-800'}`} />
               <span className={`text-xs md:text-sm font-semibold tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                 {t('auth.dontHaveAccount')}
               </span>
-              <div className={`h-[1px] flex-1 ${isLight ? 'bg-slate-300' : 'bg-gradient-to-l from-transparent to-gray-800'}`} />
+              <div className={`h-px flex-1 ${isLight ? 'bg-slate-300' : 'bg-linear-to-l from-transparent to-gray-800'}`} />
             </div>
 
             <Button

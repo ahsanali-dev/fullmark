@@ -180,55 +180,55 @@ const TeacherDashboard = () => {
       subtitle={t('teacher.dashboard.subtitle')}
       isModalOpen={isModalActive}
     >
-      <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-32 lg:pb-12">
+      <div className="flex flex-col gap-6 text-start p-4 sm:p-6 md:p-8 pb-32 lg:pb-12">
         
         {/* A. Core Stats Row */}
-        <div className="grid grid-cols-4 gap-3 md:gap-4 shrink-0 animate-fade-in">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 shrink-0 animate-fade-in">
           {/* Subjects */}
           <div 
             onClick={() => navigate('/teacher/subjects')}
-            className="p-4 bg-[#0e101a]/90 border border-blue-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:border-blue-500/40 transition-all hover:translate-y-[-2px] group"
+            className="p-3.5 sm:p-4 bg-[#0e101a]/90 border border-blue-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:border-blue-500/40 transition-all hover:translate-y-[-2px] group"
           >
-            <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.12)] mb-3 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.12)] mb-2.5 group-hover:scale-105 transition-transform">
               <FiBookOpen size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">{subjects.length}</span>
-            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">{t('teacher.dashboard.subjects')}</span>
+            <span className="text-xs sm:text-sm font-bold text-gray-400 tracking-wider mt-1 uppercase truncate max-w-full">{t('teacher.dashboard.subjects')}</span>
           </div>
 
           {/* Questions */}
           <div 
             onClick={() => navigate('/teacher/questions')}
-            className="p-4 bg-[#0e101a]/90 border border-blue-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:border-blue-500/40 transition-all hover:translate-y-[-2px] group"
+            className="p-3.5 sm:p-4 bg-[#0e101a]/90 border border-blue-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:border-blue-500/40 transition-all hover:translate-y-[-2px] group"
           >
-            <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.12)] mb-3 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.12)] mb-2.5 group-hover:scale-105 transition-transform">
               <FiHelpCircle size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">{questions.length}</span>
-            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">{t('teacher.dashboard.questions')}</span>
+            <span className="text-xs sm:text-sm font-bold text-gray-400 tracking-wider mt-1 uppercase truncate max-w-full">{t('teacher.dashboard.questions')}</span>
           </div>
 
           {/* Exams */}
           <div 
             onClick={() => navigate('/teacher/exams')}
-            className="p-4 bg-[#0e101a]/90 border border-blue-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:border-blue-500/40 transition-all hover:translate-y-[-2px] group"
+            className="p-3.5 sm:p-4 bg-[#0e101a]/90 border border-blue-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg cursor-pointer hover:border-blue-500/40 transition-all hover:translate-y-[-2px] group"
           >
-            <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.12)] mb-3 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.12)] mb-2.5 group-hover:scale-105 transition-transform">
               <FiFileText size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">{exams.length}</span>
-            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">{t('teacher.dashboard.exams')}</span>
+            <span className="text-xs sm:text-sm font-bold text-gray-400 tracking-wider mt-1 uppercase truncate max-w-full">{t('teacher.dashboard.exams')}</span>
           </div>
 
           {/* Students */}
-          <div className="p-4 bg-[#0e101a]/90 border border-yellow-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-            <div className="w-10 h-10 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.12)] mb-3">
+          <div className="p-3.5 sm:p-4 bg-[#0e101a]/90 border border-yellow-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.12)] mb-2.5">
               <FiUsers size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">
               {subjectsWithCounts.reduce((acc, curr) => acc + curr.studentsCount, 0)}
             </span>
-            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">{t('teacher.dashboard.students')}</span>
+            <span className="text-xs sm:text-sm font-bold text-gray-400 tracking-wider mt-1 uppercase truncate max-w-full">{t('teacher.dashboard.students')}</span>
           </div>
         </div>
 

@@ -136,13 +136,12 @@ const Settings = () => {
       activeTab="settings"
       title={t('admin.settings.title')}
       subtitle={t('admin.settings.subtitle')}
-      disableScroll={true}
       isModalOpen={isModalOpen}
     >
-      <div className="h-full flex flex-col px-4 md:px-8 py-4 overflow-hidden gap-5 animate-fade-in relative transition-all duration-300">
+      <div className="w-full flex flex-col px-3.5 sm:px-6 md:px-8 py-4 gap-5 animate-fade-in relative transition-all duration-300">
 
-        {/* Scrollable Settings Panel */}
-        <div className="flex-1 overflow-y-auto pr-1 pb-36 flex flex-col gap-6">
+        {/* Settings Panel */}
+        <div className="w-full pb-32 flex flex-col gap-6">
 
           {/* 1. Profile Banner Hero */}
           <div className="w-full bg-gradient-to-br from-red-700/90 to-rose-600/90 text-white rounded-3xl p-6 relative overflow-hidden flex flex-col gap-6 shadow-[0_15px_30px_rgba(239,68,68,0.2)] shrink-0">

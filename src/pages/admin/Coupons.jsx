@@ -183,7 +183,7 @@ const Coupons = () => {
 
   if (isLoading && couponBatches.length === 0) {
     return (
-      <DashboardLayout role="admin" activeTab="coupons" title={isRTL ? "نظام الكوبونات مسبقة الدفع" : "Prepaid Coupon System"} subtitle={isRTL ? "جاري التحميل..." : "Loading batches..."} disableScroll={true}>
+      <DashboardLayout role="admin" activeTab="coupons" title={isRTL ? "نظام الكوبونات مسبقة الدفع" : "Prepaid Coupon System"} subtitle={isRTL ? "جاري التحميل..." : "Loading batches..."}>
         <CouponsSkeleton />
       </DashboardLayout>
     );
@@ -214,58 +214,57 @@ const Coupons = () => {
       title={t('admin.coupons.title')}
       subtitle={t('admin.coupons.subtitle')}
       isModalOpen={isBlurred}
-      disableScroll={true}
       showBackButton={true}
       onBackClick={() => navigate('/admin/dashboard')}
     >
-      <div className={`h-full flex flex-col px-4 md:px-8 py-4 overflow-hidden gap-5 animate-fade-in relative transition-all duration-300 ${isBlurred ? 'blur-sm pointer-events-none' : ''}`}>
+      <div className={`w-full flex flex-col px-3.5 sm:px-6 md:px-8 py-4 gap-5 animate-fade-in relative transition-all duration-300 ${isBlurred ? 'blur-sm pointer-events-none' : ''}`}>
 
         {/* Top Controls Section */}
         <div className="flex flex-col gap-4 shrink-0">
           
-          {/* Summary Metric Cards (Requirement 9) */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <div className="p-4 bg-[#0e101a] border border-red-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <span className="text-2xl font-black text-red-400">{summaryStats.totalGenerated || 0}</span>
-              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">
+          {/* Summary Metric Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+            <div className="p-3.5 sm:p-4 bg-[#0e101a] border border-red-500/15 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+              <span className="text-xl sm:text-2xl font-black text-red-400">{summaryStats.totalGenerated || 0}</span>
+              <span className="text-[9px] sm:text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase truncate max-w-full">
                 {t('admin.coupons.totalGenerated')}
               </span>
             </div>
-            <div className="p-4 bg-[#0e101a] border border-emerald-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <span className="text-2xl font-black text-emerald-400">{summaryStats.activatedCount || 0}</span>
-              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">
+            <div className="p-3.5 sm:p-4 bg-[#0e101a] border border-emerald-500/15 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+              <span className="text-xl sm:text-2xl font-black text-emerald-400">{summaryStats.activatedCount || 0}</span>
+              <span className="text-[9px] sm:text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase truncate max-w-full">
                 {t('admin.coupons.activated')}
               </span>
             </div>
-            <div className="p-4 bg-[#0e101a] border border-amber-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <span className="text-2xl font-black text-amber-400">{summaryStats.notActivatedCount || 0}</span>
-              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">
+            <div className="p-3.5 sm:p-4 bg-[#0e101a] border border-amber-500/15 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+              <span className="text-xl sm:text-2xl font-black text-amber-400">{summaryStats.notActivatedCount || 0}</span>
+              <span className="text-[9px] sm:text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase truncate max-w-full">
                 {t('admin.coupons.notActivated')}
               </span>
             </div>
-            <div className="p-4 bg-[#0e101a] border border-orange-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
-              <span className="text-2xl font-black text-orange-400">{summaryStats.cancelledCount || 0}</span>
-              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">
+            <div className="p-3.5 sm:p-4 bg-[#0e101a] border border-orange-500/15 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center shadow-lg">
+              <span className="text-xl sm:text-2xl font-black text-orange-400">{summaryStats.cancelledCount || 0}</span>
+              <span className="text-[9px] sm:text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase truncate max-w-full">
                 {t('admin.coupons.cancelledExpired')}
               </span>
             </div>
-            <div className="p-4 bg-[#0e101a] border border-purple-500/15 rounded-3xl flex flex-col items-center justify-center text-center shadow-lg col-span-2 lg:col-span-1">
-              <span className="text-2xl font-black text-purple-400">${(summaryStats.totalSalesValue || 0).toLocaleString()}</span>
-              <span className="text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase">
+            <div className="p-3.5 sm:p-4 bg-[#0e101a] border border-purple-500/15 rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center text-center shadow-lg col-span-2 sm:col-span-1">
+              <span className="text-xl sm:text-2xl font-black text-purple-400">${(summaryStats.totalSalesValue || 0).toLocaleString()}</span>
+              <span className="text-[9px] sm:text-[10px] font-extrabold text-gray-500 tracking-wider mt-1 uppercase truncate max-w-full">
                 {t('admin.coupons.salesValue')}
               </span>
             </div>
           </div>
 
           {/* Search & Header */}
-          <div className="flex justify-between items-center text-xs font-bold text-gray-400 pt-2 border-b border-gray-800/40 pb-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs font-bold text-gray-400 pt-2 border-b border-gray-800/40 pb-2 gap-1">
             <span>{isRTL ? `تم إنشاء ${couponBatches.length} دفعة` : `${couponBatches.length} Batches Generated`}</span>
-            <span>{isRTL ? "تقوم الأكواد مسبقة الدفع بتفعيل المواد المختارة فوراً" : "Prepaid codes activate selected courses instantly"}</span>
+            <span className="text-[11px] sm:text-xs text-gray-500">{isRTL ? "تقوم الأكواد مسبقة الدفع بتفعيل المواد المختارة فوراً" : "Prepaid codes activate selected courses instantly"}</span>
           </div>
         </div>
 
-        {/* Coupon Batches List (Requirement 9) */}
-        <div className="flex-1 overflow-y-auto pr-1 pb-36">
+        {/* Coupon Batches List */}
+        <div className="w-full pb-32">
           {couponBatches.length === 0 ? (
             <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl text-gray-500 font-bold">
               {isRTL ? "لم يتم إنشاء أي دفعات كوبونات بعد. انقر فوق \"إنشاء دفعة كوبونات\" لإنشاء واحدة." : "No coupon batches generated yet. Click \"Generate Coupon Batch\" to create one."}

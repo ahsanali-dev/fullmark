@@ -335,6 +335,15 @@ input:-webkit-autofill:active {
   background: rgba(255, 255, 255, 0.25);
 }
 
+/* Hide scrollbar for Chrome, Safari, Opera and Firefox */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 /* ==========================================================================
    LIGHT MODE STYLING SYSTEM
    ========================================================================== */

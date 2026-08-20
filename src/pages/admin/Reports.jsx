@@ -102,7 +102,6 @@ const Reports = () => {
         activeTab="reports"
         title={isRTL ? "تقارير المنصة" : "Platform Reports"}
         subtitle={isRTL ? "جاري تحيل التحليلات..." : "Loading analytics..."}
-        disableScroll={true}
       >
         <ReportsSkeleton />
       </DashboardLayout>
@@ -115,19 +114,18 @@ const Reports = () => {
       activeTab="reports" 
       title={isRTL ? "تقارير المنصة" : "Platform Reports"} 
       subtitle={isRTL ? "تقارير التصدير الدورية والتحليلات" : "Periodic Export Reports & Analytics"}
-      disableScroll={true}
       isModalOpen={isBlurred}
       showBackButton={false}
     >
-      <div className="h-full flex flex-col px-4 md:px-8 py-4 overflow-hidden gap-5 animate-fade-in relative transition-all duration-300">
+      <div className="w-full flex flex-col px-3.5 sm:px-6 md:px-8 py-4 gap-5 animate-fade-in relative transition-all duration-300">
         
-        {/* Sticky Controls */}
+        {/* Controls Section */}
         <div className="flex flex-col gap-4 shrink-0">
           
           {/* Timeframe selector & Export */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             {/* Timeframe selector pills */}
-            <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar scrollbar-none">
               {timeframes.map((tf) => (
                 <button
                   key={tf.id}
@@ -135,7 +133,7 @@ const Reports = () => {
                     setTimeframe(tf.id);
                     if (tf.id === 'custom') setIsCustomDateOpen(true);
                   }}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-extrabold transition-all duration-300 whitespace-nowrap cursor-pointer ${
+                  className={`px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-extrabold transition-all duration-300 whitespace-nowrap cursor-pointer ${
                     timeframe === tf.id
                       ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-[0_4px_20px_rgba(239,68,68,0.35)]'
                       : 'bg-gray-950/40 hover:bg-gray-800/40 border border-gray-800 text-gray-400 hover:text-gray-200'
@@ -149,9 +147,9 @@ const Reports = () => {
             {/* Export Button */}
             <button 
               onClick={() => setIsExportOpen(true)}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white px-5 py-2.5 rounded-2xl font-extrabold shadow-[0_4px_20px_rgba(16,185,129,0.3)] transition-all active:scale-95 cursor-pointer text-sm shrink-0 w-full sm:w-auto"
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-2xl font-extrabold shadow-[0_4px_20px_rgba(16,185,129,0.3)] transition-all active:scale-95 cursor-pointer text-xs sm:text-sm shrink-0 w-full sm:w-auto"
             >
-              <FiDownload className="text-base" />
+              <FiDownload className="text-sm sm:text-base" />
               <span>{isRTL ? "تصدير تقارير إكسل" : "Export Excel Reports"}</span>
             </button>
           </div>
@@ -172,94 +170,94 @@ const Reports = () => {
           )}
 
           {/* Segmented controls Overview vs Users */}
-          <div className="grid grid-cols-2 p-1.5 bg-[#0c0d19]/80 border border-gray-800/50 rounded-2xl gap-1">
+          <div className="grid grid-cols-2 p-1 sm:p-1.5 bg-[#0c0d19]/80 border border-gray-800/50 rounded-2xl gap-1">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 cursor-pointer ${
+              className={`flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all duration-300 cursor-pointer ${
                 activeTab === 'overview'
                   ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-[0_4px_20px_rgba(239,68,68,0.25)]'
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
-              <FiGrid className="text-base" />
+              <FiGrid className="text-sm sm:text-base" />
               <span>{t('admin.reports.overview')}</span>
             </button>
             <button
               onClick={() => setActiveTab('users')}
-              className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-extrabold transition-all duration-300 cursor-pointer ${
+              className={`flex items-center justify-center gap-2 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-extrabold transition-all duration-300 cursor-pointer ${
                 activeTab === 'users'
                   ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-[0_4px_20px_rgba(239,68,68,0.25)]'
                   : 'text-gray-400 hover:text-gray-200'
               }`}
             >
-              <FiUsers className="text-base" />
+              <FiUsers className="text-sm sm:text-base" />
               <span>{t('admin.reports.userBreakdown')}</span>
             </button>
           </div>
 
         </div>
 
-        {/* Scrollable Stats Dashboard */}
-        <div className="flex-1 overflow-y-auto pr-1 pb-36">
+        {/* Stats Dashboard Content */}
+        <div className="w-full pb-32">
           {activeTab === 'overview' ? (
             /* Overview Tab layout */
             <div className="flex flex-col gap-6">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* Card 1: New Students */}
-                <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-emerald-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-                    <FiUsers size={22} />
+                <div className="p-3.5 sm:p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-emerald-500/25 rounded-2xl sm:rounded-3xl flex flex-col gap-3 sm:gap-4 relative overflow-hidden transition-all duration-300">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                    <FiUsers className="text-lg sm:text-2xl" />
                   </div>
                   <div className="flex flex-col text-start">
-                    <span className="text-2xl font-black text-emerald-400 leading-tight">
+                    <span className="text-xl sm:text-2xl font-black text-emerald-400 leading-tight">
                       {reportsData.overview?.newStudents || 0}
                     </span>
-                    <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
+                    <span className="text-[10px] sm:text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1 truncate">
                       {t('admin.reports.newRegistered')}
                     </span>
                   </div>
                 </div>
 
                 {/* Card 2: Subscribed Users */}
-                <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-blue-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-                    <FiAward size={22} />
+                <div className="p-3.5 sm:p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-blue-500/25 rounded-2xl sm:rounded-3xl flex flex-col gap-3 sm:gap-4 relative overflow-hidden transition-all duration-300">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                    <FiAward className="text-lg sm:text-2xl" />
                   </div>
                   <div className="flex flex-col text-start">
-                    <span className="text-2xl font-black text-blue-400 leading-tight">
+                    <span className="text-xl sm:text-2xl font-black text-blue-400 leading-tight">
                       {reportsData.overview?.subscribedStudents || 0}
                     </span>
-                    <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
+                    <span className="text-[10px] sm:text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1 truncate">
                       {isRTL ? "مستخدمون مشتركون" : "Subscribed Users"}
                     </span>
                   </div>
                 </div>
 
                 {/* Card 3: Exams Completed */}
-                <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-cyan-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
-                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
-                    <FiFileText size={22} />
+                <div className="p-3.5 sm:p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-cyan-500/25 rounded-2xl sm:rounded-3xl flex flex-col gap-3 sm:gap-4 relative overflow-hidden transition-all duration-300">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+                    <FiFileText className="text-lg sm:text-2xl" />
                   </div>
                   <div className="flex flex-col text-start">
-                    <span className="text-2xl font-black text-cyan-400 leading-tight">
+                    <span className="text-xl sm:text-2xl font-black text-cyan-400 leading-tight">
                       {reportsData.overview?.completedExams || 0}
                     </span>
-                    <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
+                    <span className="text-[10px] sm:text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1 truncate">
                       {isRTL ? "امتحانات مكتملة" : "Exams Completed"}
                     </span>
                   </div>
                 </div>
 
                 {/* Card 4: Coupons Redeemed */}
-                <div className="p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-yellow-500/25 rounded-3xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
-                  <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
-                    <FiTag size={22} />
+                <div className="p-3.5 sm:p-5 bg-[#0c0d19]/40 border border-gray-800/80 hover:border-yellow-500/25 rounded-2xl sm:rounded-3xl flex flex-col gap-3 sm:gap-4 relative overflow-hidden transition-all duration-300">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
+                    <FiTag className="text-lg sm:text-2xl" />
                   </div>
                   <div className="flex flex-col text-start">
-                    <span className="text-2xl font-black text-yellow-400 leading-tight">
+                    <span className="text-xl sm:text-2xl font-black text-yellow-400 leading-tight">
                       {reportsData.overview?.couponsUsed || 0}
                     </span>
-                    <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
+                    <span className="text-[10px] sm:text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1 truncate">
                       {isRTL ? "كوبونات مفعلة" : "Coupons Activated"}
                     </span>
                   </div>

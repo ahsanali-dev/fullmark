@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiGlobe, FiChevronDown, FiGrid, FiLogOut, FiUser, FiSun, FiMoon } from 'react-icons/fi';
+import { FiGlobe, FiChevronDown, FiGrid, FiLogOut, FiUser, FiSun, FiMoon, FiMenu, FiX, FiHome, FiLayers, FiUserPlus } from 'react-icons/fi';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { logoutUser, getMe } from '../../redux/slices/authSlice';
@@ -19,10 +19,12 @@ export default function Navbar({ activeSection, onNavClick }) {
 
   const [langOpen, setLangOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   const langMenuRef = useRef(null);
   const userMenuRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   const isLight = theme === 'light';
 
@@ -53,6 +55,11 @@ export default function Navbar({ activeSection, onNavClick }) {
     }
   }, [dispatch, token, user]);
 
+  // Close mobile menu on page navigation
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   // Close dropdowns if clicked outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -61,6 +68,9 @@ export default function Navbar({ activeSection, onNavClick }) {
       }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target) && !event.target.closest('#mobile-menu-btn')) {
+        setMobileMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -119,13 +129,13 @@ export default function Navbar({ activeSection, onNavClick }) {
           : 'bg-[#080911]/85 border-gray-800/60 shadow-xl text-gray-100'
       }`}
     >
-      <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between px-6 md:px-12 py-3.5">
+      <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between px-3 sm:px-6 md:px-12 py-2.5 sm:py-3.5">
         {/* BRAND LOGO */}
-        <div className="flex items-center gap-2.5 cursor-pointer select-none group" onClick={scrollToTop}>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center font-black text-white text-sm shadow-[0_0_20px_rgba(59,130,246,0.5)] group-hover:scale-105 transition-transform">
+        <div className="flex items-center gap-2.5 cursor-pointer select-none group shrink-0" onClick={scrollToTop}>
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center font-black text-white text-xs sm:text-sm shadow-[0_0_20px_rgba(59,130,246,0.5)] group-hover:scale-105 transition-transform shrink-0">
             FM
           </div>
-          <span className={`text-xl font-black tracking-tight transition-colors ${isLight ? 'text-slate-900 group-hover:text-cyan-600' : 'text-white group-hover:text-cyan-400'}`}>
+          <span className={`hidden sm:inline text-xl font-black tracking-tight transition-colors ${isLight ? 'text-slate-900 group-hover:text-cyan-600' : 'text-white group-hover:text-cyan-400'}`}>
             FullMark<span className="text-cyan-400 font-extrabold text-base">.ai</span>
           </span>
         </div>
@@ -161,29 +171,29 @@ export default function Navbar({ activeSection, onNavClick }) {
         </div>
 
         {/* RIGHT ACTION BUTTONS */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           
           {/* THEME TOGGLE BUTTON */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className={`w-9 h-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all shadow-sm ${
+            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all shadow-sm shrink-0 ${
               isLight
                 ? 'bg-slate-100 border-slate-300 text-amber-500 hover:border-amber-400 hover:bg-amber-50'
                 : 'bg-gray-900/90 border-gray-700/80 text-yellow-400 hover:border-cyan-400/50 hover:bg-gray-800'
             }`}
             title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
           >
-            {isLight ? <FiMoon className="text-base" /> : <FiSun className="text-base" />}
+            {isLight ? <FiMoon className="text-sm sm:text-base" /> : <FiSun className="text-sm sm:text-base" />}
           </button>
 
           {/* LANGUAGE DROPDOWN */}
-          <div className="relative" ref={langMenuRef}>
+          <div className="relative shrink-0" ref={langMenuRef}>
             <button
               onClick={() => {
                 setLangOpen(!langOpen);
                 setUserMenuOpen(false);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black cursor-pointer transition-all shadow-sm ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-black cursor-pointer transition-all shadow-sm whitespace-nowrap ${
                 isLight
                   ? 'bg-slate-100 border-slate-300 text-slate-800 hover:border-cyan-500'
                   : 'bg-gray-900/90 border-gray-700/80 text-gray-200 hover:text-white hover:border-cyan-400/50'
@@ -222,22 +232,22 @@ export default function Navbar({ activeSection, onNavClick }) {
 
           {/* AUTH USER DROPDOWN / SIGN IN BUTTONS */}
           {(isAuthenticated || token) ? (
-            <div className="relative" ref={userMenuRef}>
+            <div className="relative shrink-0" ref={userMenuRef}>
               <button
                 onClick={() => {
                   setUserMenuOpen(!userMenuOpen);
                   setLangOpen(false);
                 }}
-                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-2xl border transition-all cursor-pointer shadow-md group ${
+                className={`flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 rounded-2xl border transition-all cursor-pointer shadow-md group whitespace-nowrap ${
                   isLight
                     ? 'bg-slate-100 border-slate-300 text-slate-800 hover:border-cyan-500'
                     : 'bg-gray-900/90 border-gray-700/80 text-gray-200 hover:text-white hover:border-cyan-500/50'
                 }`}
               >
-                <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center font-black text-white text-xs shadow-sm">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center font-black text-white text-xs shadow-sm shrink-0">
                   {user?.name ? user.name.substring(0, 2).toUpperCase() : <FiUser size={13} />}
                 </div>
-                <span className={`text-xs font-black max-w-[120px] truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
+                <span className={`text-xs font-black max-w-[80px] sm:max-w-[120px] truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
                   {user?.name || user?.fullName || user?.email?.split('@')[0] || t('nav.account')}
                 </span>
                 <FiChevronDown className={`text-xs transition-transform duration-200 ${isLight ? 'text-slate-500' : 'text-gray-400'} ${userMenuOpen ? 'rotate-180' : ''}`} />
@@ -313,7 +323,7 @@ export default function Navbar({ activeSection, onNavClick }) {
             <>
               <button
                 onClick={() => navigate('/login')}
-                className={`px-4.5 py-2 rounded-2xl border text-xs font-black transition-all cursor-pointer ${
+                className={`px-3 sm:px-4.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                   isLight
                     ? 'bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200'
                     : 'border-gray-700/80 bg-gray-900/60 hover:bg-gray-800 text-gray-200 hover:text-white'
@@ -324,14 +334,95 @@ export default function Navbar({ activeSection, onNavClick }) {
 
               <button
                 onClick={() => navigate('/register')}
-                className="px-5 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-xs font-black shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="hidden sm:inline-flex px-5 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-xs font-black shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 {t('nav.createAccount')}
               </button>
             </>
           )}
+          {/* MOBILE HAMBURGER BUTTON */}
+          <button
+            id="mobile-menu-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className={`lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all shadow-sm shrink-0 ${
+              isLight
+                ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
+                : 'bg-gray-900/90 border-gray-700/80 text-gray-200 hover:text-white hover:border-cyan-400/50 hover:bg-gray-800'
+            }`}
+            title="Toggle Menu"
+          >
+            {mobileMenuOpen ? <FiX className="text-base" /> : <FiMenu className="text-base" />}
+          </button>
         </div>
       </div>
+
+      {/* MOBILE MENU DROPDOWN */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            ref={mobileMenuRef}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className={`lg:hidden overflow-hidden border-t px-6 py-4 flex flex-col gap-3 backdrop-blur-2xl ${
+              isLight
+                ? 'bg-white/95 border-slate-200 text-slate-900 shadow-xl'
+                : 'bg-[#080911]/95 border-gray-800/80 text-gray-100 shadow-2xl'
+            }`}
+          >
+            {/* Links List */}
+            <div className="flex flex-col gap-1.5">
+              <a
+                href="#hero"
+                onClick={(e) => {
+                  scrollToTop();
+                  setMobileMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                  !activeSection || activeSection === 'hero'
+                    ? (isLight ? 'bg-cyan-50 text-cyan-700' : 'bg-cyan-500/15 text-cyan-400')
+                    : (isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-gray-800/60 text-gray-300')
+                }`}
+              >
+                <FiHome className="text-base text-cyan-500" />
+                <span>{t('nav.home')}</span>
+              </a>
+
+              <button
+                onClick={() => {
+                  navigate('/boyle-law');
+                  setMobileMenuOpen(false);
+                }}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer text-start ${
+                  isBoyleActive
+                    ? (isLight ? 'bg-cyan-50 text-cyan-700' : 'bg-cyan-500/15 text-cyan-400')
+                    : (isLight ? 'hover:bg-slate-100 text-slate-700' : 'hover:bg-gray-800/60 text-gray-300')
+                }`}
+              >
+                <FiLayers className="text-base text-cyan-500" />
+                <span>{t('nav.lab')}</span>
+              </button>
+            </div>
+
+            {/* Mobile Auth Buttons if Not Authenticated */}
+            {!(isAuthenticated || token) && (
+              <div className={`pt-3 border-t flex flex-col gap-2 ${isLight ? 'border-slate-200' : 'border-gray-800'}`}>
+                <button
+                  onClick={() => {
+                    navigate('/register');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-xs font-black shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <FiUserPlus size={14} />
+                  <span>{t('nav.createAccount')}</span>
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 }

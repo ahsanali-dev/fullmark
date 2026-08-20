@@ -253,7 +253,7 @@ const ParentReports = () => {
           <div className="flex flex-col gap-5 animate-fade-in">
 
             {/* 4 stat mini-cards */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-yellow-500/5 border border-yellow-500/20 text-center">
                 <FiStar className="text-yellow-400" size={18} />
                 <span className="text-base font-black text-yellow-400">{avgScore}%</span>

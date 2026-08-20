@@ -38,11 +38,11 @@ const ForgotPassword = () => {
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
       await dispatch(forgotPassword({ email: values.email })).unwrap();
-      toast.success(`Reset code sent to ${values.email}!`);
+      toast.success(t('auth.resetCodeSent'));
       setSubmitting(false);
       navigate('/reset-password', { state: { email: values.email } });
     } catch (err) {
-      toast.error(err || 'Failed to send reset code.');
+      toast.error(err || t('auth.failedToSendResetCode'));
       setSubmitting(false);
     }
   };

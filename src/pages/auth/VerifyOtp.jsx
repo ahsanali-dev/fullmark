@@ -47,11 +47,11 @@ const VerifyOtp = () => {
       code: values.code,
     };
 
-    const loadToast = toast.loading('Verifying code...');
+    const loadToast = toast.loading(t('auth.verifyingCode'));
     try {
       const data = await dispatch(verifyOtp(payload)).unwrap();
       toast.dismiss(loadToast);
-      toast.success('Email verified successfully! Logging you in...');
+      toast.success(t('auth.emailVerifiedSuccess'));
       setSubmitting(false);
 
       // Redirect user based on role
@@ -67,25 +67,25 @@ const VerifyOtp = () => {
       }
     } catch (err) {
       toast.dismiss(loadToast);
-      toast.error(err || 'Verification failed. Please check the code.');
+      toast.error(err || t('auth.verificationFailed'));
       setSubmitting(false);
     }
   };
 
   const handleResend = async (email, setSubmitting) => {
     if (!email) {
-      toast.error('Please enter your email address first.');
+      toast.error(t('auth.enterEmailFirst'));
       return;
     }
 
-    const loadToast = toast.loading('Resending verification code...');
+    const loadToast = toast.loading(t('auth.resendingCode'));
     try {
       await dispatch(resendOtp({ email })).unwrap();
       toast.dismiss(loadToast);
-      toast.success('A new verification code has been sent!');
+      toast.success(t('auth.codeResentSuccess'));
     } catch (err) {
       toast.dismiss(loadToast);
-      toast.error(err || 'Failed to resend verification code.');
+      toast.error(err || t('auth.failedToResendCode'));
     }
   };
 

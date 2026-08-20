@@ -111,7 +111,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
         return {
           color: 'red',
           avatarText: 'AP',
-          roleName: 'Admin',
+          roleName: t('auth.adminRole'),
           gradientClass: 'from-red-600 to-rose-500 shadow-[0_0_20px_rgba(239,68,68,0.3)]',
           badgeClass: 'bg-red-500/10 border-red-500/20 text-red-400',
           dotClass: 'bg-red-500',
@@ -370,68 +370,68 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
       <main className="flex-1 flex flex-col h-full overflow-hidden w-full">
         
         {/* Top Header Section */}
-        <header className={`px-6 py-4 md:px-8 flex items-center justify-between border-b border-gray-800/50 bg-[#080911]/70 backdrop-blur-md shrink-0 z-10 transition-all duration-300 ${
+        <header className={`px-3.5 sm:px-6 md:px-8 py-2.5 sm:py-4 flex items-center justify-between border-b border-gray-800/50 bg-[#080911]/70 backdrop-blur-md shrink-0 z-10 transition-all duration-300 gap-2 ${
           isModalOpen ? 'blur-sm pointer-events-none' : ''
         }`}>
-          <div className="flex items-center gap-3 sm:gap-4 text-left">
+          <div className="flex items-center gap-2 sm:gap-4 text-start min-w-0 flex-1">
             {showBackButton && (
               <button 
                 onClick={onBackClick || (() => navigate(-1))}
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 cursor-pointer shrink-0"
+                className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 cursor-pointer shrink-0"
               >
-                <FiChevronLeft className="text-lg" />
+                <FiChevronLeft className="text-base sm:text-lg" />
               </button>
             )}
-            <div className="flex flex-col gap-0.5">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-white whitespace-nowrap leading-tight">{getHeaderTitle()}</h1>
-                <span className={`flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-extrabold shadow-[0_0_10px_rgba(0,0,0,0.1)] ${config.badgeClass}`}>
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+                <h1 className="text-base sm:text-2xl md:text-3xl font-black text-white whitespace-nowrap leading-tight truncate">{getHeaderTitle()}</h1>
+                <span className={`flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-xs font-extrabold shadow-[0_0_10px_rgba(0,0,0,0.1)] whitespace-nowrap shrink-0 ${config.badgeClass}`}>
                   <span className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full animate-pulse ${config.dotClass}`} />
                   {config.roleName}
                 </span>
               </div>
-              <span className="text-[10px] sm:text-xs font-semibold text-gray-500 tracking-wider flex items-center gap-1.5 uppercase leading-none">
+              <span className="text-[9px] sm:text-xs font-semibold text-gray-500 tracking-wider flex items-center gap-1.5 uppercase leading-none truncate">
                 {subtitle ? subtitle : 'Platform Overview 🛠️'}
               </span>
             </div>
           </div>
 
           {/* Header Controls */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {headerActions}
             {/* Theme Toggle */}
             <button 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-yellow-500 transition-all duration-300 cursor-pointer"
+              className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-yellow-500 transition-all duration-300 cursor-pointer"
             >
-              {theme === 'dark' ? <FiSun className="text-base sm:text-lg" /> : <FiMoon className="text-base sm:text-lg" />}
+              {theme === 'dark' ? <FiSun className="text-sm sm:text-lg" /> : <FiMoon className="text-sm sm:text-lg" />}
             </button>
 
             {/* Notifications Dropdown */}
             <div className="relative" ref={notificationsRef}>
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 relative cursor-pointer"
+                className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 relative cursor-pointer"
               >
-                <FiBell className="text-base sm:text-lg" />
+                <FiBell className="text-sm sm:text-lg" />
                 {notifications.some(n => !n.isRead) && (
-                  <span className="absolute top-3 right-3 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500 shadow-[0_0_6px_#ef4444]" />
+                  <span className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500 shadow-[0_0_6px_#ef4444]" />
                 )}
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 bg-[#111222] border border-gray-800 rounded-3xl p-4 shadow-[0_10px_45px_rgba(0,0,0,0.6)] backdrop-blur-xl z-50 animate-fade-in">
+                <div className="absolute ltr:right-0 rtl:left-0 mt-3 w-72 sm:w-80 bg-[#111222] border border-gray-800 rounded-3xl p-4 shadow-[0_10px_45px_rgba(0,0,0,0.6)] backdrop-blur-xl z-50 animate-fade-in">
                   <div className="flex items-center justify-between pb-3 border-b border-gray-800/50 mb-2">
-                    <h4 className="text-sm font-black text-white">Notifications</h4>
+                    <h4 className="text-sm font-black text-white">{t('dashboard.notifications')}</h4>
                     {notifications.some(n => !n.isRead) && (
                       <button 
                         onClick={() => {
                           dispatch(markAllNotificationsRead());
-                          toast.success('All notifications marked as read!');
+                          toast.success(t('dashboard.markAllRead'));
                         }}
                         className="text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                       >
-                        Mark all as read
+                        {t('dashboard.markAllRead')}
                       </button>
                     )}
                   </div>
@@ -450,7 +450,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                                   dispatch(markNotificationRead(n._id));
                                 }
                               }}
-                              className={`p-3 rounded-2xl border flex gap-3 text-left transition-all cursor-pointer ${
+                              className={`p-3 rounded-2xl border flex gap-3 text-start transition-all cursor-pointer ${
                                 n.isRead 
                                   ? 'bg-transparent border-gray-800/40 opacity-60' 
                                   : 'bg-[#16172b]/60 border-gray-800'
@@ -480,11 +480,11 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                           }}
                           className="w-full text-center py-2 mt-1 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors border-t border-gray-800/40 cursor-pointer"
                         >
-                          View all notifications
+                          {t('dashboard.viewAllNotifications')}
                         </button>
                       </>
                     ) : (
-                      <p className="text-xs text-gray-500 text-center py-4 font-bold">No notifications</p>
+                      <p className="text-xs text-gray-500 text-center py-4 font-bold">{t('dashboard.noNotifications')}</p>
                     )}
                   </div>
                 </div>
@@ -494,15 +494,15 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
             <div className="relative lg:hidden" ref={mobileUserMenuRef}>
               <button 
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center font-bold text-white text-xs sm:text-sm transition-transform active:scale-95 cursor-pointer bg-gradient-to-r ${config.gradientClass}`}
+                className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center font-bold text-white text-xs sm:text-sm transition-transform active:scale-95 cursor-pointer bg-gradient-to-r ${config.gradientClass}`}
               >
                 {profileAvatar}
               </button>
               {showUserMenu && (
-                <div className="absolute right-0 mt-3 w-48 bg-[#111222] border border-gray-800 rounded-2xl p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl z-50">
-                  <div className="px-3.5 py-2.5 border-b border-gray-800/50 mb-1">
-                    <p className="text-xs font-bold text-white leading-tight text-left">{profileName}</p>
-                    <p className="text-[10px] text-gray-500 text-left">{config.roleName}</p>
+                <div className="absolute ltr:right-0 rtl:left-0 mt-3 w-48 bg-[#111222] border border-gray-800 rounded-2xl p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl z-50">
+                  <div className="px-3.5 py-2.5 border-b border-gray-800/50 mb-1 text-start">
+                    <p className="text-xs font-bold text-white leading-tight">{profileName}</p>
+                    <p className="text-[10px] text-gray-500">{config.roleName}</p>
                   </div>
                   {(role === 'teacher' || role === 'student' || role === 'parent') && (
                     <button
@@ -511,18 +511,18 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                         navigate(profileRoute);
                         setShowUserMenu(false);
                       }}
-                      className="w-full flex items-center gap-3 px-3.5 py-2 text-sm font-bold text-gray-300 hover:bg-gray-800/40 rounded-xl transition-all duration-200 cursor-pointer text-left mb-1"
+                      className="w-full flex items-center gap-3 px-3.5 py-2 text-sm font-bold text-gray-300 hover:bg-gray-800/40 rounded-xl transition-all duration-200 cursor-pointer text-start mb-1"
                     >
                       <FiUser className="text-sm" />
-                      My Profile
+                      {t('dashboard.myProfile')}
                     </button>
                   )}
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200 cursor-pointer text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200 cursor-pointer text-start"
                   >
                     <FiLogOut className="text-sm" />
-                    Log Out
+                    {t('dashboard.logOut')}
                   </button>
                 </div>
               )}
@@ -538,27 +538,29 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
       </main>
 
       {/* 3. MOBILE BOTTOM NAVIGATION BAR */}
-      <div className={`lg:hidden fixed bottom-0 left-0 right-0 h-22 bg-[#0c0d19]/90 border-t border-gray-800/80 backdrop-blur-xl flex items-center justify-around px-2 z-40 pb-2 transition-all duration-300 ${
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0c0d19]/95 border-t border-gray-800/80 backdrop-blur-xl z-40 pb-2 transition-all duration-300 ${
         isModalOpen ? 'blur-sm pointer-events-none' : ''
       }`}>
-        {config.menus.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => navigate(`/${role}/${item.id}`)}
-              className={`flex flex-col items-center justify-center gap-1 py-2.5 px-3 rounded-2xl transition-all duration-300 cursor-pointer ${
-                isActive 
-                  ? `${config.badgeClass} shadow-[0_0_12px_rgba(0,0,0,0.05)]` 
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-            >
-              <Icon className="text-lg" />
-              <span className="text-[9px] font-bold tracking-wide uppercase">{item.label}</span>
-            </button>
-          );
-        })}
+        <div className="w-full h-full flex items-center gap-1.5 px-2.5 overflow-x-auto no-scrollbar scroll-smooth">
+          {config.menus.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => navigate(`/${role}/${item.id}`)}
+                className={`flex-1 min-w-[66px] flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-2xl transition-all duration-300 cursor-pointer shrink-0 ${
+                  isActive 
+                    ? `${config.badgeClass} shadow-[0_0_12px_rgba(0,0,0,0.05)]` 
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                <Icon className="text-lg shrink-0" />
+                <span className="text-[9px] font-bold tracking-wide uppercase whitespace-nowrap">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
     </div>

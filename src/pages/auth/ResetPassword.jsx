@@ -56,11 +56,11 @@ const ResetPassword = () => {
 
     try {
       await dispatch(resetPassword(payload)).unwrap();
-      toast.success('Password reset successfully! Please sign in with your new password.');
+      toast.success(t('auth.passwordResetSuccess'));
       setSubmitting(false);
       navigate('/login');
     } catch (err) {
-      toast.error(err || 'Failed to reset password. Please check your code.');
+      toast.error(err || t('auth.failedResetPassword'));
       setSubmitting(false);
     }
   };

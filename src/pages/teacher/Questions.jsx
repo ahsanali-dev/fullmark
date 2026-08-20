@@ -218,7 +218,7 @@ const TeacherQuestions = () => {
         </div>
 
         {/* Summary Stat Grid */}
-        <div className="grid grid-cols-4 gap-2.5 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-4">
           <div className="p-3.5 bg-blue-500/[0.02] border border-blue-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-blue-400 block">{totalCount}</span>
             <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">{t('admin.coupons.totalGenerated')}</span>
