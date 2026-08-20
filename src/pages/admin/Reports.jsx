@@ -7,7 +7,8 @@ import {
   FiAward, 
   FiTv, 
   FiShield, 
-  FiChevronRight, 
+  FiChevronRight,
+  FiChevronLeft, 
   FiDownload,
   FiShare2,
   FiTag,
@@ -20,9 +21,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchReports, exportReportExcel } from '../../redux/slices/adminSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { ReportsSkeleton } from '../../components/shared/SkeletonLoading';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Reports = () => {
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
   const { reports, isLoading } = useSelector((state) => state.admin);
 
   const [timeframe, setTimeframe] = useState('month'); // week, month, year, custom
@@ -36,10 +39,10 @@ const Reports = () => {
 
   // Timeframes list
   const timeframes = [
-    { id: 'week', label: 'Weekly' },
-    { id: 'month', label: 'Monthly' },
-    { id: 'year', label: 'Yearly' },
-    { id: 'custom', label: 'Custom Range' }
+    { id: 'week', label: isRTL ? 'أسبوعي' : 'Weekly' },
+    { id: 'month', label: isRTL ? 'شهري' : 'Monthly' },
+    { id: 'year', label: isRTL ? 'سنوي' : 'Yearly' },
+    { id: 'custom', label: isRTL ? 'فترة مخصصة' : 'Custom Range' }
   ];
 
   // Fetch reports when timeframe changes
@@ -54,7 +57,7 @@ const Reports = () => {
 
   // Export handlers
   const handleExportSubscribedExcel = async () => {
-    const toastId = toast.loading('Generating Subscribed Users Excel Report...');
+    const toastId = toast.loading(isRTL ? 'جاري إنشاء تقرير إكسل للمستخدمين المشتركين...' : 'Generating Subscribed Users Excel Report...');
     try {
       await dispatch(exportReportExcel({
         type: 'subscribed',
@@ -63,16 +66,16 @@ const Reports = () => {
         to: timeframe === 'custom' ? toDate : undefined,
       })).unwrap();
       toast.dismiss(toastId);
-      toast.success('Subscribed Users Excel Report downloaded!');
+      toast.success(isRTL ? 'تم تنزيل تقرير إكسل للمستخدمين المشتركين!' : 'Subscribed Users Excel Report downloaded!');
       setIsExportOpen(false);
     } catch (err) {
       toast.dismiss(toastId);
-      toast.error(err || 'Failed to export report');
+      toast.error(err || (isRTL ? 'فشل تصدير التقرير' : 'Failed to export report'));
     }
   };
 
   const handleExportNonSubscribedExcel = async () => {
-    const toastId = toast.loading('Generating Non-Subscribed Users Excel Report...');
+    const toastId = toast.loading(isRTL ? 'جاري إنشاء تقرير إكسل للمستخدمين غير المشتركين...' : 'Generating Non-Subscribed Users Excel Report...');
     try {
       await dispatch(exportReportExcel({
         type: 'non_subscribed',
@@ -81,11 +84,11 @@ const Reports = () => {
         to: timeframe === 'custom' ? toDate : undefined,
       })).unwrap();
       toast.dismiss(toastId);
-      toast.success('Non-Subscribed Users Excel Report downloaded!');
+      toast.success(isRTL ? 'تم تنزيل تقرير إكسل للمستخدمين غير المشتركين!' : 'Non-Subscribed Users Excel Report downloaded!');
       setIsExportOpen(false);
     } catch (err) {
       toast.dismiss(toastId);
-      toast.error(err || 'Failed to export report');
+      toast.error(err || (isRTL ? 'فشل تصدير التقرير' : 'Failed to export report'));
     }
   };
 
@@ -97,8 +100,8 @@ const Reports = () => {
       <DashboardLayout
         role="admin"
         activeTab="reports"
-        title="Platform Reports"
-        subtitle="Loading analytics..."
+        title={isRTL ? "تقارير المنصة" : "Platform Reports"}
+        subtitle={isRTL ? "جاري تحيل التحليلات..." : "Loading analytics..."}
         disableScroll={true}
       >
         <ReportsSkeleton />
@@ -110,8 +113,8 @@ const Reports = () => {
     <DashboardLayout 
       role="admin" 
       activeTab="reports" 
-      title="Platform Reports" 
-      subtitle="Periodic Export Reports & Analytics"
+      title={isRTL ? "تقارير المنصة" : "Platform Reports"} 
+      subtitle={isRTL ? "تقارير التصدير الدورية والتحليلات" : "Periodic Export Reports & Analytics"}
       disableScroll={true}
       isModalOpen={isBlurred}
       showBackButton={false}
@@ -149,21 +152,21 @@ const Reports = () => {
               className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white px-5 py-2.5 rounded-2xl font-extrabold shadow-[0_4px_20px_rgba(16,185,129,0.3)] transition-all active:scale-95 cursor-pointer text-sm shrink-0 w-full sm:w-auto"
             >
               <FiDownload className="text-base" />
-              <span>Export Excel Reports</span>
+              <span>{isRTL ? "تصدير تقارير إكسل" : "Export Excel Reports"}</span>
             </button>
           </div>
 
           {/* Custom Date Range Display Banner (if custom active) */}
           {timeframe === 'custom' && (
-            <div className="flex items-center justify-between p-3 bg-[#0c0d19] border border-amber-500/20 rounded-2xl text-xs text-amber-400 font-bold">
+            <div className="flex items-center justify-between p-3 bg-[#0c0d19] border border-amber-500/20 rounded-2xl text-xs text-amber-400 font-bold text-start">
               <span className="flex items-center gap-2">
-                <FiCalendar /> Selected Range: {fromDate || 'Start Date'} to {toDate || 'End Date'}
+                <FiCalendar /> {isRTL ? `الفترة المحددة: من ${fromDate || 'تاريخ البداية'} إلى ${toDate || 'تاريخ النهاية'}` : `Selected Range: ${fromDate || 'Start Date'} to ${toDate || 'End Date'}`}
               </span>
               <button 
                 onClick={() => setIsCustomDateOpen(true)} 
                 className="underline text-white hover:text-amber-300 cursor-pointer"
               >
-                Change Dates
+                {isRTL ? "تغيير التواريخ" : "Change Dates"}
               </button>
             </div>
           )}
@@ -179,7 +182,7 @@ const Reports = () => {
               }`}
             >
               <FiGrid className="text-base" />
-              <span>Overview</span>
+              <span>{t('admin.reports.overview')}</span>
             </button>
             <button
               onClick={() => setActiveTab('users')}
@@ -190,7 +193,7 @@ const Reports = () => {
               }`}
             >
               <FiUsers className="text-base" />
-              <span>User Breakdown</span>
+              <span>{t('admin.reports.userBreakdown')}</span>
             </button>
           </div>
 
@@ -207,12 +210,12 @@ const Reports = () => {
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                     <FiUsers size={22} />
                   </div>
-                  <div className="flex flex-col text-left">
+                  <div className="flex flex-col text-start">
                     <span className="text-2xl font-black text-emerald-400 leading-tight">
                       {reportsData.overview?.newStudents || 0}
                     </span>
                     <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                      New Registered
+                      {t('admin.reports.newRegistered')}
                     </span>
                   </div>
                 </div>
@@ -222,12 +225,12 @@ const Reports = () => {
                   <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
                     <FiAward size={22} />
                   </div>
-                  <div className="flex flex-col text-left">
+                  <div className="flex flex-col text-start">
                     <span className="text-2xl font-black text-blue-400 leading-tight">
                       {reportsData.overview?.subscribedStudents || 0}
                     </span>
                     <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                      Subscribed Users
+                      {isRTL ? "مستخدمون مشتركون" : "Subscribed Users"}
                     </span>
                   </div>
                 </div>
@@ -237,12 +240,12 @@ const Reports = () => {
                   <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/25 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
                     <FiFileText size={22} />
                   </div>
-                  <div className="flex flex-col text-left">
+                  <div className="flex flex-col text-start">
                     <span className="text-2xl font-black text-cyan-400 leading-tight">
                       {reportsData.overview?.completedExams || 0}
                     </span>
                     <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                      Exams Completed
+                      {isRTL ? "امتحانات مكتملة" : "Exams Completed"}
                     </span>
                   </div>
                 </div>
@@ -252,39 +255,39 @@ const Reports = () => {
                   <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
                     <FiTag size={22} />
                   </div>
-                  <div className="flex flex-col text-left">
+                  <div className="flex flex-col text-start">
                     <span className="text-2xl font-black text-yellow-400 leading-tight">
                       {reportsData.overview?.couponsUsed || 0}
                     </span>
                     <span className="text-[11px] font-extrabold text-gray-500 uppercase tracking-wider mt-1">
-                      Coupons Activated
+                      {isRTL ? "كوبونات مفعلة" : "Coupons Activated"}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Subject Performance Section */}
-              <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-5 text-left">
+              <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-5 text-start">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.2)]">
                     <FiTrendingUp size={18} />
                   </div>
-                  <h3 className="text-base font-extrabold text-white">Course Performance</h3>
+                  <h3 className="text-base font-extrabold text-white">{isRTL ? "أداء المواد" : "Course Performance"}</h3>
                 </div>
 
                 {(!reportsData.subjectPerformance || reportsData.subjectPerformance.length === 0) ? (
                   <div className="py-8 text-center border border-dashed border-gray-800 rounded-2xl">
-                    <span className="text-xs text-gray-500 font-semibold">No course performance data for selected period</span>
+                    <span className="text-xs text-gray-500 font-semibold">{isRTL ? "لا توجد بيانات أداء للمواد بالفترة المحددة" : "No course performance data for selected period"}</span>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className={`w-full ${isRTL ? 'text-right' : 'text-left'} border-collapse`}>
                       <thead>
                         <tr className="border-b border-gray-800 text-xs font-bold text-gray-400">
-                          <th className="py-3 px-4">Subject</th>
-                          <th className="py-3 px-4">Attempts</th>
-                          <th className="py-3 px-4">Average Score</th>
-                          <th className="py-3 px-4">Pass Rate</th>
+                          <th className="py-3 px-4">{isRTL ? "المادة" : "Subject"}</th>
+                          <th className="py-3 px-4">{isRTL ? "المحاولات" : "Attempts"}</th>
+                          <th className="py-3 px-4">{isRTL ? "متوسط الدرجات" : "Average Score"}</th>
+                          <th className="py-3 px-4">{isRTL ? "نسبة النجاح" : "Pass Rate"}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-800/50 text-xs font-semibold">
@@ -313,20 +316,20 @@ const Reports = () => {
               const totalCount = (studentData.count + teacherData.count + parentData.count + adminData.count) || 1;
 
               const distribution = [
-                { label: 'Students', count: studentData.count, percentage: Math.round((studentData.count / totalCount) * 100), icon: FiAward, iconBg: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', barBg: 'bg-emerald-500', textColor: 'text-emerald-400' },
-                { label: 'Teachers', count: teacherData.count, percentage: Math.round((teacherData.count / totalCount) * 100), icon: FiTv, iconBg: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', barBg: 'bg-blue-500', textColor: 'text-blue-400' },
-                { label: 'Parents', count: parentData.count, percentage: Math.round((parentData.count / totalCount) * 100), icon: FiUsers, iconBg: 'bg-purple-500/10 border border-purple-500/20 text-purple-400', barBg: 'bg-purple-500', textColor: 'text-purple-400' },
-                { label: 'Admins', count: adminData.count, percentage: Math.round((adminData.count / totalCount) * 100), icon: FiShield, iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400', barBg: 'bg-red-500', textColor: 'text-red-400' }
+                { label: isRTL ? 'الطلاب' : 'Students', count: studentData.count, percentage: Math.round((studentData.count / totalCount) * 100), icon: FiAward, iconBg: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', barBg: 'bg-emerald-500', textColor: 'text-emerald-400' },
+                { label: isRTL ? 'المعلمون' : 'Teachers', count: teacherData.count, percentage: Math.round((teacherData.count / totalCount) * 100), icon: FiTv, iconBg: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', barBg: 'bg-blue-500', textColor: 'text-blue-400' },
+                { label: isRTL ? 'أولياء الأمور' : 'Parents', count: parentData.count, percentage: Math.round((parentData.count / totalCount) * 100), icon: FiUsers, iconBg: 'bg-purple-500/10 border border-purple-500/20 text-purple-400', barBg: 'bg-purple-500', textColor: 'text-purple-400' },
+                { label: isRTL ? 'المسؤولون' : 'Admins', count: adminData.count, percentage: Math.round((adminData.count / totalCount) * 100), icon: FiShield, iconBg: 'bg-red-500/10 border border-red-500/20 text-red-400', barBg: 'bg-red-500', textColor: 'text-red-400' }
               ];
 
               return (
                 <div className="flex flex-col gap-5">
-                  <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-6">
+                  <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-6 text-start">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
                         <FiPieChart size={18} />
                       </div>
-                      <h3 className="text-base font-extrabold text-white">Role Distribution</h3>
+                      <h3 className="text-base font-extrabold text-white">{isRTL ? "توزيع الأدوار" : "Role Distribution"}</h3>
                     </div>
 
                     <div className="flex flex-col gap-5">
@@ -371,60 +374,68 @@ const Reports = () => {
           onClick={() => setIsExportOpen(false)}
         >
           <div 
-            className="w-full max-w-md bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+            className="w-full max-w-md bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setIsExportOpen(false)}
-              className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+              className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} text-gray-500 hover:text-white transition-colors cursor-pointer`}
             >
               <FiX size={20} />
             </button>
 
             <h3 className="text-xl font-black text-white mb-2">
-              Export Excel Reports ({timeframe.toUpperCase()})
+              {isRTL ? `تصدير تقارير إكسل (${timeframe.toUpperCase()})` : `Export Excel Reports (${timeframe.toUpperCase()})`}
             </h3>
             <p className="text-xs text-gray-400 font-semibold mb-6">
-              Download formatted Excel spreadsheets for specific user types.
+              {isRTL ? "تنزيل جداول إكسل منسقة لأنواع مستخدمين محددين." : "Download formatted Excel spreadsheets for specific user types."}
             </p>
 
             <div className="flex flex-col gap-4">
               {/* Option 1: Subscribed Users Report */}
               <button
                 onClick={handleExportSubscribedExcel}
-                className="w-full bg-[#121324] hover:bg-[#181a30] border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 text-left group cursor-pointer"
+                className="w-full bg-[#121324] hover:bg-[#181a30] border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 text-start group cursor-pointer"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
                     <FiGrid size={22} />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black text-white">Subscribed Users Excel Report</h4>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white">{isRTL ? "تقرير إكسل للمستخدمين المشتركين" : "Subscribed Users Excel Report"}</h4>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      Name, Phone, Email, Coupon Code, Courses, Price, Activation Date/Time
+                      {isRTL ? "الاسم، الهاتف، البريد، كود الكوبون، المواد، السعر، تاريخ التفعيل" : "Name, Phone, Email, Coupon Code, Courses, Price, Activation Date/Time"}
                     </p>
                   </div>
                 </div>
-                <FiChevronRight className="text-emerald-400 group-hover:translate-x-1 transition-transform" />
+                {isRTL ? (
+                  <FiChevronLeft className="text-emerald-400 group-hover:-translate-x-1 transition-transform" />
+                ) : (
+                  <FiChevronRight className="text-emerald-400 group-hover:translate-x-1 transition-transform" />
+                )}
               </button>
 
               {/* Option 2: Registered Non-Subscribed Users Report */}
               <button
                 onClick={handleExportNonSubscribedExcel}
-                className="w-full bg-[#121324] hover:bg-[#181a30] border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 text-left group cursor-pointer"
+                className="w-full bg-[#121324] hover:bg-[#181a30] border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 text-start group cursor-pointer"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
                     <FiUsers size={22} />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black text-white">Non-Subscribed Users Excel Report</h4>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white">{isRTL ? "تقرير إكسل للمستخدمين غير المشتركين" : "Non-Subscribed Users Excel Report"}</h4>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      Name, Phone, Email, Account Registration Date
+                      {isRTL ? "الاسم، الهاتف، البريد، تاريخ إنشاء الحساب" : "Name, Phone, Email, Account Registration Date"}
                     </p>
                   </div>
                 </div>
-                <FiChevronRight className="text-amber-400 group-hover:translate-x-1 transition-transform" />
+                {isRTL ? (
+                  <FiChevronLeft className="text-amber-400 group-hover:-translate-x-1 transition-transform" />
+                ) : (
+                  <FiChevronRight className="text-amber-400 group-hover:translate-x-1 transition-transform" />
+                )}
               </button>
             </div>
           </div>
@@ -438,54 +449,54 @@ const Reports = () => {
           onClick={() => setIsCustomDateOpen(false)}
         >
           <div 
-            className="w-full max-w-sm bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+            className="w-full max-w-sm bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setIsCustomDateOpen(false)}
-              className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+              className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} text-gray-500 hover:text-white transition-colors cursor-pointer`}
             >
               <FiX size={20} />
             </button>
 
             <h3 className="text-xl font-black text-white mb-4">
-              Select Custom Date Range
+              {isRTL ? "تحديد فترة تاريخ مخصصة" : "Select Custom Date Range"}
             </h3>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 text-start">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-400">From Date</label>
+                <label className="text-xs font-bold text-gray-400">{isRTL ? "من تاريخ" : "From Date"}</label>
                 <input 
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="w-full py-3 px-4 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50"
+                  className={`w-full py-3 px-4 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-gray-400">To Date</label>
+                <label className="text-xs font-bold text-gray-400">{isRTL ? "إلى تاريخ" : "To Date"}</label>
                 <input 
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="w-full py-3 px-4 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50"
+                  className={`w-full py-3 px-4 bg-[#07080e] border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
               </div>
 
               <button
                 onClick={() => {
                   if (!fromDate || !toDate) {
-                    toast.error('Please select both From and To dates');
+                    toast.error(isRTL ? 'يرجى تحديد تاريخي البداية والنهاية معا' : 'Please select both From and To dates');
                     return;
                   }
                   setIsCustomDateOpen(false);
                   dispatch(fetchReports({ type: activeTab, period: 'custom', from: fromDate, to: toDate }));
-                  toast.success('Custom date filter applied!');
+                  toast.success(isRTL ? 'تم تطبيق فلتر التاريخ المخصص!' : 'Custom date filter applied!');
                 }}
                 className="w-full py-3.5 bg-gradient-to-r from-red-600 to-rose-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(239,68,68,0.3)] mt-2 cursor-pointer"
               >
-                Apply Custom Range
+                {isRTL ? "تطبيق الفترة المخصصة" : "Apply Custom Range"}
               </button>
             </div>
           </div>

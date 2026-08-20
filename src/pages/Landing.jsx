@@ -11,6 +11,7 @@ import { InteractiveDemo } from '../components/shared/InteractiveDemo';
 import { FaqAccordion } from '../components/shared/FaqAccordion';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import { useLanguage } from '../context/LanguageContext';
 
 /* ─── Floating Orb Background Effect ────────────────────────── */
 const Orb = ({ color, size, top, left, blur, delay }) => (
@@ -92,6 +93,7 @@ const RoleCard = ({ role, icon: Icon, color, gradient, glow, features, delay }) 
 /* ─── Main Landing Page ──────────────────────────────────────── */
 export default function Landing() {
   const navigate = useNavigate();
+  const { t, isRTL } = useLanguage();
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 100]);
@@ -117,95 +119,83 @@ export default function Landing() {
     return () => observer.disconnect();
   }, []);
 
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setTheme(localStorage.getItem('theme') || 'dark');
+    };
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
+  const isLight = theme === 'light';
+
   // 5 Sub-Hero Cards using 3D rendered icon assets matching reference image exactly
   const subHeroCards = [
     {
-      titleAr: "أنيميشن تفاعلي",
-      titleEn: "Interactive Animations",
-      descAr: "شاهد المفاهيم تتحرك أمامك",
-      descEn: "Watch concepts move in front of you",
+      title: t('landing.interactiveAnimations'),
+      desc: t('landing.interactiveAnimationsDesc'),
       iconImg: "/assets/icons/icon_interactive_animations.png",
-      glowColor: "rgba(34, 211, 238, 0.4)",
-      borderColor: "border-cyan-500/40"
+      glowColor: isLight ? "rgba(14, 165, 233, 0.2)" : "rgba(34, 211, 238, 0.4)",
+      borderColor: isLight ? "border-sky-300/80" : "border-cyan-500/40"
     },
     {
-      titleAr: "امتحانات ذكية",
-      titleEn: "Smart Exams",
-      descAr: "تدرّب حسب مستواك",
-      descEn: "Train according to your level",
+      title: t('landing.smartExams'),
+      desc: t('landing.smartExamsDesc'),
       iconImg: "/assets/icons/icon_smart_exams.png",
-      glowColor: "rgba(192, 132, 252, 0.4)",
-      borderColor: "border-purple-500/40"
+      glowColor: isLight ? "rgba(168, 85, 247, 0.2)" : "rgba(192, 132, 252, 0.4)",
+      borderColor: isLight ? "border-purple-300/80" : "border-purple-500/40"
     },
     {
-      titleAr: "تحليل نقاط الضعف",
-      titleEn: "Weakness Analysis",
-      descAr: "اعرف ما يحتاج إلى تقوية",
-      descEn: "Know what needs strengthening",
+      title: t('landing.weaknessAnalysis'),
+      desc: t('landing.weaknessAnalysisDesc'),
       iconImg: "/assets/icons/icon_weakness_analysis.png",
-      glowColor: "rgba(56, 189, 248, 0.4)",
-      borderColor: "border-sky-500/40"
+      glowColor: isLight ? "rgba(56, 189, 248, 0.2)" : "rgba(56, 189, 248, 0.4)",
+      borderColor: isLight ? "border-sky-300/80" : "border-sky-500/40"
     },
     {
-      titleAr: "مراجعة مخصصة",
-      titleEn: "Dedicated Revision",
-      descAr: "ثبّت معلوماتك في الوقت المناسب",
-      descEn: "Consolidate knowledge at right time",
+      title: t('landing.dedicatedRevision'),
+      desc: t('landing.dedicatedRevisionDesc'),
       iconImg: "/assets/icons/icon_dedicated_revision.png",
-      glowColor: "rgba(168, 85, 247, 0.4)",
-      borderColor: "border-purple-500/40"
+      glowColor: isLight ? "rgba(168, 85, 247, 0.2)" : "rgba(168, 85, 247, 0.4)",
+      borderColor: isLight ? "border-purple-300/80" : "border-purple-500/40"
     },
     {
-      titleAr: "تحديات الطلاب",
-      titleEn: "Student Challenges",
-      descAr: "نافس وتعلّم بطريقة ممتعة",
-      descEn: "Compete & learn in a fun way",
+      title: t('landing.studentChallenges'),
+      desc: t('landing.studentChallengesDesc'),
       iconImg: "/assets/icons/icon_student_challenges.png",
-      glowColor: "rgba(129, 140, 248, 0.4)",
-      borderColor: "border-indigo-500/40"
+      glowColor: isLight ? "rgba(99, 102, 241, 0.2)" : "rgba(129, 140, 248, 0.4)",
+      borderColor: isLight ? "border-indigo-300/80" : "border-indigo-500/40"
     }
   ];
 
-  const roles = [
-    {
-      role: 'Admin', icon: FiShield, color: '#f87171', gradient: ['rgba(239,68,68,0.15)', 'rgba(239,68,68,0.3)'],
-      glow: '#ef4444', delay: 0,
-      features: ['Manage teachers & students', 'Create & assign subjects', 'Platform-wide analytics', 'User role control', 'System configuration'],
-    },
-    {
-      role: 'Teacher', icon: FiBookOpen, color: '#60a5fa', gradient: ['rgba(59,130,246,0.15)', 'rgba(59,130,246,0.3)'],
-      glow: '#3b82f6', delay: 0.1,
-      features: ['Question bank management', 'Schedule exams & assessments', 'Upload PDF for AI parsing', 'Subject-wise reporting', 'Student performance tracking'],
-    },
-    {
-      role: 'Student', icon: FiAward, color: '#34d399', gradient: ['rgba(16,185,129,0.15)', 'rgba(16,185,129,0.3)'],
-      glow: '#10b981', delay: 0.2,
-      features: ['Attempt scheduled exams', 'View scores & feedback', 'Weakness tracker & SRS', 'Progress dashboard', 'Result history'],
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#030614] text-gray-100 overflow-x-hidden font-sans relative">
-      <Background3D roleColor="student" />
+    <div className={`min-h-screen overflow-x-hidden font-sans relative transition-colors duration-300 ${
+      isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#030614] text-gray-100'
+    }`}>
+      {!isLight && <Background3D roleColor="student" />}
 
       {/* ── NAVBAR ── */}
       <Navbar activeSection={activeSection} />
 
       {/* ── HERO SECTION ── */}
-      <section id="hero" ref={heroRef} className="relative pt-32 pb-16 px-6 md:px-12 overflow-hidden min-h-screen flex flex-col justify-center bg-gradient-to-b from-[#030614] via-[#060c24] to-[#030614]">
+      <section id="hero" ref={heroRef} className={`relative pt-32 pb-16 px-6 md:px-12 overflow-hidden min-h-screen flex flex-col justify-center transition-colors duration-300 ${
+        isLight ? 'bg-gradient-to-b from-slate-50 via-slate-100/80 to-slate-50' : 'bg-gradient-to-b from-[#030614] via-[#060c24] to-[#030614]'
+      }`}>
 
         {/* Ambient Glowing Background Orbs */}
-        <Orb color="rgba(34,211,238,0.45)" size="550px" top="5%" left="-15%" blur="140px" delay={0} />
-        <Orb color="rgba(147,51,234,0.45)" size="500px" top="15%" left="65%" blur="150px" delay={1.5} />
-        <Orb color="rgba(59,130,246,0.4)" size="400px" top="55%" left="30%" blur="120px" delay={3} />
+        <Orb color={isLight ? "rgba(56,189,248,0.25)" : "rgba(34,211,238,0.45)"} size="550px" top="5%" left="-15%" blur="140px" delay={0} />
+        <Orb color={isLight ? "rgba(192,132,252,0.25)" : "rgba(147,51,234,0.45)"} size="500px" top="15%" left="65%" blur="150px" delay={1.5} />
+        <Orb color={isLight ? "rgba(99,102,241,0.2)" : "rgba(59,130,246,0.4)"} size="400px" top="55%" left="30%" blur="120px" delay={3} />
 
         {/* Subtle Background Grid Line Overlay */}
-        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)', backgroundSize: '70px 70px' }} />
+        <div className={`absolute inset-0 pointer-events-none ${isLight ? 'opacity-[0.03]' : 'opacity-[0.04]'}`} style={{ backgroundImage: `linear-gradient(${isLight ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.4)'} 1px, transparent 1px), linear-gradient(90deg, ${isLight ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.4)'} 1px, transparent 1px)`, backgroundSize: '70px 70px' }} />
 
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative z-10 w-full max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
-          {/* LEFT COLUMN: HERO TRANSPARENT TEACHER & AI BOT COMPOSITION */}
-          <div className="lg:col-span-6 relative flex items-center justify-center order-2 lg:order-1">
+          {/* LEFT COLUMN (In RTL): HERO TRANSPARENT TEACHER & AI BOT COMPOSITION */}
+          <div className="lg:col-span-6 relative flex items-center justify-center order-2 lg:order-2">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -213,9 +203,15 @@ export default function Landing() {
               className="relative w-full max-w-[580px] flex items-center justify-center"
             >
               {/* Chemistry Teacher & Full AI Smart Widgets Composition */}
-              <div className="relative w-full flex items-center justify-center">
+              <div className={`relative w-full flex items-center justify-center p-3 md:p-6 rounded-[2.5rem] transition-all duration-500 ${
+                isLight 
+                  ? 'bg-gradient-to-b from-[#090d2a]/95 via-[#05081c]/95 to-[#030412]/95 border border-cyan-500/30 shadow-[0_25px_60px_-15px_rgba(14,165,233,0.25)]' 
+                  : 'bg-transparent'
+              }`}>
                 {/* Ambient Soft Glow Behind Teacher */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/25 via-blue-500/20 to-purple-500/20 blur-3xl rounded-full opacity-70 pointer-events-none" />
+                <div className={`absolute inset-0 blur-3xl rounded-[2.5rem] pointer-events-none ${
+                  isLight ? 'bg-gradient-to-tr from-cyan-500/30 via-blue-500/20 to-purple-500/20 opacity-90' : 'bg-gradient-to-tr from-cyan-500/25 via-blue-500/20 to-purple-500/20 opacity-70'
+                }`} />
                 
                 <img
                   src="/images/hero_teacher_chemistry_transparent.png"
@@ -226,18 +222,20 @@ export default function Landing() {
             </motion.div>
           </div>
 
-          {/* RIGHT COLUMN: HEADLINE, DESCRIPTION & CTAs */}
-          <div className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-left gap-6 order-1 lg:order-2">
+          {/* RIGHT COLUMN (In RTL): HEADLINE, DESCRIPTION & CTAs */}
+          <div className="lg:col-span-6 flex flex-col items-center lg:items-start text-center lg:text-start gap-6 order-1 lg:order-1">
 
             {/* Smart Platform Pill Badge */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-4.5 py-2 rounded-full border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 text-xs font-black tracking-wide"
+              className={`inline-flex items-center gap-2 px-4.5 py-2 rounded-full border text-xs font-black tracking-wide ${
+                isLight ? 'border-sky-300 bg-sky-100/80 text-sky-800' : 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300'
+              }`}
             >
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#22d3ee]" />
-              Smart Chemistry Platform for Tawjihi & High School Students
+              {t('landing.heroBadge')}
             </motion.div>
 
             {/* Main Headline */}
@@ -245,9 +243,17 @@ export default function Landing() {
               initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}
-              className="text-4xl sm:text-6xl lg:text-7xl font-black leading-tight tracking-tight text-white"
+              className={`text-4xl sm:text-6xl lg:text-7xl font-black leading-tight tracking-tight ${
+                isLight ? 'text-slate-900' : 'text-white'
+              }`}
             >
-              Your Path to <span className="text-white">Full Marks</span> in <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(34,211,238,0.4)]">Chemistry</span> Starts Here
+              {t('landing.heroHeadline1')}
+              <span className={isLight ? 'text-slate-900' : 'text-white'}>{t('landing.heroHeadlineBold')}</span>
+              {t('landing.heroHeadlineIn')}
+              <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(34,211,238,0.4)]">
+                {t('landing.heroHeadlineChem')}
+              </span>
+              {t('landing.heroHeadlineEnd')}
             </motion.h1>
 
             {/* Subheadline */}
@@ -255,9 +261,11 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.2 }}
-              className="text-base sm:text-lg text-gray-400 font-semibold max-w-xl leading-relaxed"
+              className={`text-base sm:text-lg font-semibold max-w-xl leading-relaxed ${
+                isLight ? 'text-slate-600' : 'text-gray-400'
+              }`}
             >
-              Learn Chemistry with expert teachers through organized courses and AI-powered smart exams that reveal your exact weakness points and turn every mistake into real progress.
+              {t('landing.heroDesc')}
             </motion.p>
 
             {/* Call To Action Buttons */}
@@ -271,15 +279,19 @@ export default function Landing() {
                 onClick={() => navigate('/login')}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-base shadow-[0_0_35px_rgba(79,70,229,0.5)] hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>Start Now</span>
-                <FiArrowRight size={18} />
+                <span>{t('landing.startNow')}</span>
+                <FiArrowRight size={18} className={isRTL ? "rotate-180" : ""} />
               </button>
 
               <button
                 onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
-                className="w-full sm:w-auto px-7 py-4 rounded-2xl border border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-extrabold text-base transition-all cursor-pointer flex items-center justify-center gap-2"
+                className={`w-full sm:w-auto px-7 py-4 rounded-2xl border font-extrabold text-base transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  isLight
+                    ? 'border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100'
+                    : 'border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300'
+                }`}
               >
-                <span>Explore Chemistry Courses</span>
+                <span>{t('hero.exploreCourses')}</span>
               </button>
             </motion.div>
 
@@ -288,12 +300,16 @@ export default function Landing() {
         </motion.div>
 
         {/* ── SUB-HERO 5 FEATURE CARDS BAR (Matching Reference Image) ── */}
-        <div className="w-full max-w-[1400px] mx-auto mt-16 pt-8 border-t border-gray-800/60 relative z-10">
+        <div className={`w-full max-w-[1400px] mx-auto mt-16 pt-8 border-t relative z-10 ${
+          isLight ? 'border-slate-200' : 'border-gray-800/60'
+        }`}>
           
           <div className="flex items-center justify-center gap-2 mb-8">
             <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_#22d3ee]" />
-            <h3 className="text-lg md:text-xl font-black text-white tracking-wide text-center">
-              Everything You Need to Excel in Chemistry
+            <h3 className={`text-lg md:text-xl font-black tracking-wide text-center ${
+              isLight ? 'text-slate-900' : 'text-white'
+            }`}>
+              {t('landing.everythingTitle')}
             </h3>
           </div>
 
@@ -306,12 +322,18 @@ export default function Landing() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.08 * idx }}
                   whileHover={{ y: -6, scale: 1.02 }}
-                  className={`p-5 rounded-2xl border-2 ${card.borderColor} bg-[#060a1d]/90 backdrop-blur-2xl flex flex-col justify-between items-center text-center gap-3 relative overflow-hidden group transition-all duration-300 min-h-[220px]`}
+                  className={`p-5 rounded-2xl border-2 ${card.borderColor} ${
+                    isLight
+                      ? 'bg-white/90 backdrop-blur-2xl shadow-xl text-slate-900'
+                      : 'bg-[#060a1d]/90 backdrop-blur-2xl text-white'
+                  } flex flex-col justify-between items-center text-center gap-3 relative overflow-hidden group transition-all duration-300 min-h-[220px]`}
                   style={{ boxShadow: `0 8px 30px ${card.glowColor}` }}
                 >
                   {/* Top Left Play Icon Badge matching reference screenshot */}
                   <div className="flex items-center justify-start w-full">
-                    <div className="w-8 h-8 rounded-full bg-[#08102b] border-2 border-cyan-400 flex items-center justify-center text-cyan-300 shadow-[0_0_12px_#22d3ee] group-hover:bg-cyan-400 group-hover:text-black transition-all">
+                    <div className={`w-8 h-8 rounded-full border-2 border-cyan-400 flex items-center justify-center text-cyan-500 shadow-[0_0_12px_#22d3ee] group-hover:bg-cyan-400 group-hover:text-black transition-all ${
+                      isLight ? 'bg-sky-50' : 'bg-[#08102b]'
+                    }`}>
                       <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current ml-0.5">
                         <path d="M8 5v14l11-7z" />
                       </svg>
@@ -323,18 +345,22 @@ export default function Landing() {
                     <div className="absolute inset-0 blur-2xl rounded-full opacity-60 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: card.glowColor }} />
                     <img 
                       src={card.iconImg} 
-                      alt={card.titleEn} 
+                      alt={card.title} 
                       className="w-22 h-22 object-contain relative z-10 filter drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]" 
                     />
                   </div>
 
                   {/* Text Content */}
                   <div className="text-center flex flex-col gap-1">
-                    <h4 className="text-base font-black text-white group-hover:text-cyan-300 transition-colors">
-                      {card.titleEn}
+                    <h4 className={`text-base font-black group-hover:text-cyan-500 transition-colors ${
+                      isLight ? 'text-slate-900' : 'text-white'
+                    }`}>
+                      {card.title}
                     </h4>
-                    <p className="text-xs font-semibold text-gray-400 leading-snug">
-                      {card.descEn}
+                    <p className={`text-xs font-semibold leading-snug ${
+                      isLight ? 'text-slate-600' : 'text-gray-400'
+                    }`}>
+                      {card.desc}
                     </p>
                   </div>
                 </motion.div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { motion as motionFramer } from 'framer-motion';
@@ -11,6 +11,8 @@ import toast from 'react-hot-toast';
 import Background3D from '../../components/shared/Background3D';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import AuthHeader from '../../components/auth/AuthHeader';
+import { useLanguage } from '../../context/LanguageContext';
 
 const VerifyOtpSchema = Yup.object().shape({
   email: Yup.string()
@@ -22,9 +24,19 @@ const VerifyOtpSchema = Yup.object().shape({
 });
 
 const VerifyOtp = () => {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
+
+  useEffect(() => {
+    const handleThemeChange = () => setTheme(localStorage.getItem('theme') || 'dark');
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
+  const isLight = theme === 'light';
 
   // Try to retrieve email from route state (e.g. from register redirection)
   const initialEmail = location.state?.email || '';
@@ -78,9 +90,14 @@ const VerifyOtp = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden select-none z-0">
+    <div className={`relative min-h-screen w-full overflow-hidden select-none z-0 transition-colors duration-300 ${
+      isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#080911] text-gray-100'
+    }`}>
       {/* Background Starry Nebula Layer */}
-      <Background3D roleColor="auth" />
+      {!isLight && <Background3D roleColor="auth" />}
+
+      {/* Top Header Controls */}
+      <AuthHeader />
 
       {/* Centered Form Container */}
       <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-8 relative z-10">
@@ -91,11 +108,15 @@ const VerifyOtp = () => {
             <motionFramer.button 
               type="button"
               onClick={() => navigate('/login')}
-              whileHover={{ scale: 1.05, borderColor: 'rgba(255,255,255,0.2)' }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-12 h-12 rounded-xl border border-gray-800 flex items-center justify-center text-white bg-gray-950/40 hover:bg-gray-800/60 transition-colors cursor-pointer"
+              className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-colors cursor-pointer ${
+                isLight 
+                  ? 'border-slate-300 text-slate-700 bg-white hover:bg-slate-100 shadow-sm' 
+                  : 'border-gray-800 text-white bg-gray-950/40 hover:bg-gray-800/60'
+              }`}
             >
-              <FiArrowLeft size={20} />
+              <FiArrowLeft size={20} className={isRTL ? "rotate-180" : ""} />
             </motionFramer.button>
           </div>
 
@@ -125,11 +146,11 @@ const VerifyOtp = () => {
 
           {/* Page Titles */}
           <div className="flex flex-col items-center mb-8 text-center">
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2 leading-tight">
-              Verify Your Email
+            <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight mb-2 leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              {t('auth.verifyEmailTitle')}
             </h1>
-            <p className="text-gray-400 text-sm md:text-base font-semibold tracking-wide px-4">
-              Enter the 6-digit verification code sent to your inbox
+            <p className={`text-sm md:text-base font-semibold tracking-wide px-4 ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+              {t('auth.verifyEmailDesc')}
             </p>
           </div>
 
@@ -144,12 +165,14 @@ const VerifyOtp = () => {
               <Form className="w-full">
                 
                 {/* 3D Indigo Theme Card */}
-                <div className="p-5 md:p-6 rounded-3xl mb-4 flex flex-col card-3d-auth">
+                <div className={`p-5 md:p-6 rounded-3xl mb-4 flex flex-col text-start ${
+                  isLight ? 'bg-white/90 border border-slate-200 shadow-xl text-slate-900' : 'card-3d-auth'
+                }`}>
                   <Input
                     name="email"
                     type="email"
-                    label="Email Address"
-                    placeholder="example@email.com"
+                    label={t('auth.emailLabel')}
+                    placeholder={t('auth.emailPlaceholder')}
                     icon={FiMail}
                     roleColor="auth"
                     disabled={!!initialEmail}
@@ -158,7 +181,7 @@ const VerifyOtp = () => {
                   <Input
                     name="code"
                     type="text"
-                    label="Verification Code"
+                    label={t('auth.verificationCodeLabel')}
                     placeholder="123456"
                     icon={FiShield}
                     roleColor="auth"
@@ -171,15 +194,19 @@ const VerifyOtp = () => {
                       roleColor="auth"
                       icon={FiCheck}
                     >
-                      {isSubmitting ? 'Verifying...' : 'Verify Code'}
+                      {isSubmitting ? t('common.loading') : t('auth.verifyCodeButton')}
                     </Button>
 
                     <button
                       type="button"
                       onClick={() => handleResend(values.email)}
-                      className="w-full py-3.5 rounded-2xl border border-gray-800 text-gray-400 hover:text-white font-bold text-sm bg-transparent hover:bg-gray-950/20 active:scale-95 transition-all cursor-pointer"
+                      className={`w-full py-3.5 rounded-2xl border font-bold text-sm bg-transparent active:scale-95 transition-all cursor-pointer ${
+                        isLight 
+                          ? 'border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100' 
+                          : 'border-gray-800 text-gray-400 hover:text-white hover:bg-gray-950/20'
+                      }`}
                     >
-                      Resend Verification Code
+                      {t('auth.resendCode')}
                     </button>
                   </div>
                 </div>

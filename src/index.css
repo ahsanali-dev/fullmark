@@ -1,10 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&display=swap');
 @import "tailwindcss";
 
 @layer base {
   body {
-    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+    font-family: 'Outfit', 'Cairo', system-ui, -apple-system, sans-serif;
     background-color: #080911;
     /* Extremely dark cosmic background */
     color: #f3f4f6;
@@ -12,14 +13,8 @@
   }
 }
 
-.VIpgJd-ZVi9od-ORHb,
-.VIpgJd-ZVi9od-ORHb-OEVmcd {
-  display: none !important;
-  width: 0px !important;
-  height: 0px !important; 
-  pointer-events: none !important;
-  z-index: -9999 !important;
-  overflow: hidden !important;
+html[lang="ar"] body, html[dir="rtl"] body {
+  font-family: 'Cairo', 'Outfit', system-ui, -apple-system, sans-serif;
 }
 
 /* 3D Card Themes (Deep 3D shadows, dynamic color backgrounds and inner glows) */

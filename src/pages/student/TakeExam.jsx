@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { fetchExamToTake, submitExam } from '../../redux/slices/studentSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const getImageUrl = (path) => {
   if (!path) return '';
@@ -26,6 +27,7 @@ const TakeExam = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   const { examDetail: exam, isLoading, isActionLoading } = useSelector((state) => state.student);
 
@@ -58,7 +60,7 @@ const TakeExam = () => {
       <div className="fixed inset-0 bg-[#080911] text-white z-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
-          <span className="text-xs text-gray-500 font-bold">Loading exam questions...</span>
+          <span className="text-xs text-gray-500 font-bold">{isRTL ? "جاري تحميل أسئلة الاختبار..." : "Loading exam questions..."}</span>
         </div>
       </div>
     );
@@ -68,12 +70,12 @@ const TakeExam = () => {
     return (
       <div className="fixed inset-0 bg-[#080911] text-white z-50 flex items-center justify-center p-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <span className="text-sm font-bold text-gray-500">Exam not found or you are not authorized.</span>
+          <span className="text-sm font-bold text-gray-500">{isRTL ? "الاختبار غير موجود أو ليس لديك صلاحية." : "Exam not found or you are not authorized."}</span>
           <button 
             onClick={() => navigate('/student/exams')}
-            className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-black text-white hover:bg-blue-500"
+            className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-black text-white hover:bg-blue-500 cursor-pointer"
           >
-            Back to Exams
+            {isRTL ? "العودة للاختبارات" : "Back to Exams"}
           </button>
         </div>
       </div>
@@ -88,12 +90,12 @@ const TakeExam = () => {
     return (
       <div className="fixed inset-0 bg-[#080911] text-white z-50 flex items-center justify-center p-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <span className="text-sm font-bold text-gray-500">This exam does not have any questions.</span>
+          <span className="text-sm font-bold text-gray-500">{isRTL ? "هذا الاختبار لا يحتوي على أسئلة." : "This exam does not have any questions."}</span>
           <button 
             onClick={() => navigate('/student/exams')}
-            className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-black text-white hover:bg-blue-500"
+            className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-black text-white hover:bg-blue-500 cursor-pointer"
           >
-            Back to Exams
+            {isRTL ? "العودة للاختبارات" : "Back to Exams"}
           </button>
         </div>
       </div>
@@ -115,7 +117,7 @@ const TakeExam = () => {
 
   const handleNext = () => {
     if (!selectedAnswers.hasOwnProperty(currentIdx)) {
-      toast.error('Please select an answer to proceed.');
+      toast.error(isRTL ? 'الرجاء اختيار إجابة للمتابعة.' : 'Please select an answer to proceed.');
       return;
     }
     if (currentIdx < totalQuestions - 1) {
@@ -131,7 +133,7 @@ const TakeExam = () => {
 
   const handleSubmit = async () => {
     if (!selectedAnswers.hasOwnProperty(currentIdx)) {
-      toast.error('Please select an answer before submitting.');
+      toast.error(isRTL ? 'الرجاء اختيار إجابة قبل التسليم.' : 'Please select an answer before submitting.');
       return;
     }
 
@@ -144,7 +146,7 @@ const TakeExam = () => {
       timeTaken: Math.round(timeSpent / totalQuestions) // approximation per question
     }));
 
-    const myToast = toast.loading('Submitting exam answers...');
+    const myToast = toast.loading(isRTL ? 'جاري تسليم إجابات الاختبار...' : 'Submitting exam answers...');
     try {
       const res = await dispatch(submitExam({
         examId: exam._id,
@@ -153,13 +155,13 @@ const TakeExam = () => {
       })).unwrap();
 
       toast.dismiss(myToast);
-      toast.success(res?.message || 'Exam submitted successfully! 🏁');
+      toast.success(res?.message || (isRTL ? 'تم تسليم الاختبار بنجاح! 🏁' : 'Exam submitted successfully! 🏁'));
       
       // Navigate to results
       navigate('/student/results');
     } catch (err) {
       toast.dismiss(myToast);
-      toast.error(err || 'Failed to submit exam.');
+      toast.error(err || (isRTL ? 'فشل تسليم الاختبار.' : 'Failed to submit exam.'));
       // resume timer if failed
       timerRef.current = setInterval(() => {
         setTimeSpent(prev => prev + 1);
@@ -186,7 +188,7 @@ const TakeExam = () => {
         {/* Question Counter Bullet pill */}
         <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] sm:text-xs font-black text-emerald-400 flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          {answeredCount}/{totalQuestions} answered
+          {isRTL ? `تم إجابة ${answeredCount}/${totalQuestions}` : `${answeredCount}/${totalQuestions} answered`}
         </span>
       </header>
 
@@ -211,19 +213,19 @@ const TakeExam = () => {
         </div>
 
         {/* Question Header & Card */}
-        <div className="flex flex-col gap-1 text-left mt-2">
+        <div className="flex flex-col gap-1 text-start mt-2">
           <div className="flex items-center justify-between text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">
-            <span>Question {currentIdx + 1} of {totalQuestions}</span>
-            <span>Elapsed: {Math.floor(timeSpent / 60)}m {timeSpent % 60}s</span>
+            <span>{isRTL ? `السؤال ${currentIdx + 1} من ${totalQuestions}` : `Question ${currentIdx + 1} of ${totalQuestions}`}</span>
+            <span>{isRTL ? `الوقت: ${Math.floor(timeSpent / 60)}د ${timeSpent % 60}ث` : `Elapsed: ${Math.floor(timeSpent / 60)}m ${timeSpent % 60}s`}</span>
           </div>
 
-          <div className="p-6 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 shadow-2xl flex flex-col gap-4 text-left mt-2">
+          <div className="p-6 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 shadow-2xl flex flex-col gap-4 text-start mt-2">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-xl bg-gray-900 border border-gray-800 text-[9px] font-black text-gray-400">
                 Q{currentIdx + 1}
               </span>
               <span className="px-2.5 py-0.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 capitalize">
-                {currentQuestion.difficulty || 'medium'}
+                {currentQuestion.difficulty || (isRTL ? 'متوسط' : 'medium')}
               </span>
             </div>
 
@@ -254,7 +256,7 @@ const TakeExam = () => {
                 key={opt.key}
                 disabled={isActionLoading}
                 onClick={() => handleSelectOption(opt.key)}
-                className={`w-full p-4 rounded-[1.5rem] border transition-all text-left flex flex-col gap-3 cursor-pointer ${
+                className={`w-full p-4 rounded-[1.5rem] border transition-all text-start flex flex-col gap-3 cursor-pointer ${
                   isSelected 
                     ? 'bg-purple-600/5 border-purple-500 shadow-md shadow-purple-500/5' 
                     : 'bg-[#0c0d19]/40 border-gray-800 hover:border-gray-700/80'
@@ -310,7 +312,7 @@ const TakeExam = () => {
                 disabled={currentIdx === 0 || isActionLoading}
                 className="w-12 h-12 rounded-2xl border border-gray-800 bg-gray-950/40 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
               >
-                <FiArrowLeft className="text-lg" />
+                {isRTL ? <FiArrowRight className="text-lg" /> : <FiArrowLeft className="text-lg" />}
               </button>
               
               {/* Submit button */}
@@ -319,7 +321,7 @@ const TakeExam = () => {
                 disabled={isActionLoading}
                 className="flex-1 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-xs font-black text-gray-950 transition-all shadow-[0_4px_15px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] disabled:opacity-50"
               >
-                <FiFlag className="text-sm" /> {isActionLoading ? 'Submitting...' : 'Submit Exam'}
+                <FiFlag className="text-sm" /> {isActionLoading ? (isRTL ? 'جاري التسليم...' : 'Submitting...') : (isRTL ? 'تسليم الاختبار' : 'Submit Exam')}
               </button>
             </div>
           ) : (
@@ -329,7 +331,7 @@ const TakeExam = () => {
               disabled={isActionLoading}
               className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_15px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.01] disabled:opacity-50"
             >
-              Next <FiArrowRight className="text-sm" />
+              {isRTL ? "التالي" : "Next"} {isRTL ? <FiArrowLeft className="text-sm" /> : <FiArrowRight className="text-sm" />}
             </button>
           )}
         </div>

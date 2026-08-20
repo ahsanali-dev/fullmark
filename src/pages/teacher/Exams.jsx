@@ -25,6 +25,7 @@ import toast from 'react-hot-toast';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
+import { useLanguage } from '../../context/LanguageContext';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTeacherSubjects, fetchExams, createExam, deleteExam } from '../../redux/slices/teacherSlice';
@@ -140,6 +141,7 @@ const generateMockResults = (examId, examTitle, passingScore = 60) => {
 const TeacherExams = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   const { subjects = [], exams = [], isLoading } = useSelector((state) => state.teacher);
 
@@ -180,13 +182,13 @@ const TeacherExams = () => {
     toast.promise(
       dispatch(createExam(payload)).unwrap(),
       {
-        loading: 'Scheduling exam...',
+        loading: isRTL ? 'جاري جدولة الاختبار...' : 'Scheduling exam...',
         success: () => {
           setIsAddExamOpen(false);
           resetForm();
-          return 'Exam scheduled successfully!';
+          return isRTL ? 'تم جدولة الاختبار بنجاح!' : 'Exam scheduled successfully!';
         },
-        error: (err) => err || 'Failed to schedule exam'
+        error: (err) => err || (isRTL ? 'فشل جدولة الاختبار' : 'Failed to schedule exam')
       }
     );
   };
@@ -201,13 +203,13 @@ const TeacherExams = () => {
     const id = deletingExam._id || deletingExam.id;
     setIsDeletingId(id);
     setShowDeleteConfirm(false);
-    const loadingToast = toast.loading('Deleting exam...');
+    const loadingToast = toast.loading(isRTL ? 'جاري حذف الاختبار...' : 'Deleting exam...');
     try {
       await dispatch(deleteExam(id)).unwrap();
-      toast.success('Exam deleted successfully!', { id: loadingToast });
+      toast.success(isRTL ? 'تم حذف الاختبار بنجاح!' : 'Exam deleted successfully!', { id: loadingToast });
       setDeletingExam(null);
     } catch (err) {
-      toast.error(err || 'Failed to delete exam', { id: loadingToast });
+      toast.error(err || (isRTL ? 'فشل حذف الاختبار' : 'Failed to delete exam'), { id: loadingToast });
     } finally {
       setIsDeletingId(null);
     }
@@ -233,11 +235,11 @@ const TeacherExams = () => {
     <DashboardLayout
       role="teacher"
       activeTab="exams"
-      title="Exams Schedule"
-      subtitle="Organize student exams and durations"
+      title={t('teacher.exams.title')}
+      subtitle={t('teacher.exams.subtitle')}
       isModalOpen={isModalActive}
     >
-      <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-36">
+      <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-36">
 
         {/* Header Block */}
         <div className="flex justify-between items-center pb-2 border-b border-gray-800/40">
@@ -247,7 +249,7 @@ const TeacherExams = () => {
               className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all flex items-center gap-1.5 cursor-pointer text-base"
             >
               <FiPlus size={16} />
-              <span>Create Exam</span>
+              <span>{isRTL ? "إنشاء اختبار" : "Create Exam"}</span>
             </button>
           </div>
         </div>
@@ -257,26 +259,26 @@ const TeacherExams = () => {
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="Search exams..."
+              placeholder={isRTL ? "البحث في الاختبارات..." : "Search exams..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-655"
+              className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-655`}
             />
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" size={18} />
+            <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-blue-500`} size={18} />
           </div>
           <div className="relative w-full md:w-56">
-            <FiBookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+            <FiBookOpen className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
             <select
               value={selectedSubjectFilter}
               onChange={(e) => setSelectedSubjectFilter(e.target.value)}
-              className="w-full pl-11 pr-10 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0"
+              className={`w-full ${isRTL ? 'pr-11 pl-10' : 'pl-11 pr-10'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0`}
             >
-              <option value="all">All Subjects</option>
+              <option value="all">{isRTL ? "جميع المواد" : "All Subjects"}</option>
               {subjects.map(s => (
                 <option key={s._id || s.id} value={s._id || s.id}>{s.name || s.title}</option>
               ))}
             </select>
-            <FiChevronDown className="text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none`} />
           </div>
         </div>
 
@@ -284,28 +286,28 @@ const TeacherExams = () => {
         <div className="grid grid-cols-4 gap-2.5 md:gap-4">
           <div className="p-3.5 bg-blue-500/[0.02] border border-blue-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-blue-400 block">{totalCount}</span>
-            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Total</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">{isRTL ? "الإجمالي" : "Total"}</span>
           </div>
           <div className="p-3.5 bg-emerald-500/[0.02] border border-emerald-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-emerald-400 block">{publishedCount}</span>
-            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Published</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">{isRTL ? "منشور" : "Published"}</span>
           </div>
           <div className="p-3.5 bg-amber-500/[0.02] border border-amber-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-amber-400 block">{draftCount}</span>
-            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Draft</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">{isRTL ? "مسودة" : "Draft"}</span>
           </div>
           <div className="p-3.5 bg-indigo-500/[0.02] border border-indigo-500/15 rounded-2xl text-center">
             <span className="text-lg md:text-xl font-black text-indigo-400 block">{upcomingCount}</span>
-            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">Upcoming</span>
+            <span className="text-sm text-gray-500 font-bold uppercase tracking-wider mt-1 block">{isRTL ? "قادم" : "Upcoming"}</span>
           </div>
         </div>
 
         {/* Results Counter & Sort */}
         <div className="flex justify-between items-center text-sm font-bold text-gray-400 px-1">
-          <span>{filteredExams.length} results</span>
+          <span>{filteredExams.length} {isRTL ? "نتيجة" : "results"}</span>
           <div className="flex items-center gap-1.5 text-blue-450 hover:text-blue-400 cursor-pointer">
             <FiSliders size={13} />
-            <span>Newest</span>
+            <span>{isRTL ? "الأحدث" : "Newest"}</span>
           </div>
         </div>
 
@@ -319,8 +321,8 @@ const TeacherExams = () => {
         ) : filteredExams.length === 0 ? (
           <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] flex flex-col items-center justify-center">
             <FiAlertCircle className="text-gray-650 mb-3" size={40} />
-            <span className="text-lg font-extrabold text-gray-500">No exams found</span>
-            <p className="text-base text-gray-600 font-semibold mt-1">Create a new exam or adjust your filters</p>
+            <span className="text-lg font-extrabold text-gray-500">{isRTL ? "لم يتم العثور على اختبارات" : "No exams found"}</span>
+            <p className="text-base text-gray-600 font-semibold mt-1">{isRTL ? "أنشئ اختباراً جديداً أو عدل الفلاتر" : "Create a new exam or adjust your filters"}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -334,7 +336,7 @@ const TeacherExams = () => {
               return (
                 <div
                   key={ex.id || ex._id}
-                  className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 relative text-left transition-all duration-300 hover:border-gray-700 animate-fade-in"
+                  className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 relative text-start transition-all duration-300 hover:border-gray-700 animate-fade-in"
                 >
                   {/* Top Row: Icon + Title + Status badge */}
                   <div className="flex items-center justify-between">
@@ -347,7 +349,7 @@ const TeacherExams = () => {
                           {ex.title}
                         </h4>
                         <span className="text-sm text-gray-500 font-bold mt-1 block uppercase font-semibold">
-                          {subObj ? (subObj.name || subObj.title) : 'Unassigned'}
+                          {subObj ? (subObj.name || subObj.title) : (isRTL ? 'غير مسند' : 'Unassigned')}
                         </span>
                       </div>
                     </div>
@@ -359,7 +361,7 @@ const TeacherExams = () => {
                         ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                         : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
                     }`}>
-                      {ex.status || 'Published'}
+                      {ex.status ? (ex.status === 'published' ? (isRTL ? 'منشور' : 'Published') : ex.status === 'draft' ? (isRTL ? 'مسودة' : 'Draft') : (isRTL ? 'قادم' : 'Upcoming')) : (isRTL ? 'منشور' : 'Published')}
                     </span>
                   </div>
 
@@ -367,11 +369,11 @@ const TeacherExams = () => {
                   <div className="flex items-center gap-3 flex-wrap text-sm font-bold text-gray-500 uppercase tracking-wide">
                     <div className="flex items-center gap-1">
                       <FiHelpCircle size={12} className="text-gray-650" />
-                      <span>{ex.questions?.length || ex.questionsCount || 0} Qs</span>
+                      <span>{ex.questions?.length || ex.questionsCount || 0} {isRTL ? 'أسئلة' : 'Qs'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FiClock size={12} className="text-gray-650" />
-                      <span>{ex.duration || 0} min</span>
+                      <span>{ex.duration || 0} {isRTL ? 'دقيقة' : 'min'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FiCalendar size={12} className="text-gray-650" />
@@ -379,7 +381,7 @@ const TeacherExams = () => {
                     </div>
                     <div className="flex items-center gap-1 text-blue-400">
                       <FiZap size={12} />
-                      <span>Timer</span>
+                      <span>{isRTL ? 'المؤقت' : 'Timer'}</span>
                     </div>
                   </div>
 
@@ -387,24 +389,24 @@ const TeacherExams = () => {
                   <div className="grid grid-cols-4 gap-2">
                     <div className="p-2.5 rounded-xl bg-amber-500/[0.05] border border-amber-500/10 text-center">
                       <span className="text-base font-black text-amber-400 block">{mockRes.stats.avgScore}</span>
-                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Avg Score</span>
+                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">{isRTL ? 'متوسط الدرجة' : 'Avg Score'}</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/10 text-center">
                       <span className="text-base font-black text-emerald-400 block">{mockRes.stats.highScore}</span>
-                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">High Score</span>
+                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">{isRTL ? 'أعلى درجة' : 'High Score'}</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-red-500/[0.05] border border-red-500/10 text-center">
                       <span className="text-base font-black text-red-400 block">{mockRes.stats.lowScore}</span>
-                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Low Score</span>
+                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">{isRTL ? 'أقل درجة' : 'Low Score'}</span>
                     </div>
                     <div className="p-2.5 rounded-xl bg-blue-500/[0.05] border border-blue-500/10 text-center">
                       <span className="text-base font-black text-blue-400 block">{mockRes.stats.submitted}</span>
-                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">Submitted</span>
+                      <span className="text-xs text-gray-600 font-bold uppercase tracking-wider block mt-0.5">{isRTL ? 'المقدمين' : 'Submitted'}</span>
                     </div>
                   </div>
 
                   {/* Submission Rate */}
-                  <p className="text-sm font-semibold text-gray-600 -mt-1">{mockRes.stats.submissionRate} submission rate</p>
+                  <p className="text-sm font-semibold text-gray-600 -mt-1">{mockRes.stats.submissionRate} {isRTL ? 'نسبة التقديم' : 'submission rate'}</p>
 
                   {/* Divider */}
                   <div className="border-t border-gray-800/40" />
@@ -419,13 +421,13 @@ const TeacherExams = () => {
                       className="flex-1 py-3 rounded-2xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/20 text-blue-400 font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
                       <FiBarChart2 size={14} />
-                      <span>View Results</span>
+                      <span>{isRTL ? "عرض النتائج" : "View Results"}</span>
                     </button>
                     <button
                       onClick={() => handleDeleteClick(ex)}
                       disabled={isDeletingId === (ex._id || ex.id)}
                       className="p-3 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Cancel Exam"
+                      title={isRTL ? "إلغاء الاختبار" : "Cancel Exam"}
                     >
                       <FiTrash2 size={14} />
                     </button>
@@ -448,20 +450,20 @@ const TeacherExams = () => {
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
 
               <button
                 onClick={() => setIsAddExamOpen(false)}
-                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+                className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} text-gray-500 hover:text-white transition-colors cursor-pointer`}
               >
                 <FiX size={20} />
               </button>
 
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-2">New Exam</h3>
-              <p className="text-xs text-gray-500 mb-6 font-semibold">Schedule a new student assessment exam</p>
+              <h3 className="text-xl sm:text-2xl font-black text-white mb-2">{isRTL ? "اختبار جديد" : "New Exam"}</h3>
+              <p className="text-xs text-gray-500 mb-6 font-semibold">{isRTL ? "جدولة اختبار تقييم جديد للطلاب" : "Schedule a new student assessment exam"}</p>
 
               <Formik
                 initialValues={{ title: '', subjectId: '', duration: '', date: '', questionsCount: '' }}
@@ -470,13 +472,13 @@ const TeacherExams = () => {
               >
                 {({ values, handleChange, handleBlur, isSubmitting }) => (
                   <Form className="flex flex-col gap-4 mt-2">
-                    <Input name="title" type="text" label="Exam Title" placeholder="e.g. Midterm assessment" icon={FiFileText} roleColor="teacher" />
+                    <Input name="title" type="text" label={isRTL ? "عنوان الاختبار" : "Exam Title"} placeholder={isRTL ? "مثال: تقييم منتصف الفصل" : "e.g. Midterm assessment"} icon={FiFileText} roleColor="teacher" />
 
                     <div className="w-full flex flex-col relative">
                       <div className="w-full flex items-center relative rounded-2xl px-4 h-15 input-3d-teacher">
                         <div className="flex-1 relative h-full flex items-center">
-                          <span className="absolute left-3 top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider">
-                            Subject
+                          <span className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider`}>
+                            {isRTL ? "المادة" : "Subject"}
                           </span>
                           <select
                             name="subjectId"
@@ -485,29 +487,29 @@ const TeacherExams = () => {
                             onBlur={handleBlur}
                             className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer focus:outline-none"
                           >
-                            <option value="" className="bg-[#0b0c16] text-gray-500">Select Subject</option>
+                            <option value="" className="bg-[#0b0c16] text-gray-500">{isRTL ? "اختر المادة" : "Select Subject"}</option>
                             {subjects.map(s => (
                               <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0b0c16] text-white">{s.name || s.title}</option>
                             ))}
                           </select>
                         </div>
-                        <FiChevronDown className="text-gray-400 absolute right-4 pointer-events-none" />
+                        <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} pointer-events-none`} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <Input name="duration" type="number" label="Duration (mins)" placeholder="45" icon={FiClock} roleColor="teacher" />
-                      <Input name="questionsCount" type="number" label="No. of Questions" placeholder="10" icon={FiHelpCircle} roleColor="teacher" />
+                      <Input name="duration" type="number" label={isRTL ? "المدة (بالدقائق)" : "Duration (mins)"} placeholder="45" icon={FiClock} roleColor="teacher" />
+                      <Input name="questionsCount" type="number" label={isRTL ? "عدد الأسئلة" : "No. of Questions"} placeholder="10" icon={FiHelpCircle} roleColor="teacher" />
                     </div>
 
-                    <Input name="date" type="date" label="Exam Date" placeholder="YYYY-MM-DD" icon={FiCalendar} roleColor="teacher" />
+                    <Input name="date" type="date" label={isRTL ? "تاريخ الاختبار" : "Exam Date"} placeholder="YYYY-MM-DD" icon={FiCalendar} roleColor="teacher" />
 
                     <button
                       type="submit"
                       disabled={isSubmitting}
                       className="w-full py-4 mt-2 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer disabled:opacity-55"
                     >
-                      <span>Schedule Exam</span>
+                      <span>{isRTL ? "جدولة الاختبار" : "Schedule Exam"}</span>
                       <FiCheck className="text-base" />
                     </button>
                   </Form>
@@ -532,12 +534,12 @@ const TeacherExams = () => {
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-md bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              className="w-full sm:max-w-md bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-black text-white mb-4">Cancel Exam</h3>
+              <h3 className="text-xl font-black text-white mb-4">{isRTL ? "إلغاء الاختبار" : "Cancel Exam"}</h3>
               <p className="text-sm text-gray-400 leading-relaxed font-semibold mb-6">
-                Are you sure you want to cancel the exam <span className="text-red-400 font-extrabold">"{deletingExam.title}"</span>? This action cannot be undone.
+                {isRTL ? "هل أنت تأكد من أنك تريد إلغاء الاختبار" : "Are you sure you want to cancel the exam"} <span className="text-red-400 font-extrabold">"{deletingExam.title}"</span>؟ {isRTL ? "لا يمكن التراجع عن هذا الإجراء." : "This action cannot be undone."}
               </p>
               <div className="flex gap-3">
                 <button
@@ -548,14 +550,14 @@ const TeacherExams = () => {
                   }}
                   className="flex-1 py-4 bg-gray-800 hover:bg-gray-700 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center"
                 >
-                  Cancel
+                  {isRTL ? "إلغاء" : "Cancel"}
                 </button>
                 <button
                   type="button"
                   onClick={confirmDelete}
                   className="flex-1 py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-bold text-base transition-all cursor-pointer text-center shadow-[0_4px_15px_rgba(239,68,68,0.3)]"
                 >
-                  Delete
+                  {isRTL ? "حذف" : "Delete"}
                 </button>
               </div>
             </motion.div>
@@ -589,14 +591,14 @@ const TeacherExams = () => {
                 initial={{ scale: 0.95, y: 100, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 exit={{ scale: 0.95, y: 100, opacity: 0 }}
-                className="w-full max-w-3xl bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left flex flex-col max-h-[90vh]"
+                className="w-full max-w-3xl bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start flex flex-col max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-2xl font-black text-white capitalize">{resultsExam.title}</h3>
-                    <p className="text-sm text-gray-500 font-bold uppercase mt-1">Student Performance & Results</p>
+                    <p className="text-sm text-gray-500 font-bold uppercase mt-1">{isRTL ? "أداء الطلاب والنتائج" : "Student Performance & Results"}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -615,19 +617,19 @@ const TeacherExams = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/10 flex flex-col">
                     <span className="text-2xl font-black text-amber-400">{stats.avgScore}</span>
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Average Score</span>
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "متوسط الدرجة" : "Average Score"}</span>
                   </div>
                   <div className="p-4 rounded-2xl bg-emerald-500/[0.03] border border-emerald-500/10 flex flex-col">
                     <span className="text-2xl font-black text-emerald-400">{stats.highScore}</span>
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">High Score</span>
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "أعلى درجة" : "High Score"}</span>
                   </div>
                   <div className="p-4 rounded-2xl bg-red-500/[0.03] border border-red-500/10 flex flex-col">
                     <span className="text-2xl font-black text-red-400">{stats.lowScore}</span>
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Low Score</span>
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "أقل درجة" : "Low Score"}</span>
                   </div>
                   <div className="p-4 rounded-2xl bg-blue-500/[0.03] border border-blue-500/10 flex flex-col">
                     <span className="text-2xl font-black text-blue-400">{stats.submitted}</span>
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">Submission Rate ({stats.submissionRate})</span>
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "نسبة التقديم" : "Submission Rate"} ({stats.submissionRate})</span>
                   </div>
                 </div>
 
@@ -635,13 +637,13 @@ const TeacherExams = () => {
                 <div className="flex flex-col sm:flex-row gap-3 mb-6 items-center w-full">
                   {/* Search */}
                   <div className="relative flex-1 w-full">
-                    <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                    <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
                     <input
                       type="text"
-                      placeholder="Search student name..."
+                      placeholder={isRTL ? "البحث باسم الطالب..." : "Search student name..."}
                       value={resultsSearchQuery}
                       onChange={(e) => setResultsSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 bg-gray-900/50 border border-gray-800/80 rounded-2xl text-white font-bold text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all"
+                      className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3.5 bg-gray-900/50 border border-gray-800/80 rounded-2xl text-white font-bold text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all`}
                     />
                   </div>
 
@@ -655,7 +657,7 @@ const TeacherExams = () => {
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      All
+                      {isRTL ? "الكل" : "All"}
                     </button>
                     <button
                       onClick={() => setResultsFilter('passed')}
@@ -665,7 +667,7 @@ const TeacherExams = () => {
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      Passed
+                      {isRTL ? "ناجح" : "Passed"}
                     </button>
                     <button
                       onClick={() => setResultsFilter('failed')}
@@ -675,18 +677,18 @@ const TeacherExams = () => {
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      Failed
+                      {isRTL ? "راسب" : "Failed"}
                     </button>
                   </div>
                 </div>
 
                 {/* Submissions List Container */}
-                <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 min-h-[250px] max-h-[45vh]">
+                <div className="flex-1 overflow-y-auto px-1 flex flex-col gap-3 min-h-[250px] max-h-[45vh]">
                   {filteredAttempts.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-gray-950/20 border border-gray-900 rounded-3xl">
                       <FiUsers className="text-gray-650 mb-2" size={32} />
-                      <span className="text-base font-extrabold text-gray-500">No attempts found</span>
-                      <p className="text-xs text-gray-600 font-bold mt-1">Try resetting search or filters</p>
+                      <span className="text-base font-extrabold text-gray-500">{isRTL ? "لم يتم العثور على محاولات" : "No attempts found"}</span>
+                      <p className="text-xs text-gray-600 font-bold mt-1">{isRTL ? "جرب إعادة ضبط البحث أو الفلاتر" : "Try resetting search or filters"}</p>
                     </div>
                   ) : (
                     filteredAttempts.map((att) => (
@@ -700,16 +702,16 @@ const TeacherExams = () => {
                           </div>
                           <div>
                             <h5 className="font-extrabold text-white text-base leading-tight">{att.studentName}</h5>
-                            <span className="text-xs text-gray-500 font-semibold mt-0.5 block">Submitted on {att.completedAt}</span>
+                            <span className="text-xs text-gray-500 font-semibold mt-0.5 block">{isRTL ? "تم التقديم في" : "Submitted on"} {att.completedAt}</span>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-4">
-                          <div className="text-right">
+                          <div className="text-end">
                             <span className={`text-base font-black block ${att.passed ? 'text-emerald-400' : 'text-red-400'}`}>
                               {att.score}%
                             </span>
-                            <span className="text-xs text-gray-500 font-bold uppercase block mt-0.5">{att.timeTaken} mins</span>
+                            <span className="text-xs text-gray-500 font-bold uppercase block mt-0.5">{att.timeTaken} {isRTL ? "دقيقة" : "mins"}</span>
                           </div>
 
                           <span className={`text-xs font-black uppercase px-3 py-1.5 rounded-full ${
@@ -717,7 +719,7 @@ const TeacherExams = () => {
                               ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
                               : 'bg-red-500/10 border border-red-500/20 text-red-400'
                           }`}>
-                            {att.passed ? 'Passed' : 'Failed'}
+                            {att.passed ? (isRTL ? 'ناجح' : 'Passed') : (isRTL ? 'راسب' : 'Failed')}
                           </span>
                         </div>
                       </div>

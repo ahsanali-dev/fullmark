@@ -25,6 +25,7 @@ import StatCard from '../../components/shared/StatCard';
 import ModalWrapper from '../../components/shared/ModalWrapper';
 import { QuestionSchema } from '../../schemas/questionSchema';
 import { ExamSchema } from '../../schemas/examSchema';
+import { useLanguage } from '../../context/LanguageContext';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { 
@@ -42,6 +43,7 @@ import { DashboardSkeleton } from '../../components/shared/SkeletonLoading';
 const TeacherDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   // Load from Redux
   const { subjects = [], questions = [], exams = [], stats = null, isLoading } = useSelector((state) => state.teacher);
@@ -89,22 +91,22 @@ const TeacherDashboard = () => {
         correctOption: correctIdx,
       })).unwrap(),
       {
-        loading: 'Creating question...',
+        loading: isRTL ? 'جاري إنشاء السؤال...' : 'Creating question...',
         success: () => {
           setIsAddQuestionOpen(false);
           resetForm();
           dispatch(fetchTeacherSubjects());
           dispatch(fetchQuestions());
-          return 'Question added successfully!';
+          return isRTL ? 'تم إضافة السؤال بنجاح!' : 'Question added successfully!';
         },
-        error: (err) => err || 'Failed to add question',
+        error: (err) => err || (isRTL ? 'فشل إضافة السؤال' : 'Failed to add question'),
       }
     );
   };
 
   const handleAddExam = (values, { resetForm }) => {
     if (!values.subjectId) {
-      toast.error('Please select a subject');
+      toast.error(isRTL ? 'الرجاء اختيار المادة' : 'Please select a subject');
       return;
     }
     setIsAddExamOpen(false);
@@ -115,11 +117,11 @@ const TeacherDashboard = () => {
   const handlePdfUploadSubmit = async (e) => {
     e.preventDefault();
     if (!pdfFile) {
-      toast.error('Please select a PDF file first');
+      toast.error(isRTL ? 'الرجاء اختيار ملف PDF أولاً' : 'Please select a PDF file first');
       return;
     }
     if (!selectedPdfSubject) {
-      toast.error('Please select a subject');
+      toast.error(isRTL ? 'الرجاء اختيار المادة' : 'Please select a subject');
       return;
     }
 
@@ -130,7 +132,7 @@ const TeacherDashboard = () => {
       setPdfProgress(prev => (prev < 90 ? prev + 10 : prev));
     }, 300);
 
-    const loadingToast = toast.loading('Extracting questions from PDF...');
+    const loadingToast = toast.loading(isRTL ? 'جاري استخراج الأسئلة من PDF...' : 'Extracting questions from PDF...');
     try {
       const res = await dispatch(extractQuestionsFromPdf({
         subjectId: selectedPdfSubject,
@@ -140,7 +142,7 @@ const TeacherDashboard = () => {
       clearInterval(progressInterval);
       setPdfProgress(100);
       
-      toast.success(res.message || 'PDF uploaded and questions extracted successfully!', { id: loadingToast });
+      toast.success(res.message || (isRTL ? 'تم رفع PDF واستخراج الأسئلة بنجاح!' : 'PDF uploaded and questions extracted successfully!'), { id: loadingToast });
       setPdfUploading(false);
       setIsUploadPDFOpen(false);
       setPdfFile(null);
@@ -150,7 +152,7 @@ const TeacherDashboard = () => {
     } catch (err) {
       clearInterval(progressInterval);
       setPdfUploading(false);
-      toast.error(err || 'Failed to extract questions from PDF', { id: loadingToast });
+      toast.error(err || (isRTL ? 'فشل استخراج الأسئلة من PDF' : 'Failed to extract questions from PDF'), { id: loadingToast });
     }
   };
 
@@ -161,8 +163,8 @@ const TeacherDashboard = () => {
       <DashboardLayout
         role="teacher"
         activeTab="dashboard"
-        title="Teacher Panel"
-        subtitle="Teacher Portal Overview 🧑‍🏫"
+        title={t('teacher.dashboard.title')}
+        subtitle={t('teacher.dashboard.subtitle')}
         isModalOpen={false}
       >
         <DashboardSkeleton />
@@ -174,11 +176,11 @@ const TeacherDashboard = () => {
     <DashboardLayout
       role="teacher"
       activeTab="dashboard"
-      title="Teacher Panel"
-      subtitle="Teacher Portal Overview 🧑‍🏫"
+      title={t('teacher.dashboard.title')}
+      subtitle={t('teacher.dashboard.subtitle')}
       isModalOpen={isModalActive}
     >
-      <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-32 lg:pb-12">
+      <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-32 lg:pb-12">
         
         {/* A. Core Stats Row */}
         <div className="grid grid-cols-4 gap-3 md:gap-4 shrink-0 animate-fade-in">
@@ -191,7 +193,7 @@ const TeacherDashboard = () => {
               <FiBookOpen size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">{subjects.length}</span>
-            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">Subjects</span>
+            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">{t('teacher.dashboard.subjects')}</span>
           </div>
 
           {/* Questions */}
@@ -203,7 +205,7 @@ const TeacherDashboard = () => {
               <FiHelpCircle size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">{questions.length}</span>
-            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">Questions</span>
+            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">{t('teacher.dashboard.questions')}</span>
           </div>
 
           {/* Exams */}
@@ -215,7 +217,7 @@ const TeacherDashboard = () => {
               <FiFileText size={16} />
             </div>
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">{exams.length}</span>
-            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">Exams</span>
+            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">{t('teacher.dashboard.exams')}</span>
           </div>
 
           {/* Students */}
@@ -226,13 +228,13 @@ const TeacherDashboard = () => {
             <span className="text-xl md:text-2xl font-extrabold text-white leading-none">
               {subjectsWithCounts.reduce((acc, curr) => acc + curr.studentsCount, 0)}
             </span>
-            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">Students</span>
+            <span className="text-sm font-bold text-gray-500 tracking-wider mt-1 uppercase">{t('teacher.dashboard.students')}</span>
           </div>
         </div>
 
         {/* B. Quick Actions */}
-        <div className="flex flex-col gap-4 text-left animate-fade-in delay-100">
-          <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">Quick Actions</h3>
+        <div className="flex flex-col gap-4 text-start animate-fade-in delay-100">
+          <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">{t('teacher.dashboard.quickActions')}</h3>
           <div className="grid grid-cols-3 gap-3 md:gap-4">
             <button 
               onClick={() => setIsUploadPDFOpen(true)}
@@ -241,7 +243,7 @@ const TeacherDashboard = () => {
               <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 transition-transform duration-300 group-hover:scale-110">
                 <FiUploadCloud size={18} />
               </div>
-              <span className="text-base font-bold text-white tracking-wide">Upload PDF</span>
+              <span className="text-base font-bold text-white tracking-wide">{t('teacher.dashboard.uploadPdf')}</span>
             </button>
 
             <button 
@@ -251,7 +253,7 @@ const TeacherDashboard = () => {
               <div className="w-11 h-11 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 transition-transform duration-300 group-hover:scale-110">
                 <FiPlus size={18} />
               </div>
-              <span className="text-base font-bold text-white tracking-wide">Add Question</span>
+              <span className="text-base font-bold text-white tracking-wide">{t('teacher.dashboard.addQuestion')}</span>
             </button>
 
             <button 
@@ -261,26 +263,26 @@ const TeacherDashboard = () => {
               <div className="w-11 h-11 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 transition-transform duration-300 group-hover:scale-110">
                 <FiFileText size={18} />
               </div>
-              <span className="text-base font-bold text-white tracking-wide">New Exam</span>
+              <span className="text-base font-bold text-white tracking-wide">{t('teacher.dashboard.newExam')}</span>
             </button>
           </div>
         </div>
 
         {/* C. My Subjects Section */}
-        <div className="flex flex-col gap-4 text-left animate-fade-in delay-200">
+        <div className="flex flex-col gap-4 text-start animate-fade-in delay-200">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">My Subjects</h3>
+            <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">{t('teacher.dashboard.mySubjects')}</h3>
             <button 
               onClick={() => navigate('/teacher/subjects')}
               className="text-blue-400 hover:text-blue-300 font-bold text-base transition-colors cursor-pointer"
             >
-              Manage
+              {t('teacher.dashboard.manage')}
             </button>
           </div>
 
           {subjects.length === 0 ? (
             <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl flex flex-col items-center justify-center">
-              <span className="text-lg font-bold text-gray-500">No subjects assigned yet</span>
+              <span className="text-lg font-bold text-gray-500">{t('teacher.dashboard.noSubjects')}</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
@@ -294,10 +296,10 @@ const TeacherDashboard = () => {
                     <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.15)] shrink-0">
                       <FiBookOpen size={20} />
                     </div>
-                    <FiChevronRight size={18} className="text-gray-500 mt-1 transition-transform group-hover:translate-x-1" />
+                    <FiChevronRight size={18} className={`text-gray-500 mt-1 transition-transform group-hover:translate-x-1 ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
                   </div>
                   
-                  <div className="text-left mt-2">
+                  <div className="text-start mt-2">
                     <h4 className="text-xl font-extrabold text-white leading-tight capitalize">{sub.title}</h4>
                     <p className="text-base text-gray-500 font-semibold mt-1 leading-normal line-clamp-2">{sub.description}</p>
                   </div>
@@ -334,22 +336,22 @@ const TeacherDashboard = () => {
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-lg bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              className="w-full sm:max-w-lg bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
               
               <button 
                 onClick={() => setIsAddQuestionOpen(false)}
-                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+                className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} text-gray-500 hover:text-white transition-colors cursor-pointer`}
               >
                 <FiX size={20} />
               </button>
 
               <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
-                Add Question
+                {isRTL ? "إضافة سؤال" : "Add Question"}
               </h3>
-              <p className="text-xs text-gray-500 mb-6 font-semibold">Create a new assessment question manually</p>
+              <p className="text-xs text-gray-500 mb-6 font-semibold">{isRTL ? "إنشاء سؤال تقييم جديد يدوياً" : "Create a new assessment question manually"}</p>
 
               <Formik
                 initialValues={{
@@ -365,12 +367,12 @@ const TeacherDashboard = () => {
                 onSubmit={handleAddQuestion}
               >
                 {({ values, handleChange, handleBlur, isSubmitting }) => (
-                  <Form className="flex flex-col gap-4 mt-2 max-h-[70vh] overflow-y-auto pr-1">
+                  <Form className="flex flex-col gap-4 mt-2 max-h-[70vh] overflow-y-auto px-1">
                     <div className="w-full flex flex-col relative">
                       <div className="w-full flex items-center relative rounded-2xl px-4 h-15 input-3d-teacher">
                         <div className="flex-1 relative h-full flex items-center">
-                          <span className="absolute left-3 top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider">
-                            Subject
+                          <span className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider`}>
+                            {isRTL ? "المادة" : "Subject"}
                           </span>
                           <select
                             name="subjectId"
@@ -379,37 +381,37 @@ const TeacherDashboard = () => {
                             onBlur={handleBlur}
                             className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer focus:outline-none"
                           >
-                            <option value="" className="bg-[#0b0c16] text-gray-500">Select Subject</option>
+                            <option value="" className="bg-[#0b0c16] text-gray-500">{isRTL ? "اختر المادة" : "Select Subject"}</option>
                             {subjects.map(s => (
                               <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0b0c16] text-white">{s.title || s.name}</option>
                             ))}
                           </select>
                         </div>
-                        <FiChevronDown className="text-gray-400 absolute right-4 pointer-events-none" />
+                        <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} pointer-events-none`} />
                       </div>
                     </div>
 
                     <Input
                       name="text"
                       type="text"
-                      label="Question Text"
-                      placeholder="e.g. What is the sum of 2 and 2?"
+                      label={isRTL ? "نص السؤال" : "Question Text"}
+                      placeholder={isRTL ? "مثال: ما هو مجموع 2 + 2؟" : "e.g. What is the sum of 2 and 2?"}
                       icon={FiHelpCircle}
                       roleColor="teacher"
                     />
 
                     <div className="grid grid-cols-2 gap-3">
-                      <Input name="optionA" type="text" label="Option A" placeholder="Option A" icon={FiPlus} roleColor="teacher" />
-                      <Input name="optionB" type="text" label="Option B" placeholder="Option B" icon={FiPlus} roleColor="teacher" />
-                      <Input name="optionC" type="text" label="Option C" placeholder="Option C" icon={FiPlus} roleColor="teacher" />
-                      <Input name="optionD" type="text" label="Option D" placeholder="Option D" icon={FiPlus} roleColor="teacher" />
+                      <Input name="optionA" type="text" label={isRTL ? "الخيار أ" : "Option A"} placeholder={isRTL ? "الخيار أ" : "Option A"} icon={FiPlus} roleColor="teacher" />
+                      <Input name="optionB" type="text" label={isRTL ? "الخيار ب" : "Option B"} placeholder={isRTL ? "الخيار ب" : "Option B"} icon={FiPlus} roleColor="teacher" />
+                      <Input name="optionC" type="text" label={isRTL ? "الخيار ج" : "Option C"} placeholder={isRTL ? "الخيار ج" : "Option C"} icon={FiPlus} roleColor="teacher" />
+                      <Input name="optionD" type="text" label={isRTL ? "الخيار د" : "Option D"} placeholder={isRTL ? "الخيار د" : "Option D"} icon={FiPlus} roleColor="teacher" />
                     </div>
 
                     <div className="w-full flex flex-col relative">
                       <div className="w-full flex items-center relative rounded-2xl px-4 h-15 input-3d-teacher">
                         <div className="flex-1 relative h-full flex items-center">
-                          <span className="absolute left-3 top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider">
-                            Correct Option
+                          <span className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider`}>
+                            {isRTL ? "الخيار الصحيح" : "Correct Option"}
                           </span>
                           <select
                             name="correctOption"
@@ -418,14 +420,14 @@ const TeacherDashboard = () => {
                             onBlur={handleBlur}
                             className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer focus:outline-none"
                           >
-                            <option value="" className="bg-[#0b0c16] text-gray-500">Select Correct Option</option>
-                            <option value="A" className="bg-[#0b0c16] text-white">Option A</option>
-                            <option value="B" className="bg-[#0b0c16] text-white">Option B</option>
-                            <option value="C" className="bg-[#0b0c16] text-white">Option C</option>
-                            <option value="D" className="bg-[#0b0c16] text-white">Option D</option>
+                            <option value="" className="bg-[#0b0c16] text-gray-500">{isRTL ? "اختر الخيار الصحيح" : "Select Correct Option"}</option>
+                            <option value="A" className="bg-[#0b0c16] text-white">{isRTL ? "الخيار أ" : "Option A"}</option>
+                            <option value="B" className="bg-[#0b0c16] text-white">{isRTL ? "الخيار ب" : "Option B"}</option>
+                            <option value="C" className="bg-[#0b0c16] text-white">{isRTL ? "الخيار ج" : "Option C"}</option>
+                            <option value="D" className="bg-[#0b0c16] text-white">{isRTL ? "الخيار د" : "Option D"}</option>
                           </select>
                         </div>
-                        <FiChevronDown className="text-gray-400 absolute right-4 pointer-events-none" />
+                        <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} pointer-events-none`} />
                       </div>
                     </div>
 
@@ -435,7 +437,7 @@ const TeacherDashboard = () => {
                       roleColor="teacher"
                       icon={FiCheck}
                     >
-                      Create Question
+                      {isRTL ? "إنشاء السؤال" : "Create Question"}
                     </Button>
                   </Form>
                 )}
@@ -456,22 +458,22 @@ const TeacherDashboard = () => {
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
               
               <button 
                 onClick={() => setIsAddExamOpen(false)}
-                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+                className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} text-gray-500 hover:text-white transition-colors cursor-pointer`}
               >
                 <FiX size={20} />
               </button>
 
               <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
-                New Exam
+                {isRTL ? "اختبار جديد" : "New Exam"}
               </h3>
-              <p className="text-xs text-gray-500 mb-6 font-semibold">Schedule a new student assessment exam</p>
+              <p className="text-xs text-gray-500 mb-6 font-semibold">{isRTL ? "جدولة اختبار تقييم جديد للطلاب" : "Schedule a new student assessment exam"}</p>
 
               <Formik
                 initialValues={{
@@ -489,8 +491,8 @@ const TeacherDashboard = () => {
                     <Input
                       name="title"
                       type="text"
-                      label="Exam Title"
-                      placeholder="e.g. Midterm assessment"
+                      label={isRTL ? "عنوان الاختبار" : "Exam Title"}
+                      placeholder={isRTL ? "مثال: تقييم منتصف الفصل" : "e.g. Midterm assessment"}
                       icon={FiFileText}
                       roleColor="teacher"
                     />
@@ -498,8 +500,8 @@ const TeacherDashboard = () => {
                     <div className="w-full flex flex-col relative">
                       <div className="w-full flex items-center relative rounded-2xl px-4 h-15 input-3d-teacher">
                         <div className="flex-1 relative h-full flex items-center">
-                          <span className="absolute left-3 top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider">
-                            Subject
+                          <span className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider`}>
+                            {isRTL ? "المادة" : "Subject"}
                           </span>
                           <select
                             name="subjectId"
@@ -508,13 +510,13 @@ const TeacherDashboard = () => {
                             onBlur={handleBlur}
                             className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer focus:outline-none"
                           >
-                            <option value="" className="bg-[#0b0c16] text-gray-500">Select Subject</option>
+                            <option value="" className="bg-[#0b0c16] text-gray-500">{isRTL ? "اختر المادة" : "Select Subject"}</option>
                             {subjects.map(s => (
                               <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0b0c16] text-white">{s.title || s.name}</option>
                             ))}
                           </select>
                         </div>
-                        <FiChevronDown className="text-gray-400 absolute right-4 pointer-events-none" />
+                        <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} pointer-events-none`} />
                       </div>
                     </div>
 
@@ -522,7 +524,7 @@ const TeacherDashboard = () => {
                       <Input
                         name="duration"
                         type="number"
-                        label="Duration (mins)"
+                        label={isRTL ? "المدة (بالدقائق)" : "Duration (mins)"}
                         placeholder="45"
                         icon={FiFileText}
                         roleColor="teacher"
@@ -530,7 +532,7 @@ const TeacherDashboard = () => {
                       <Input
                         name="questionsCount"
                         type="number"
-                        label="No. of Questions"
+                        label={isRTL ? "عدد الأسئلة" : "No. of Questions"}
                         placeholder="10"
                         icon={FiFileText}
                         roleColor="teacher"
@@ -540,7 +542,7 @@ const TeacherDashboard = () => {
                     <Input
                       name="date"
                       type="date"
-                      label="Exam Date"
+                      label={isRTL ? "تاريخ الاختبار" : "Exam Date"}
                       placeholder="YYYY-MM-DD"
                       icon={FiFileText}
                       roleColor="teacher"
@@ -552,7 +554,7 @@ const TeacherDashboard = () => {
                       roleColor="teacher"
                       icon={FiCheck}
                     >
-                      Schedule Exam
+                      {isRTL ? "جدولة الاختبار" : "Schedule Exam"}
                     </Button>
                   </Form>
                 )}
@@ -575,7 +577,7 @@ const TeacherDashboard = () => {
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
@@ -583,23 +585,23 @@ const TeacherDashboard = () => {
               {!pdfUploading && (
                 <button 
                   onClick={() => setIsUploadPDFOpen(false)}
-                  className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer"
+                  className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} text-gray-500 hover:text-white transition-colors cursor-pointer`}
                 >
                   <FiX size={20} />
                 </button>
               )}
 
               <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
-                Upload Question PDF
+                {isRTL ? "رفع PDF الأسئلة" : "Upload Question PDF"}
               </h3>
-              <p className="text-xs text-gray-500 mb-6 font-semibold">Upload chapters or questions for automatic AI parsing</p>
+              <p className="text-xs text-gray-500 mb-6 font-semibold">{isRTL ? "رفع الفصول أو الأسئلة للتحليل الآلي بواسطة الذكاء الاصطناعي" : "Upload chapters or questions for automatic AI parsing"}</p>
 
               <form onSubmit={handlePdfUploadSubmit} className="flex flex-col gap-4 mt-2">
                 <div className="w-full flex flex-col relative">
                   <div className="w-full flex items-center relative rounded-2xl px-4 h-15 input-3d-teacher">
                     <div className="flex-1 relative h-full flex items-center">
-                      <span className="absolute left-3 top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider">
-                        Target Subject
+                      <span className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1.5 pointer-events-none font-semibold text-[10px] text-blue-400 uppercase tracking-wider`}>
+                        {isRTL ? "المادة المستهدفة" : "Target Subject"}
                       </span>
                       <select
                         value={selectedPdfSubject}
@@ -607,13 +609,13 @@ const TeacherDashboard = () => {
                         disabled={pdfUploading}
                         className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold pt-4 outline-none focus:ring-0 appearance-none cursor-pointer focus:outline-none disabled:opacity-55"
                       >
-                        <option value="" className="bg-[#0b0c16] text-gray-500">Select Subject</option>
+                        <option value="" className="bg-[#0b0c16] text-gray-500">{isRTL ? "اختر المادة" : "Select Subject"}</option>
                         {subjects.map(s => (
                           <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0b0c16] text-white">{s.title || s.name}</option>
                         ))}
                       </select>
                     </div>
-                    <FiChevronDown className="text-gray-400 absolute right-4 pointer-events-none" />
+                    <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} pointer-events-none`} />
                   </div>
                 </div>
 
@@ -623,7 +625,7 @@ const TeacherDashboard = () => {
                       <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 animate-bounce">
                         <FiUploadCloud size={22} />
                       </div>
-                      <span className="text-sm font-bold text-white">Extracting Questions from PDF...</span>
+                      <span className="text-sm font-bold text-white">{isRTL ? "جاري استخراج الأسئلة من PDF..." : "Extracting Questions from PDF..."}</span>
                       
                       <div className="w-full bg-gray-800 rounded-full h-2 mt-2 max-w-[200px]">
                         <div 
@@ -631,7 +633,7 @@ const TeacherDashboard = () => {
                           style={{ width: `${pdfProgress}%` }}
                         />
                       </div>
-                      <span className="text-[10px] font-bold text-gray-500">{pdfProgress}% completed</span>
+                      <span className="text-[10px] font-bold text-gray-500">{pdfProgress}% {isRTL ? "مكتمل" : "completed"}</span>
                     </div>
                   ) : (
                     <label className="border border-dashed border-gray-800 hover:border-blue-500/35 bg-[#0e101a]/50 hover:bg-[#111326]/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all">
@@ -642,15 +644,15 @@ const TeacherDashboard = () => {
                         onChange={(e) => {
                           if (e.target.files && e.target.files[0]) {
                             setPdfFile(e.target.files[0]);
-                            toast.success(`Selected file: ${e.target.files[0].name}`);
+                            toast.success(`${isRTL ? 'الملف المختار:' : 'Selected file:'} ${e.target.files[0].name}`);
                           }
                         }}
                       />
                       <FiUploadCloud size={28} className="text-gray-500 mb-1" />
                       <span className="text-sm font-bold text-white leading-none">
-                        {pdfFile ? pdfFile.name : 'Choose PDF File'}
+                        {pdfFile ? pdfFile.name : (isRTL ? "اختر ملف PDF" : "Choose PDF File")}
                       </span>
-                      <span className="text-[10px] text-gray-500 font-medium">PDF formats up to 15MB</span>
+                      <span className="text-[10px] text-gray-500 font-medium">{isRTL ? "صيغ PDF حتى 15 ميجابايت" : "PDF formats up to 15MB"}</span>
                     </label>
                   )}
                 </div>
@@ -662,7 +664,7 @@ const TeacherDashboard = () => {
                     icon={FiUploadCloud}
                     disabled={!pdfFile || !selectedPdfSubject}
                   >
-                    Start Parsing PDF
+                    {isRTL ? "بدء تحليل PDF" : "Start Parsing PDF"}
                   </Button>
                 )}
               </form>

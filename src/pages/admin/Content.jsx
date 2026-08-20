@@ -38,10 +38,12 @@ import Button from '../../components/ui/Button';
 import { SubjectSchema } from '../../schemas/adminSchemas';
 import { useLocation } from 'react-router-dom';
 import { ContentSkeleton } from '../../components/shared/SkeletonLoading';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Content = () => {
   const dispatch = useDispatch();
   const location = useLocation();
+  const { t, isRTL } = useLanguage();
 
   const { subjects, lessons, isLoading } = useSelector((state) => state.admin);
   const [teachers, setTeachers] = useState([]);
@@ -84,35 +86,35 @@ const Content = () => {
 
   // Toggle Free Preview for single lesson (Requirement 10)
   const handleToggleLessonFree = async (lessonId, currentFree) => {
-    const toastId = toast.loading('Updating lesson preview status...');
+    const toastId = toast.loading(isRTL ? 'جاري تحديث حالة المعاينة...' : 'Updating lesson preview status...');
     try {
       await dispatch(toggleLessonFree(lessonId)).unwrap();
       toast.dismiss(toastId);
-      toast.success(`Lesson marked as ${!currentFree ? 'Free Preview' : 'Paid Lesson'}!`);
+      toast.success(isRTL ? `تم تحديد الدرس كـ ${!currentFree ? 'معاينة مجانية' : 'درس مدفوع'}!` : `Lesson marked as ${!currentFree ? 'Free Preview' : 'Paid Lesson'}!`);
       dispatch(fetchAdminLessons({ subjectId: selectedSubjectFilter || undefined }));
     } catch (err) {
       toast.dismiss(toastId);
-      toast.error(err || 'Failed to update lesson status');
+      toast.error(err || (isRTL ? 'فشل تحديث حالة الدرس' : 'Failed to update lesson status'));
     }
   };
 
   // Bulk Toggle Free Preview (Requirement 10)
   const handleBulkToggleFree = async (isFree) => {
     if (selectedLessonIds.length === 0) {
-      toast.error('Please select at least one lesson.');
+      toast.error(isRTL ? 'يرجى تحديد درس واحد على الأقل.' : 'Please select at least one lesson.');
       return;
     }
 
-    const toastId = toast.loading(`Updating ${selectedLessonIds.length} lesson(s)...`);
+    const toastId = toast.loading(isRTL ? `جاري تحديث ${selectedLessonIds.length} درساً...` : `Updating ${selectedLessonIds.length} lesson(s)...`);
     try {
       await dispatch(bulkToggleLessonFree({ lessonIds: selectedLessonIds, isFree })).unwrap();
       toast.dismiss(toastId);
-      toast.success(`Updated ${selectedLessonIds.length} lesson(s) to ${isFree ? 'Free Preview' : 'Paid Lesson'}!`);
+      toast.success(isRTL ? `تم تحديث ${selectedLessonIds.length} درساً إلى ${isFree ? 'معاينة مجانية' : 'درس مدفوع'}!` : `Updated ${selectedLessonIds.length} lesson(s) to ${isFree ? 'Free Preview' : 'Paid Lesson'}!`);
       setSelectedLessonIds([]);
       dispatch(fetchAdminLessons({ subjectId: selectedSubjectFilter || undefined }));
     } catch (err) {
       toast.dismiss(toastId);
-      toast.error(err || 'Failed bulk update');
+      toast.error(err || (isRTL ? 'فشل التحديث الجماعي' : 'Failed bulk update'));
     }
   };
 
@@ -127,18 +129,18 @@ const Content = () => {
 
   // Toggle Subject Status
   const toggleSubjectStatus = async (id, currentStatus) => {
-    const loadToast = toast.loading('Updating subject status...');
+    const loadToast = toast.loading(isRTL ? 'جاري تحديث حالة المادة...' : 'Updating subject status...');
     try {
       await dispatch(updateSubject({
         id,
         subjectData: { isActive: !currentStatus }
       })).unwrap();
       toast.dismiss(loadToast);
-      toast.success('Subject status updated!');
+      toast.success(isRTL ? 'تم تحديث حالة المادة!' : 'Subject status updated!');
       dispatch(fetchAllSubjects());
     } catch (err) {
       toast.dismiss(loadToast);
-      toast.error(err || 'Failed to update subject status');
+      toast.error(err || (isRTL ? 'فشل تحديث حالة المادة' : 'Failed to update subject status'));
     }
   };
 
@@ -158,22 +160,22 @@ const Content = () => {
   };
 
   const confirmDelete = async () => {
-    const loadToast = toast.loading('Deleting subject...');
+    const loadToast = toast.loading(isRTL ? 'جاري حذف المادة...' : 'Deleting subject...');
     try {
       await dispatch(deleteSubject(deletingSubject._id)).unwrap();
       toast.dismiss(loadToast);
-      toast.success('Subject deleted successfully!');
+      toast.success(isRTL ? 'تم حذف المادة بنجاح!' : 'Subject deleted successfully!');
       setShowDeleteConfirm(false);
       setDeletingSubject(null);
       dispatch(fetchAllSubjects());
     } catch (err) {
       toast.dismiss(loadToast);
-      toast.error(err || 'Failed to delete subject');
+      toast.error(err || (isRTL ? 'فشل حذف المادة' : 'Failed to delete subject'));
     }
   };
 
   const handleFormSubmit = async (values, { resetForm, setSubmitting }) => {
-    const loadToast = toast.loading(editingSubject ? 'Saving subject...' : 'Creating subject...');
+    const loadToast = toast.loading(editingSubject ? (isRTL ? 'جاري حفظ المادة...' : 'Saving subject...') : (isRTL ? 'جاري إنشاء المادة...' : 'Creating subject...'));
     try {
       if (editingSubject) {
         await dispatch(updateSubject({
@@ -186,7 +188,7 @@ const Content = () => {
           }
         })).unwrap();
         toast.dismiss(loadToast);
-        toast.success('Subject updated successfully!');
+        toast.success(isRTL ? 'تم تحديث المادة بنجاح!' : 'Subject updated successfully!');
       } else {
         await dispatch(createSubject({
           name: values.title,
@@ -199,7 +201,7 @@ const Content = () => {
           grade: 'Primary',
         })).unwrap();
         toast.dismiss(loadToast);
-        toast.success('Subject created successfully!');
+        toast.success(isRTL ? 'تم إنشاء المادة بنجاح!' : 'Subject created successfully!');
       }
       setIsModalOpen(false);
       setEditingSubject(null);
@@ -207,7 +209,7 @@ const Content = () => {
       dispatch(fetchAllSubjects());
     } catch (err) {
       toast.dismiss(loadToast);
-      toast.error(err || 'Failed to submit subject form');
+      toast.error(err || (isRTL ? 'فشل إرسال نموذج المادة' : 'Failed to submit subject form'));
     } finally {
       setSubmitting(false);
     }
@@ -240,7 +242,7 @@ const Content = () => {
 
   if (isLoading && subjectsList.length === 0 && lessons.length === 0) {
     return (
-      <DashboardLayout role="admin" activeTab="content" title="Courses & Lessons" subtitle="Loading content..." disableScroll={true}>
+      <DashboardLayout role="admin" activeTab="content" title={t('admin.content.title')} subtitle={t('common.loading')} disableScroll={true}>
         <ContentSkeleton />
       </DashboardLayout>
     );
@@ -250,8 +252,8 @@ const Content = () => {
     <DashboardLayout
       role="admin"
       activeTab="content"
-      title="Courses & Lessons"
-      subtitle="Course Management & Free Preview Toggles"
+      title={t('admin.content.title')}
+      subtitle={t('admin.content.subtitle')}
       isModalOpen={isBlurred}
       disableScroll={true}
     >
@@ -271,7 +273,7 @@ const Content = () => {
               }`}
             >
               <FiBookOpen size={16} />
-              <span>Subjects ({totalSubjects})</span>
+              <span>{isRTL ? `المواد الدراسية (${totalSubjects})` : `Subjects (${totalSubjects})`}</span>
             </button>
 
             <button
@@ -283,7 +285,7 @@ const Content = () => {
               }`}
             >
               <FiVideo size={16} />
-              <span>Free Lesson Management</span>
+              <span>{isRTL ? "إدارة المعاينة المجانية" : "Free Lesson Management"}</span>
             </button>
           </div>
 
@@ -295,27 +297,31 @@ const Content = () => {
             {/* Search & Filters */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-400`} size={18} />
                 <input
                   type="text"
-                  placeholder="Search subjects or teachers..."
+                  placeholder={isRTL ? "البحث عن المواد أو المعلمين..." : "Search subjects or teachers..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm focus:outline-none focus:border-red-500/50"
+                  className={`w-full ${isRTL ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'} py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm focus:outline-none focus:border-red-500/50`}
                 />
               </div>
               <div className="flex gap-2">
-                {['all', 'active', 'inactive'].map((st) => (
+                {[
+                  { id: 'all', label: isRTL ? 'الكل' : 'all' },
+                  { id: 'active', label: isRTL ? 'نشط' : 'active' },
+                  { id: 'inactive', label: isRTL ? 'معطل' : 'inactive' }
+                ].map((st) => (
                   <button
-                    key={st}
-                    onClick={() => setFilterStatus(st)}
+                    key={st.id}
+                    onClick={() => setFilterStatus(st.id)}
                     className={`px-4 py-2.5 rounded-2xl text-xs font-bold capitalize transition-all cursor-pointer ${
-                      filterStatus === st
+                      filterStatus === st.id
                         ? 'bg-red-500 text-white'
                         : 'bg-[#0e101a] border border-gray-800 text-gray-400'
                     }`}
                   >
-                    {st}
+                    {st.label}
                   </button>
                 ))}
               </div>
@@ -325,27 +331,29 @@ const Content = () => {
             <div className="flex-1 overflow-y-auto pr-1 pb-36">
               {filteredSubjects.length === 0 ? (
                 <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl text-gray-500 font-bold">
-                  No subjects found.
+                  {isRTL ? "لم يتم العثور على مواد." : "No subjects found."}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredSubjects.map((sub) => {
-                    const teacherName = sub.teacher && typeof sub.teacher === 'object' ? sub.teacher.name : 'Unassigned';
+                    const teacherName = sub.teacher && typeof sub.teacher === 'object' ? sub.teacher.name : (isRTL ? 'غير معين' : 'Unassigned');
 
                     return (
                       <div
                         key={sub._id}
-                        className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden text-left"
+                        className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-3xl shadow-lg flex flex-col gap-4 relative overflow-hidden text-start"
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-3.5">
                             <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
                               <FiBookOpen size={22} />
                             </div>
-                            <div>
+                            <div className="text-start">
                               <h4 className="text-base font-extrabold text-white leading-tight capitalize">{sub.name}</h4>
                               <p className="text-xs text-gray-400 mt-1">{sub.description}</p>
-                              <span className="text-[11px] text-gray-500 font-bold block mt-1">Teacher: {teacherName}</span>
+                              <span className="text-[11px] text-gray-500 font-bold block mt-1">
+                                {isRTL ? `المعلم: ${teacherName}` : `Teacher: ${teacherName}`}
+                              </span>
                             </div>
                           </div>
 
@@ -356,22 +364,22 @@ const Content = () => {
                               checked={!!sub.isActive}
                               onChange={() => toggleSubjectStatus(sub._id, sub.isActive)}
                             />
-                            <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500" />
+                            <div className={`w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:${isRTL ? '-translate-x-full' : 'translate-x-full'} peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:${isRTL ? 'right-[2px]' : 'left-[2px]'} after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500`} />
                           </label>
                         </div>
 
                         <div className="flex justify-end gap-2 pt-2 border-t border-gray-800/50">
                           <button
                             onClick={() => handleEditClick(sub)}
-                            className="px-4 py-2 border border-red-500/20 text-red-400 rounded-2xl text-xs font-bold cursor-pointer"
+                            className="px-4 py-2 border border-red-500/20 text-red-400 rounded-2xl text-xs font-bold cursor-pointer hover:bg-red-500/10 transition-colors"
                           >
-                            Edit
+                            {isRTL ? "تعديل" : "Edit"}
                           </button>
                           <button
                             onClick={() => handleDeleteClick(sub)}
-                            className="px-4 py-2 border border-red-500/20 text-red-400 rounded-2xl text-xs font-bold cursor-pointer"
+                            className="px-4 py-2 border border-red-500/20 text-red-400 rounded-2xl text-xs font-bold cursor-pointer hover:bg-red-500/10 transition-colors"
                           >
-                            Delete
+                            {isRTL ? "حذف" : "Delete"}
                           </button>
                         </div>
                       </div>
@@ -384,10 +392,10 @@ const Content = () => {
             {/* Floating Add Subject Button */}
             <button 
               onClick={handleAddClick}
-              className="fixed bottom-26 right-6 lg:bottom-10 lg:right-10 z-30 flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-500 text-white px-5 py-3.5 rounded-2xl font-extrabold shadow-[0_4px_25px_rgba(239,68,68,0.4)] hover:scale-105 transition-all cursor-pointer"
+              className={`fixed bottom-26 ${isRTL ? 'left-6 lg:left-10' : 'right-6 lg:right-10'} lg:bottom-10 z-30 flex items-center gap-2 bg-gradient-to-r from-red-600 to-rose-500 text-white px-5 py-3.5 rounded-2xl font-extrabold shadow-[0_4px_25px_rgba(239,68,68,0.4)] hover:scale-105 transition-all cursor-pointer`}
             >
               <FiPlus size={18} />
-              <span>Add Subject</span>
+              <span>{isRTL ? "إضافة مادة" : "Add Subject"}</span>
             </button>
           </div>
         )}
@@ -402,13 +410,13 @@ const Content = () => {
               <div className="flex flex-1 gap-3 w-full">
                 {/* Search */}
                 <div className="relative flex-1">
-                  <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                  <FiSearch className={`absolute ${isRTL ? 'right-3.5' : 'left-3.5'} top-1/2 -translate-y-1/2 text-gray-400`} size={16} />
                   <input
                     type="text"
-                    placeholder="Search lesson title..."
+                    placeholder={isRTL ? "البحث عن عنوان الدرس..." : "Search lesson title..."}
                     value={lessonSearch}
                     onChange={(e) => setLessonSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#07080e] border border-gray-800 rounded-xl text-xs font-bold text-white focus:outline-none"
+                    className={`w-full ${isRTL ? 'pr-10 pl-4 text-right' : 'pl-10 pr-4 text-left'} py-2.5 bg-[#07080e] border border-gray-800 rounded-xl text-xs font-bold text-white focus:outline-none`}
                   />
                 </div>
 
@@ -416,9 +424,9 @@ const Content = () => {
                 <select
                   value={selectedSubjectFilter}
                   onChange={(e) => setSelectedSubjectFilter(e.target.value)}
-                  className="py-2.5 px-3 bg-[#07080e] border border-gray-800 rounded-xl text-xs font-bold text-white focus:outline-none cursor-pointer"
+                  className={`py-2.5 px-3 bg-[#07080e] border border-gray-800 rounded-xl text-xs font-bold text-white focus:outline-none cursor-pointer ${isRTL ? 'text-right' : 'text-left'}`}
                 >
-                  <option value="">All Courses</option>
+                  <option value="">{isRTL ? "جميع المواد" : "All Courses"}</option>
                   {subjects?.map(s => (
                     <option key={s._id} value={s._id}>{s.name}</option>
                   ))}
@@ -431,7 +439,7 @@ const Content = () => {
                   onClick={handleSelectAllLessons}
                   className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold cursor-pointer"
                 >
-                  {selectedLessonIds.length === filteredLessons.length ? 'Deselect All' : 'Select All'}
+                  {selectedLessonIds.length === filteredLessons.length ? (isRTL ? 'إلغاء تحديد الكل' : 'Deselect All') : (isRTL ? 'تحديد الكل' : 'Select All')}
                 </button>
 
                 <button
@@ -439,7 +447,7 @@ const Content = () => {
                   disabled={selectedLessonIds.length === 0}
                   className="px-3.5 py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-black hover:bg-emerald-500/30 transition-all cursor-pointer disabled:opacity-40"
                 >
-                  Mark Selected Free
+                  {isRTL ? "تعيين المحدد مجاني" : "Mark Selected Free"}
                 </button>
 
                 <button
@@ -447,7 +455,7 @@ const Content = () => {
                   disabled={selectedLessonIds.length === 0}
                   className="px-3.5 py-2 bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-xl text-xs font-black hover:bg-amber-500/30 transition-all cursor-pointer disabled:opacity-40"
                 >
-                  Mark Selected Paid
+                  {isRTL ? "تعيين المحدد مدفوع" : "Mark Selected Paid"}
                 </button>
               </div>
 
@@ -457,14 +465,14 @@ const Content = () => {
             <div className="flex-1 overflow-y-auto pr-1 pb-36">
               {filteredLessons.length === 0 ? (
                 <div className="p-12 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl text-gray-500 font-bold">
-                  No lessons found matching filters.
+                  {isRTL ? "لم يتم العثور على دروس تلتزم بالتصفية." : "No lessons found matching filters."}
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
                   {filteredLessons.map((lesson) => {
                     const isSelected = selectedLessonIds.includes(lesson._id);
                     const isFree = lesson.isFree;
-                    const subjectName = lesson.subject?.name || 'Subject';
+                    const subjectName = lesson.subject?.name || (isRTL ? 'مادة' : 'Subject');
 
                     return (
                       <div
@@ -476,7 +484,7 @@ const Content = () => {
                             setSelectedLessonIds([...selectedLessonIds, lesson._id]);
                           }
                         }}
-                        className={`p-4 bg-[#0e101a] border rounded-2xl flex items-center justify-between gap-4 transition-all duration-300 text-left cursor-pointer ${
+                        className={`p-4 bg-[#0e101a] border rounded-2xl flex items-center justify-between gap-4 transition-all duration-300 text-start cursor-pointer ${
                           isSelected ? 'border-red-500/60 bg-red-500/5' : 'border-gray-800/80 hover:border-gray-700'
                         }`}
                       >
@@ -487,7 +495,7 @@ const Content = () => {
                           </div>
 
                           {/* Lesson Details */}
-                          <div className="flex flex-col">
+                          <div className="flex flex-col text-start">
                             <span className="text-sm font-extrabold text-white leading-tight">{lesson.title}</span>
                             <span className="text-xs text-gray-400 font-semibold mt-0.5">{subjectName}</span>
                           </div>
@@ -501,14 +509,14 @@ const Content = () => {
                               : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
                           }`}>
                             {isFree ? <FiUnlock size={12} /> : <FiLock size={12} />}
-                            {isFree ? 'Free Preview' : 'Paid Lesson'}
+                            {isFree ? (isRTL ? 'معاينة مجانية' : 'Free Preview') : (isRTL ? 'درس مدفوع' : 'Paid Lesson')}
                           </span>
 
                           <button
                             onClick={() => handleToggleLessonFree(lesson._id, lesson.isFree)}
                             className="px-3 py-1.5 bg-[#07080e] border border-gray-800 hover:border-gray-700 text-xs font-bold text-gray-300 rounded-xl transition-all cursor-pointer"
                           >
-                            {isFree ? 'Make Paid' : 'Make Free'}
+                            {isFree ? (isRTL ? 'جعله مدفوعاً' : 'Make Paid') : (isRTL ? 'جعله مجانياً' : 'Make Free')}
                           </button>
                         </div>
 
@@ -527,19 +535,19 @@ const Content = () => {
       {/* Add / Edit Subject Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0b0c16] border border-gray-800 rounded-3xl p-6 w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 animate-fade-in flex flex-col gap-4 text-left relative">
+          <div className="bg-[#0b0c16] border border-gray-800 rounded-3xl p-6 w-full max-w-md shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 animate-fade-in flex flex-col gap-4 text-start relative">
             <button
               onClick={() => {
                 setIsModalOpen(false);
                 setEditingSubject(null);
               }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors cursor-pointer"
+              className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} text-gray-500 hover:text-white transition-colors cursor-pointer`}
             >
               <FiX size={20} />
             </button>
 
-            <h3 className="text-xl font-black text-white">
-              {editingSubject ? 'Edit Subject' : 'Add New Subject'}
+            <h3 className="text-xl font-black text-white text-start">
+              {editingSubject ? (isRTL ? 'تعديل المادة' : 'Edit Subject') : (isRTL ? 'إضافة مادة جديدة' : 'Add New Subject')}
             </h3>
 
             <Formik
@@ -557,41 +565,41 @@ const Content = () => {
                   <Input
                     name="title"
                     type="text"
-                    label="Subject Title"
-                    placeholder="Chemistry"
+                    label={isRTL ? "اسم المادة" : "Subject Title"}
+                    placeholder={isRTL ? "الكيمياء" : "Chemistry"}
                     icon={FiBookOpen}
                     roleColor="admin"
                   />
                   <Input
                     name="price"
                     type="number"
-                    label="Price ($)"
+                    label={isRTL ? "السعر ($)" : "Price ($)"}
                     placeholder="0"
                     icon={FiDollarSign}
                     roleColor="admin"
                   />
                   
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-gray-400">Description</label>
+                  <div className="flex flex-col gap-1 text-start">
+                    <label className="text-xs font-bold text-gray-400">{isRTL ? "الوصف" : "Description"}</label>
                     <textarea
                       name="description"
                       rows={3}
                       value={values.description}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className="w-full bg-[#07080e] border border-gray-800 rounded-2xl p-3 text-white text-sm focus:outline-none"
+                      className={`w-full bg-[#07080e] border border-gray-800 rounded-2xl p-3 text-white text-sm focus:outline-none ${isRTL ? 'text-right' : 'text-left'}`}
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-gray-400">Teacher</label>
+                  <div className="flex flex-col gap-1 text-start">
+                    <label className="text-xs font-bold text-gray-400">{isRTL ? "المعلم" : "Teacher"}</label>
                     <select
                       name="teacher"
                       value={values.teacher}
                       onChange={handleChange}
-                      className="w-full bg-[#07080e] border border-gray-800 rounded-2xl p-3 text-white text-sm focus:outline-none"
+                      className={`w-full bg-[#07080e] border border-gray-800 rounded-2xl p-3 text-white text-sm focus:outline-none cursor-pointer ${isRTL ? 'text-right' : 'text-left'}`}
                     >
-                      <option value="">Select Teacher</option>
+                      <option value="">{isRTL ? "اختر المعلم" : "Select Teacher"}</option>
                       {teachers?.map((t) => (
                         <option key={t._id} value={t._id}>{t.name}</option>
                       ))}
@@ -603,13 +611,55 @@ const Content = () => {
                     roleColor="admin"
                     disabled={isSubmitting || !(isValid && dirty)}
                     icon={isSubmitting ? undefined : FiCheck}
-                    className="w-full mt-2 !rounded-2xl"
+                    className="w-full mt-2 !rounded-2xl cursor-pointer"
                   >
-                    {isSubmitting ? 'Saving...' : editingSubject ? 'Save Changes' : 'Create Subject'}
+                    {isSubmitting ? (isRTL ? 'جاري الحفظ...' : 'Saving...') : editingSubject ? (isRTL ? 'حفظ التغييرات' : 'Save Changes') : (isRTL ? 'إنشاء المادة' : 'Create Subject')}
                   </Button>
                 </Form>
               )}
             </Formik>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && deletingSubject && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0b0c16] border border-red-500/30 rounded-3xl p-6 w-full max-w-sm shadow-[0_20px_50px_rgba(239,68,68,0.2)] animate-fade-in flex flex-col items-center justify-center text-center gap-4 relative">
+            <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500 font-black">
+              <FiTrash2 size={24} />
+            </div>
+
+            <div>
+              <h3 className="text-lg font-black text-white">
+                {isRTL ? "حذف المادة؟" : "Delete Subject?"}
+              </h3>
+              <p className="text-xs text-gray-400 font-semibold mt-1">
+                {isRTL ? (
+                  <>هل أنت تأكد من رغبتك في حذف مادة <strong className="text-white">{deletingSubject.name}</strong>؟ لا يمكن التراجع عن هذا الإجراء.</>
+                ) : (
+                  <>Are you sure you want to delete <strong className="text-white">{deletingSubject.name}</strong>? This action cannot be undone.</>
+                )}
+              </p>
+            </div>
+
+            <div className="flex gap-3 w-full pt-2">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletingSubject(null);
+                }}
+                className="flex-1 py-3 bg-gray-800 text-gray-300 rounded-xl text-xs font-black hover:bg-gray-700 transition-all cursor-pointer"
+              >
+                {isRTL ? "إلغاء" : "Cancel"}
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black shadow-lg transition-all cursor-pointer"
+              >
+                {isRTL ? "حذف المادة" : "Delete Subject"}
+              </button>
+            </div>
           </div>
         </div>
       )}

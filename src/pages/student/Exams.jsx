@@ -13,10 +13,12 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { CardSkeleton } from '../../components/ui/Skeleton';
 import { fetchAvailableExams } from '../../redux/slices/studentSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Exams = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   const { availableExams, isLoading } = useSelector((state) => state.student);
 
@@ -47,8 +49,8 @@ const Exams = () => {
     <DashboardLayout
       role="student"
       activeTab="exams"
-      title="Available Exams"
-      subtitle={`${filteredExams.length} exams to take`}
+      title={t('student.exams.title')}
+      subtitle={t('student.exams.subtitle')}
       showBackButton={true}
       onBackClick={() => navigate('/student/dashboard')}
       headerActions={
@@ -60,7 +62,7 @@ const Exams = () => {
         </button>
       }
     >
-      <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-32 lg:pb-12 w-full">
+      <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-32 lg:pb-12 w-full">
         
         {/* Subject filter tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none w-full">
@@ -74,7 +76,7 @@ const Exams = () => {
                   : 'bg-gray-900/40 border-gray-800 text-gray-400 hover:text-gray-200'
               }`}
             >
-              {tag}
+              {tag === 'All Subjects' ? t('student.exams.allSubjects') : tag}
             </button>
           ))}
         </div>
@@ -93,10 +95,10 @@ const Exams = () => {
               return (
                 <div 
                   key={exam._id}
-                  className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 hover:border-emerald-500/20 shadow-xl flex flex-col justify-between gap-5 relative overflow-hidden transition-all duration-300 group"
+                  className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 hover:border-emerald-500/20 shadow-xl flex flex-col justify-between gap-5 relative overflow-hidden transition-all duration-300 group text-start"
                 >
-                  {/* Status Badge in top right */}
-                  <div className="absolute top-4 right-4 z-10">
+                  {/* Status Badge in top corner */}
+                  <div className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} z-10`}>
                     {hasAttempted && (
                       <span className={`px-3 py-1.5 rounded-2xl text-[10px] font-black flex flex-col items-center justify-center ${
                         isPassed 
@@ -104,18 +106,18 @@ const Exams = () => {
                           : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'
                       }`}>
                         <span className="text-xs leading-none">{lastScore}%</span>
-                        <span className="text-[9.5px] opacity-80 mt-0.5">{isPassed ? 'Passed' : 'Failed'}</span>
+                        <span className="text-[9.5px] opacity-80 mt-0.5">{isPassed ? t('student.results.passed') : t('student.results.failed')}</span>
                       </span>
                     )}
                   </div>
 
                   {/* Icon & Details */}
-                  <div className="flex flex-col text-left gap-3">
+                  <div className="flex flex-col text-start gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)] shrink-0">
                       <FiClipboard size={18} className="group-hover:scale-110 transition-transform" />
                     </div>
                     
-                    <div className="flex flex-col text-left mt-1">
+                    <div className="flex flex-col text-start mt-1">
                       <h3 className="text-base font-black text-white capitalize leading-tight group-hover:text-emerald-400 transition-colors">
                         {exam.title}
                       </h3>
@@ -133,12 +135,12 @@ const Exams = () => {
                     <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold text-gray-400">
                       <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-900/30 border border-gray-800/80">
                         <FiHelpCircle className="text-blue-400" />
-                        {exam.totalQuestions || 0} Qs
+                        {exam.totalQuestions || 0} {t('student.exams.qsCount')}
                       </span>
                       {exam.duration && (
                         <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-900/30 border border-gray-800/80">
                           <FiClock className="text-blue-400" />
-                          {exam.duration} min
+                          {exam.duration} {t('student.exams.minDuration')}
                         </span>
                       )}
                       <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-900/30 border border-gray-800/80 capitalize">
@@ -155,11 +157,11 @@ const Exams = () => {
                       >
                         {hasAttempted ? (
                           <>
-                            <FiRotateCcw className="text-xs" /> Retake Exam
+                            <FiRotateCcw className="text-xs" /> {t('student.exams.retakeExam')}
                           </>
                         ) : (
                           <>
-                            <FiPlay className="text-xs" /> Take Exam
+                            <FiPlay className={`text-xs ${isRTL ? 'rotate-180' : ''}`} /> {t('student.exams.takeExam')}
                           </>
                         )}
                       </button>
@@ -168,7 +170,7 @@ const Exams = () => {
                         disabled
                         className="w-full py-2.5 rounded-xl bg-gray-900/30 border border-gray-800 text-xs font-black text-gray-500 transition-all flex items-center justify-center gap-1.5 select-none cursor-not-allowed"
                       >
-                        <FiLock className="text-xs" /> Already Taken
+                        <FiLock className="text-xs" /> {t('student.exams.alreadyTaken')}
                       </button>
                     )}
                   </div>
@@ -177,7 +179,7 @@ const Exams = () => {
             })
           ) : (
             <div className="col-span-2 lg:col-span-4 p-8 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl flex flex-col items-center justify-center">
-              <span className="text-sm font-bold text-gray-500">No exams available matching your selection.</span>
+              <span className="text-sm font-bold text-gray-500">{t('student.exams.noExamsMatching')}</span>
             </div>
           )}
         </div>

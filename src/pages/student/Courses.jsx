@@ -6,7 +6,6 @@ import {
   FiBookOpen,
   FiBook,
   FiSearch,
-  FiUsers,
   FiHelpCircle,
   FiChevronRight,
   FiX,
@@ -20,17 +19,19 @@ import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { CardSkeleton } from '../../components/ui/Skeleton';
 import { fetchBrowseSubjects, validateCoupon, redeemCoupon, enrollWithCoupon } from '../../redux/slices/studentSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Courses = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   // Redux Selectors
   const { browseSubjects, isLoading, isActionLoading } = useSelector((state) => state.student);
 
   // Filter & search states
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTag, setSelectedTag] = useState('All');
+  const [selectedTag, setSelectedTag] = useState(isRTL ? 'الكل' : 'All');
 
   // Modal enrollment states
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
@@ -52,18 +53,18 @@ const Courses = () => {
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim()) {
-      toast.error('Please enter a coupon code.');
+      toast.error(isRTL ? 'الرجاء إدخال رمز الكوبون.' : 'Please enter a coupon code.');
       return;
     }
-    const myToast = toast.loading('Validating coupon...');
+    const myToast = toast.loading(isRTL ? 'جاري التحقق من الكوبون...' : 'Validating coupon...');
     try {
       const res = await dispatch(validateCoupon(couponCode)).unwrap();
       toast.dismiss(myToast);
       setValidatedCouponData(res);
-      toast.success('Coupon valid! 🎁');
+      toast.success(isRTL ? 'الكوبون صالح! 🎁' : 'Coupon valid! 🎁');
     } catch (err) {
       toast.dismiss(myToast);
-      toast.error(err || 'Invalid or expired coupon code.');
+      toast.error(err || (isRTL ? 'رمز الكوبون غير صالح أو منتهي الصلاحية.' : 'Invalid or expired coupon code.'));
       setValidatedCouponData(null);
     }
   };
@@ -71,18 +72,18 @@ const Courses = () => {
   const handleConfirmEnrollment = async () => {
     const isFree = activeEnrollCourse && activeEnrollCourse.price === 0;
     if (!isFree && !validatedCouponData) {
-      toast.error('Please validate a coupon first.');
+      toast.error(isRTL ? 'الرجاء التحقق من الكوبون أولاً.' : 'Please validate a coupon first.');
       return;
     }
 
-    const myToast = toast.loading(isFree ? 'Enrolling...' : 'Redeeming coupon...');
+    const myToast = toast.loading(isFree ? (isRTL ? 'جاري التسجيل...' : 'Enrolling...') : (isRTL ? 'جاري استخدام الكوبون...' : 'Redeeming coupon...'));
     try {
       if (isFree) {
         await dispatch(enrollWithCoupon({ subjectId: activeEnrollCourse._id })).unwrap();
-        toast.success(`Successfully enrolled in ${activeEnrollCourse.name}! 🎉`);
+        toast.success(isRTL ? `تم التسجيل بنجاح في ${activeEnrollCourse.name}! 🎉` : `Successfully enrolled in ${activeEnrollCourse.name}! 🎉`);
       } else {
         const res = await dispatch(redeemCoupon(couponCode)).unwrap();
-        toast.success(res.message || 'Coupon redeemed successfully! 🎉');
+        toast.success(res.message || (isRTL ? 'تم استخدام الكوبون بنجاح! 🎉' : 'Coupon redeemed successfully! 🎉'));
       }
 
       toast.dismiss(myToast);
@@ -93,12 +94,16 @@ const Courses = () => {
       dispatch(fetchBrowseSubjects());
     } catch (err) {
       toast.dismiss(myToast);
-      toast.error(err || 'Failed to redeem coupon.');
+      toast.error(err || (isRTL ? 'فشل استخدام الكوبون.' : 'Failed to redeem coupon.'));
     }
   };
 
   // Generate dynamic tag filters
-  const courseTags = ['All', 'Enrolled', 'Available'];
+  const allLabel = isRTL ? 'الكل' : 'All';
+  const enrolledLabel = isRTL ? 'المسجلة' : 'Enrolled';
+  const availableLabel = isRTL ? 'المتاحة' : 'Available';
+
+  const courseTags = [allLabel, enrolledLabel, availableLabel];
   if (browseSubjects && browseSubjects.length > 0) {
     const subjectNames = [...new Set(browseSubjects.map(s => s.name))];
     courseTags.push(...subjectNames);
@@ -111,9 +116,9 @@ const Courses = () => {
 
     if (!matchesSearch) return false;
 
-    if (selectedTag === 'Enrolled') return c.isEnrolled;
-    if (selectedTag === 'Available') return !c.isEnrolled;
-    if (selectedTag !== 'All') {
+    if (selectedTag === enrolledLabel || selectedTag === 'Enrolled') return c.isEnrolled;
+    if (selectedTag === availableLabel || selectedTag === 'Available') return !c.isEnrolled;
+    if (selectedTag !== allLabel && selectedTag !== 'All') {
       return c.name.toLowerCase() === selectedTag.toLowerCase();
     }
     return true;
@@ -126,22 +131,22 @@ const Courses = () => {
     <DashboardLayout
       role="student"
       activeTab="courses"
-      title="My Courses"
-      subtitle={`${enrolledCount} enrolled · ${availableCount} available`}
+      title={t('student.courses.title')}
+      subtitle={t('student.courses.subtitle')}
       showBackButton={false}
       isModalOpen={isEnrollModalOpen}
     >
-      <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-32 lg:pb-12 w-full">
+      <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-32 lg:pb-12 w-full">
         {/* Search & Redeem Bar */}
         <div className="flex items-center gap-3 w-full">
           <div className="relative flex-1">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
+            <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-400 text-base`} />
             <input
               type="text"
-              placeholder="Search courses..."
+              placeholder={t('student.courses.searchCourses')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-gray-900/50 border border-gray-800 text-sm font-semibold text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-gray-500"
+              className={`w-full ${isRTL ? 'pr-11 pl-4' : 'pl-11 pr-4'} py-3.5 rounded-2xl bg-gray-900/50 border border-gray-800 text-sm font-semibold text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-gray-500 text-start`}
             />
           </div>
           <button
@@ -154,7 +159,7 @@ const Courses = () => {
             className="px-4 py-3.5 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-gray-950 font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(234,179,8,0.25)] transition-all hover:scale-105 cursor-pointer shrink-0"
           >
             <FiGift size={16} />
-            Redeem Coupon
+            {isRTL ? "استخدام الكوبون" : "Redeem Coupon"}
           </button>
         </div>
 
@@ -199,33 +204,33 @@ const Courses = () => {
                       handleEnrollClick(course);
                     }
                   }}
-                  className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 hover:border-emerald-500/20 shadow-xl flex flex-col justify-between gap-4 relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] cursor-pointer group"
+                  className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 hover:border-emerald-500/20 shadow-xl flex flex-col justify-between gap-4 relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] cursor-pointer group text-start"
                 >
                   {/* Enrolled/Price badge */}
-                  <div className="absolute top-4 right-4 z-10">
+                  <div className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} z-10`}>
                     {isEnrolled ? (
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Enrolled
+                        {isRTL ? "مسجل" : "Enrolled"}
                       </span>
                     ) : isFree ? (
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400">
-                        Free
+                        {isRTL ? "مجاني" : "Free"}
                       </span>
                     ) : (
                       <span className="px-2.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-[10px] font-black text-yellow-400">
-                        {course.price} Pts
+                        {course.price} {isRTL ? "نقاط" : "Pts"}
                       </span>
                     )}
                   </div>
 
                   {/* Title & icon */}
-                  <div className="flex flex-col text-left gap-3">
+                  <div className="flex flex-col text-start gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)] shrink-0">
                       <FiBookOpen size={18} className="group-hover:scale-110 transition-transform" />
                     </div>
 
-                    <div className="flex flex-col text-left">
+                    <div className="flex flex-col text-start">
                       <h3 className="text-base font-black text-white capitalize leading-tight group-hover:text-emerald-400 transition-colors">
                         {course.name}
                       </h3>
@@ -234,7 +239,7 @@ const Courses = () => {
                       </span>
                       {course.teacher && (
                         <span className="text-xs text-gray-400 font-bold mt-2">
-                          Instructor: {course.teacher.name}
+                          {isRTL ? "المحاضر: " : "Instructor: "}{course.teacher.name}
                         </span>
                       )}
                     </div>
@@ -242,18 +247,14 @@ const Courses = () => {
 
                   <div className="flex flex-col gap-3 border-t border-gray-800/40 pt-3 mt-1">
                     {/* Stat pills info */}
-                    <div className="flex items-center justify-between text-xs font-bold text-gray-500">
+                    <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
                       <span className="flex items-center gap-1">
                         <FiBook className="text-blue-400" />
-                        {course.totalLessons || 0} lessons
+                        {course.totalLessons || 0} {isRTL ? "دروس" : "lessons"}
                       </span>
                       <span className="flex items-center gap-1">
                         <FiHelpCircle className="text-blue-400" />
-                        {course.totalQuestions || 0} Qs
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FiUsers className="text-yellow-500" />
-                        {course.totalStudents || 0}
+                        {course.totalQuestions || 0} {isRTL ? "أسئلة" : "Qs"}
                       </span>
                     </div>
 
@@ -262,7 +263,7 @@ const Courses = () => {
                       {isEnrolled && totalLessons > 0 ? (
                         <div className="flex flex-col gap-1.5 flex-1">
                           <div className="flex items-center justify-between text-xs font-bold text-gray-400">
-                            <span>{completedCount}/{totalLessons} lessons</span>
+                            <span>{completedCount}/{totalLessons} {isRTL ? "دروس" : "lessons"}</span>
                             <span className="text-blue-400">{progressPercent}%</span>
                           </div>
                           <div className="h-1 w-full bg-gray-900 rounded-full overflow-hidden border border-gray-800/60">
@@ -274,7 +275,7 @@ const Courses = () => {
                         </div>
                       ) : (
                         <div className="text-xs text-gray-500 font-bold">
-                          {!isEnrolled && !isFree ? `Requires ${course.price} Points` : 'Available to study'}
+                          {!isEnrolled && !isFree ? (isRTL ? `يتطلب ${course.price} نقطة` : `Requires ${course.price} Points`) : (isRTL ? 'متاح للدراسة' : 'Available to study')}
                         </div>
                       )}
 
@@ -287,7 +288,7 @@ const Courses = () => {
                           }}
                           className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_12px_rgba(37,99,235,0.25)] hover:scale-102 cursor-pointer flex items-center justify-center gap-1"
                         >
-                          Continue <FiChevronRight />
+                          {isRTL ? "متابعة" : "Continue"} <FiChevronRight className={isRTL ? 'rotate-180' : ''} />
                         </button>
                       ) : (
                         <button
@@ -297,7 +298,7 @@ const Courses = () => {
                           }}
                           className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_12px_rgba(37,99,235,0.25)] hover:scale-102 cursor-pointer flex items-center justify-center gap-1"
                         >
-                          Enroll +
+                          {isRTL ? "+ تسجيل" : "Enroll +"}
                         </button>
                       )}
                     </div>
@@ -308,7 +309,9 @@ const Courses = () => {
           )}
           {!isLoading && filteredCourses.length === 0 && (
             <div className="col-span-2 lg:col-span-4 p-8 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl flex flex-col items-center justify-center">
-              <span className="text-xs font-bold text-gray-500">No courses match your search filters.</span>
+              <span className="text-xs font-bold text-gray-500">
+                {isRTL ? "لا توجد كورسات تطابق فلاتر البحث." : "No courses match your search filters."}
+              </span>
             </div>
           )}
         </div>
@@ -327,7 +330,7 @@ const Courses = () => {
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-lg bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-left"
+              className="w-full sm:max-w-lg bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Drawer Top Handle for Mobile */}
@@ -337,33 +340,33 @@ const Courses = () => {
               <button
                 disabled={isActionLoading}
                 onClick={() => setIsEnrollModalOpen(false)}
-                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
+                className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} text-gray-500 hover:text-white transition-colors cursor-pointer disabled:opacity-50`}
               >
                 <FiX size={20} />
               </button>
 
               {/* Header Title and Badges */}
-              <div className="flex items-center gap-4 mb-6 text-left">
+              <div className="flex items-center gap-4 mb-6 text-start">
                 <div className="w-14 h-14 rounded-2xl bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-400 shrink-0">
                   <FiGift size={26} />
                 </div>
-                <div className="flex flex-col text-left">
+                <div className="flex flex-col text-start">
                   <h3 className="text-xl font-black text-white capitalize leading-tight">
-                    {activeEnrollCourse ? activeEnrollCourse.name : 'Redeem Coupon'}
+                    {activeEnrollCourse ? activeEnrollCourse.name : (isRTL ? 'استخدام الكوبون' : 'Redeem Coupon')}
                   </h3>
                   {activeEnrollCourse ? (
                     activeEnrollCourse.price === 0 || validatedCouponData ? (
                       <span className="text-xs font-bold text-emerald-400 mt-1 leading-none">
-                        Free / Covered by coupon
+                        {isRTL ? "مجاني / مغطى بالكوبون" : "Free / Covered by coupon"}
                       </span>
                     ) : (
                       <span className="text-xs font-bold text-yellow-500 mt-1 leading-none">
-                        Price: {activeEnrollCourse.price} Points
+                        {isRTL ? `السعر: ${activeEnrollCourse.price} نقاط` : `Price: ${activeEnrollCourse.price} Points`}
                       </span>
                     )
                   ) : (
                     <span className="text-xs font-bold text-gray-400 mt-1 leading-none">
-                      Unlock courses with a batch coupon code
+                      {isRTL ? "افتح الكورسات باستخدام رمز الكوبون" : "Unlock courses with a batch coupon code"}
                     </span>
                   )}
                 </div>
@@ -373,23 +376,25 @@ const Courses = () => {
               {activeEnrollCourse && activeEnrollCourse.price === 0 ? (
                 <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 flex items-center gap-3 mb-6">
                   <FiLock className="text-lg shrink-0" />
-                  <span className="text-xs font-bold">This course is free — no coupon needed.</span>
+                  <span className="text-xs font-bold">
+                    {isRTL ? "هذا الكورس مجاني — لا حاجة لكوبون." : "This course is free — no coupon needed."}
+                  </span>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2.5 mb-6">
                   <span className="text-xs font-black text-gray-400 uppercase tracking-wider">
-                    Enter your coupon code
+                    {isRTL ? "أدخل رمز الكوبون" : "Enter your coupon code"}
                   </span>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
-                      <FiKey className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm" />
+                      <FiKey className={`absolute ${isRTL ? 'right-3.5' : 'left-3.5'} top-1/2 -translate-y-1/2 text-gray-500 text-sm`} />
                       <input
                         type="text"
                         placeholder="FM-XXXXXXXXX"
                         value={couponCode}
                         disabled={isActionLoading || validatedCouponData}
                         onChange={(e) => setCouponCode(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-950/50 border border-gray-800 text-xs font-semibold text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-gray-600 uppercase"
+                        className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 rounded-xl bg-gray-950/50 border border-gray-800 text-xs font-semibold text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-gray-600 uppercase text-start`}
                       />
                     </div>
                     {!validatedCouponData && (
@@ -405,20 +410,11 @@ const Courses = () => {
                   {validatedCouponData && (
                     <div className="p-4 mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex flex-col gap-2">
                       <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-black">
-                        <FiCheckCircle size={16} /> Valid Coupon: {validatedCouponData.code}
+                        <FiCheckCircle size={16} /> {isRTL ? "كوبون صالح:" : "Valid Coupon:"} {validatedCouponData.code}
                       </div>
                       <div className="text-gray-300 font-semibold">
-                        Unlocks {validatedCouponData.courses?.length || 0} main course(s) and {validatedCouponData.bonusCourses?.length || 0} bonus course(s).
+                        {isRTL ? `يفتح ${validatedCouponData.courses?.length || 0} كورس رئيسي و ${validatedCouponData.bonusCourses?.length || 0} كورس إضافي.` : `Unlocks ${validatedCouponData.courses?.length || 0} main course(s) and ${validatedCouponData.bonusCourses?.length || 0} bonus course(s).`}
                       </div>
-                      {((validatedCouponData.courses && validatedCouponData.courses.length > 0) || (validatedCouponData.bonusCourses && validatedCouponData.bonusCourses.length > 0)) && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {[...(validatedCouponData.courses || []), ...(validatedCouponData.bonusCourses || [])].map((c) => (
-                            <span key={c._id} className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
-                              {c.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -431,7 +427,7 @@ const Courses = () => {
                   disabled={isActionLoading}
                   className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_15px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  {isActionLoading ? 'Processing...' : 'Confirm & Unlock Courses'}
+                  {isActionLoading ? (isRTL ? 'جاري المعالجة...' : 'Processing...') : (isRTL ? 'تأكيد وفتح الكورسات' : 'Confirm & Unlock Courses')}
                 </button>
               ) : (
                 <button
@@ -439,7 +435,7 @@ const Courses = () => {
                   disabled={true}
                   className="w-full py-4 rounded-2xl bg-gray-850 text-xs font-black text-gray-500 flex items-center justify-center gap-2 cursor-not-allowed border border-gray-800/80"
                 >
-                  <FiShoppingBag className="text-sm" /> Enter valid coupon code
+                  <FiShoppingBag className="text-sm" /> {isRTL ? "أدخل رمز كوبون صالح" : "Enter valid coupon code"}
                 </button>
               )}
             </motion.div>

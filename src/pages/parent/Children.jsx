@@ -18,10 +18,12 @@ import {
   fetchChildSubjects, 
   fetchChildResults 
 } from '../../redux/slices/parentsSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const ParentChildren = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   const { 
     children, 
@@ -74,10 +76,10 @@ const ParentChildren = () => {
     <DashboardLayout
       role="parent"
       activeTab="children"
-      title="Children Stats"
-      subtitle="Detailed performance reports"
+      title={t('parent.dashboard.myChildren')}
+      subtitle={t('parent.dashboard.subjectPerformance')}
     >
-      <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-36 lg:pb-16 animate-fade-in">
+      <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-36 lg:pb-16 animate-fade-in">
 
         {/* Child Selector Tabs */}
         <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
@@ -112,9 +114,9 @@ const ParentChildren = () => {
         {selectedChildId && (
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Avg Score', value: `${avgScore}%`, icon: FiTrendingUp, color: 'cyan' },
-              { label: 'Best Score', value: `${bestScore}%`, icon: FiAward, color: 'yellow' },
-              { label: 'Passed', value: passedCount, icon: FiClipboard, color: 'emerald' },
+              { label: t('parent.dashboard.avgScore'), value: `${avgScore}%`, icon: FiTrendingUp, color: 'cyan' },
+              { label: t('parent.dashboard.bestScore'), value: `${bestScore}%`, icon: FiAward, color: 'yellow' },
+              { label: t('parent.dashboard.passed'), value: passedCount, icon: FiClipboard, color: 'emerald' },
             ].map((s) => {
               const Icon = s.icon;
               return (
@@ -124,7 +126,7 @@ const ParentChildren = () => {
                 >
                   <Icon className="text-purple-400 text-lg" />
                   <span className="text-lg font-black text-white">{s.value}</span>
-                  <span className="text-[10px] font-bold text-gray-505 uppercase tracking-wider">{s.label}</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{s.label}</span>
                 </div>
               );
             })}
@@ -134,11 +136,11 @@ const ParentChildren = () => {
         {/* Subject Performance */}
         {selectedChildId && (
           <div className="flex flex-col gap-3">
-            <h3 className="text-base font-black text-white">Subject Performance</h3>
+            <h3 className="text-base font-black text-white">{t('parent.dashboard.subjectPerformance')}</h3>
             {isLoading && childSubjects.length === 0 ? (
               <TableRowSkeleton />
             ) : childSubjects.length === 0 ? (
-              <p className="text-sm text-gray-500 font-semibold py-2">No subjects enrolled yet.</p>
+              <p className="text-sm text-gray-500 font-semibold py-2">{t('parent.dashboard.noSubjectsYet')}</p>
             ) : (
               childSubjects.map((subj) => {
                 const subjectData = subj.subject || {};
@@ -172,13 +174,13 @@ const ParentChildren = () => {
         {/* Search Exams */}
         {selectedChildId && (
           <div className="relative">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+            <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search exams..."
-              className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm font-semibold outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600"
+              placeholder={t('parent.dashboard.searchExamsPlaceholder')}
+              className={`w-full ${isRTL ? 'pr-11 pl-4' : 'pl-11 pr-4'} py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-sm font-semibold outline-none focus:border-purple-500/50 transition-colors placeholder:text-gray-600`}
             />
           </div>
         )}
@@ -187,8 +189,8 @@ const ParentChildren = () => {
         {selectedChildId && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
-              <h3 className="text-base font-black text-white">Exam History</h3>
-              <span className="text-xs font-bold text-gray-500">{filteredExams.length} exams</span>
+              <h3 className="text-base font-black text-white">{t('parent.dashboard.examHistory')}</h3>
+              <span className="text-xs font-bold text-gray-500">{filteredExams.length} {t('parent.reports.exams')}</span>
             </div>
 
             {isLoading && childResults.length === 0 ? (
@@ -196,14 +198,14 @@ const ParentChildren = () => {
             ) : filteredExams.length === 0 ? (
               <div className="p-10 rounded-3xl bg-[#0c0d19]/40 border border-gray-800/80 flex flex-col items-center justify-center gap-2">
                 <FiClipboard className="text-gray-600" size={36} />
-                <span className="text-sm font-extrabold text-gray-500">No exams taken yet</span>
+                <span className="text-sm font-extrabold text-gray-500">{t('parent.dashboard.noExamsTakenYet')}</span>
               </div>
             ) : (
               filteredExams.map((exam) => {
                 const isPassed = exam.passed;
                 const isExpanded = expandedExamId === exam._id;
                 const formattedDate = exam.createdAt 
-                  ? new Date(exam.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  ? new Date(exam.createdAt).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                   : '';
                 return (
                   <div
@@ -238,8 +240,8 @@ const ParentChildren = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="text-left">
-                          <p className="text-sm font-black text-white capitalize">{exam.subject?.name || 'Exam'}</p>
+                        <div className="text-start">
+                          <p className="text-sm font-black text-white capitalize">{exam.subject?.name || t('student.exams.exam')}</p>
                           <p className="text-xs text-gray-500 font-semibold">{formattedDate}</p>
                         </div>
                       </div>
@@ -249,7 +251,7 @@ const ParentChildren = () => {
                             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                             : 'bg-red-500/10 border-red-500/20 text-red-400'
                         }`}>
-                          {isPassed ? '✓ Passed' : '✗ Failed'}
+                          {isPassed ? `✓ ${t('student.results.passed')}` : `✗ ${t('student.results.failed')}`}
                         </span>
                         {isExpanded ? (
                           <FiChevronUp size={16} className="text-gray-400" />
@@ -262,17 +264,17 @@ const ParentChildren = () => {
                     {isExpanded && (
                       <div className="mt-4 pt-4 border-t border-gray-800/50 flex items-center justify-between animate-fade-in">
                         <div className="text-center">
-                          <span className="text-xs text-gray-500 font-semibold block">Score</span>
+                          <span className="text-xs text-gray-500 font-semibold block">{t('student.dailyImprovement.score')}</span>
                           <span className="text-base font-black text-white">{exam.score}% ({exam.correctAnswers}/{exam.totalQuestions})</span>
                         </div>
                         <div className="text-center">
-                          <span className="text-xs text-gray-500 font-semibold block">Status</span>
+                          <span className="text-xs text-gray-500 font-semibold block">{t('admin.users.status')}</span>
                           <span className={`text-sm font-black ${isPassed ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {isPassed ? 'Passed' : 'Failed'}
+                            {isPassed ? t('student.results.passed') : t('student.results.failed')}
                           </span>
                         </div>
                         <div className="text-center">
-                          <span className="text-xs text-gray-500 font-semibold block">Date</span>
+                          <span className="text-xs text-gray-500 font-semibold block">{t('teacher.exams.date')}</span>
                           <span className="text-sm font-black text-white">{formattedDate}</span>
                         </div>
                       </div>

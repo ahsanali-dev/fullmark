@@ -29,12 +29,12 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import ModalWrapper from '../../components/shared/ModalWrapper';
 import { EditProfileSchema, ChangePasswordSchema } from '../../schemas/authSchemas';
-
-// Schemas imported from src/schemas/authSchemas.js
+import { useLanguage } from '../../context/LanguageContext';
 
 const Settings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
   const user = useSelector((state) => state.auth.user);
 
   // App Theme State
@@ -62,7 +62,7 @@ const Settings = () => {
     }
     localStorage.setItem('theme', nextTheme);
     window.dispatchEvent(new Event('themeChange'));
-    toast.success(`Switched to ${nextTheme === 'light' ? 'Light' : 'Dark'} Mode!`);
+    toast.success(isRTL ? `تم التبديل إلى الوضع ${nextTheme === 'light' ? 'الفاتح' : 'الداكن'}!` : `Switched to ${nextTheme === 'light' ? 'Light' : 'Dark'} Mode!`);
   };
 
   // User Profile State
@@ -94,9 +94,9 @@ const Settings = () => {
         phone: values.phone
       })).unwrap();
       setIsEditProfileOpen(false);
-      toast.success('Profile updated successfully!');
+      toast.success(isRTL ? 'تم تحديث الملف الشخصي بنجاح!' : 'Profile updated successfully!');
     } catch (err) {
-      toast.error(err || 'Failed to update profile.');
+      toast.error(err || (isRTL ? 'فشل تحديث الملف الشخصي.' : 'Failed to update profile.'));
     } finally {
       if (setSubmitting) setSubmitting(false);
     }
@@ -104,19 +104,19 @@ const Settings = () => {
 
   // Handle Change Password Save
   const handleUpdatePassword = async (values, { resetForm, setSubmitting }) => {
-    const loadToast = toast.loading('Updating password...');
+    const loadToast = toast.loading(isRTL ? 'جاري تحديث كلمة المرور...' : 'Updating password...');
     try {
       await dispatch(changePassword({
         currentPassword: values.currentPassword,
         newPassword: values.newPassword
       })).unwrap();
       toast.dismiss(loadToast);
-      toast.success('Password updated successfully!');
+      toast.success(isRTL ? 'تم تحديث كلمة المرور بنجاح!' : 'Password updated successfully!');
       setIsChangePasswordOpen(false);
       resetForm();
     } catch (err) {
       toast.dismiss(loadToast);
-      toast.error(err || 'Failed to update password.');
+      toast.error(err || (isRTL ? 'فشل تحديث كلمة المرور.' : 'Failed to update password.'));
     } finally {
       if (setSubmitting) setSubmitting(false);
     }
@@ -124,7 +124,7 @@ const Settings = () => {
 
   const handleLogout = () => {
     dispatch(logoutUser());
-    toast.success('Logged out successfully!');
+    toast.success(isRTL ? 'تم تسجيل الخروج بنجاح!' : 'Logged out successfully!');
     navigate('/');
   };
 
@@ -134,8 +134,8 @@ const Settings = () => {
     <DashboardLayout
       role="admin"
       activeTab="settings"
-      title="System Settings"
-      subtitle="Configure Platform Options"
+      title={t('admin.settings.title')}
+      subtitle={t('admin.settings.subtitle')}
       disableScroll={true}
       isModalOpen={isModalOpen}
     >
@@ -156,9 +156,9 @@ const Settings = () => {
                 onClick={() => navigate(-1)}
                 className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/10"
               >
-                <FiChevronLeft size={20} />
+                {isRTL ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}
               </button>
-              <span className="text-sm font-black tracking-wide uppercase text-white/90">My Profile</span>
+              <span className="text-sm font-black tracking-wide uppercase text-white/90">{isRTL ? "ملفي الشخصي" : "My Profile"}</span>
               <button
                 onClick={() => {
                   setIsEditProfileOpen(true);
@@ -177,7 +177,7 @@ const Settings = () => {
                 </div>
                 <button
                   onClick={() => setIsEditProfileOpen(true)}
-                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-yellow-500 text-gray-900 border-2 border-red-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg"
+                  className={`absolute bottom-0 ${isRTL ? 'left-0' : 'right-0'} w-8 h-8 rounded-full bg-yellow-500 text-gray-900 border-2 border-red-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg`}
                 >
                   <FiCamera size={14} className="stroke-[2.5]" />
                 </button>
@@ -192,52 +192,52 @@ const Settings = () => {
             <div className="flex flex-wrap items-center justify-center gap-2 mt-1 z-10">
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                Super Admin
+                {isRTL ? "مسؤول مميز" : "Super Admin"}
               </span>
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Since May 2026
+                {isRTL ? "منذ مايو 2026" : "Since May 2026"}
               </span>
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                23h ago
+                {isRTL ? "منذ 23 ساعة" : "23h ago"}
               </span>
             </div>
 
           </div>
 
           {/* 2. Admin Privileges Grid */}
-          <div className="flex flex-col gap-3 shrink-0">
-            <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider text-left pl-1">
-              Admin Privileges
+          <div className="flex flex-col gap-3 shrink-0 text-start">
+            <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider text-start pl-1">
+              {isRTL ? "صلاحيات المسؤول" : "Admin Privileges"}
             </h3>
             <div className="grid grid-cols-4 gap-2">
               <div className="flex flex-col items-center justify-center p-3 bg-red-500/5 border border-red-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(239,68,68,0.02)]">
                 <FiShield className="text-red-500 text-lg sm:text-xl" />
-                <span className="text-[10px] font-black text-red-500 whitespace-nowrap">Super Admin</span>
+                <span className="text-[10px] font-black text-red-500 whitespace-nowrap">{isRTL ? "مسؤول مميز" : "Super Admin"}</span>
               </div>
               <div className="flex flex-col items-center justify-center p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(16,185,129,0.02)]">
                 <FiLock className="text-emerald-500 text-lg sm:text-xl" />
-                <span className="text-[10px] font-black text-emerald-500 whitespace-nowrap">Full Access</span>
+                <span className="text-[10px] font-black text-emerald-500 whitespace-nowrap">{isRTL ? "صلاحيات كاملة" : "Full Access"}</span>
               </div>
               <div className="flex flex-col items-center justify-center p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(59,130,246,0.02)]">
                 <FiCheckCircle className="text-blue-500 text-lg sm:text-xl" />
-                <span className="text-[10px] font-black text-blue-500 whitespace-nowrap">Verified</span>
+                <span className="text-[10px] font-black text-blue-500 whitespace-nowrap">{isRTL ? "موثق" : "Verified"}</span>
               </div>
               <div className="flex flex-col items-center justify-center p-3 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(234,179,8,0.02)]">
                 <FiStar className="text-yellow-500 text-lg sm:text-xl" />
-                <span className="text-[10px] font-black text-yellow-500 whitespace-nowrap">Trusted</span>
+                <span className="text-[10px] font-black text-yellow-500 whitespace-nowrap">{isRTL ? "موثوق" : "Trusted"}</span>
               </div>
             </div>
           </div>
 
           {/* 3. Account Management Rows */}
-          <div className="flex flex-col gap-3 shrink-0">
+          <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
               <div className="w-6 h-6 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
                 <FiUser size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Account</h3>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "الحساب" : "Account"}</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -247,35 +247,43 @@ const Settings = () => {
                 onClick={() => {
                   setIsEditProfileOpen(true);
                 }}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-red-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-red-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-sm">
                     <FiUser size={18} />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black text-white leading-tight">Edit Profile</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">Name, photo, contact info</p>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h4>
+                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "الاسم، الصورة، بيانات الاتصال" : "Name, photo, contact info"}</p>
                   </div>
                 </div>
-                <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                {isRTL ? (
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                ) : (
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                )}
               </button>
 
               {/* Change Password Row */}
               <button
                 onClick={() => setIsChangePasswordOpen(true)}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-sm">
                     <FiLock size={18} />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black text-white leading-tight">Change Password</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">Update your password</p>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "تغيير كلمة المرور" : "Change Password"}</h4>
+                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "تحديث كلمة المرور" : "Update your password"}</p>
                   </div>
                 </div>
-                <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                {isRTL ? (
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                ) : (
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                )}
               </button>
 
               {/* Phone Number Row */}
@@ -283,30 +291,34 @@ const Settings = () => {
                 onClick={() => {
                   setIsEditProfileOpen(true);
                 }}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-emerald-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-emerald-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-sm">
                     <FiPhone size={18} />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black text-white leading-tight">Phone Number</h4>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "رقم الهاتف" : "Phone Number"}</h4>
                     <p className="text-xs text-gray-500 font-semibold mt-1">{profileData.phone}</p>
                   </div>
                 </div>
-                <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                {isRTL ? (
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                ) : (
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                )}
               </button>
 
             </div>
           </div>
 
           {/* 4. Appearance Row */}
-          <div className="flex flex-col gap-3 shrink-0">
+          <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
               <div className="w-6 h-6 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
                 <MdPalette size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Appearance</h3>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "المظهر" : "Appearance"}</h3>
             </div>
 
             {/* Theme Toggle Card */}
@@ -315,11 +327,11 @@ const Settings = () => {
                 <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-sm">
                   {isDarkMode ? <FiMoon size={18} /> : <FiSun size={18} />}
                 </div>
-                <div className="text-left">
+                <div className="text-start">
                   <h4 className="text-sm font-black text-white leading-tight">
-                    {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                    {isDarkMode ? (isRTL ? 'الوضع الداكن' : 'Dark Mode') : (isRTL ? 'الوضع الفاتح' : 'Light Mode')}
                   </h4>
-                  <p className="text-xs text-gray-500 font-semibold mt-1">Switch app appearance</p>
+                  <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "تغيير مظهر التطبيق" : "Switch app appearance"}</p>
                 </div>
               </div>
 
@@ -330,20 +342,21 @@ const Settings = () => {
                   }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-lg transition duration-300 ease-in-out ${isDarkMode ? 'translate-x-5.5' : 'translate-x-0'
-                    }`}
+                  className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-lg transition duration-300 ease-in-out ${
+                    isDarkMode ? (isRTL ? '-translate-x-5.5' : 'translate-x-5.5') : 'translate-x-0'
+                  }`}
                 />
               </button>
             </div>
           </div>
 
           {/* 5. Quick Access Grid */}
-          <div className="flex flex-col gap-3 shrink-0">
+          <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
               <div className="w-6 h-6 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
                 <FiGrid size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">Quick Access</h3>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "وصول سريع" : "Quick Access"}</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -351,52 +364,64 @@ const Settings = () => {
               {/* User Management */}
               <button
                 onClick={() => navigate('/admin/users')}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-emerald-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-emerald-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-sm">
                     <FiGrid size={18} />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black text-white leading-tight">User Management</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">View and manage all users</p>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "إدارة المستخدمين" : "User Management"}</h4>
+                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "عرض وإدارة جميع المستخدمين" : "View and manage all users"}</p>
                   </div>
                 </div>
-                <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                {isRTL ? (
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                ) : (
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                )}
               </button>
 
               {/* Subject Management */}
               <button
                 onClick={() => navigate('/admin/content')}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-sm">
                     <FiBookOpen size={18} />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black text-white leading-tight">Subject Management</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">Manage subjects and content</p>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "إدارة المواد" : "Subject Management"}</h4>
+                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "إدارة المواد والمحتوى" : "Manage subjects and content"}</p>
                   </div>
                 </div>
-                <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                {isRTL ? (
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                ) : (
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                )}
               </button>
 
               {/* Platform Reports */}
               <button
                 onClick={() => navigate('/admin/reports')}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-cyan-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-left"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-cyan-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-sm">
                     <FiBarChart2 size={18} />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black text-white leading-tight">Platform Reports</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">Analytics and insights</p>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "تقارير المنصة" : "Platform Reports"}</h4>
+                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "التحليلات والرؤى" : "Analytics and insights"}</p>
                   </div>
                 </div>
-                <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                {isRTL ? (
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                ) : (
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                )}
               </button>
 
             </div>
@@ -408,7 +433,7 @@ const Settings = () => {
             className="w-full py-4 border border-red-500/30 hover:border-red-500/60 bg-red-500/5 hover:bg-red-500/10 rounded-2xl font-black text-red-500 flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer mt-4"
           >
             <FiLogOut className="text-lg" />
-            <span>Sign Out</span>
+            <span>{isRTL ? "تسجيل الخروج" : "Sign Out"}</span>
           </button>
 
         </div>
@@ -422,13 +447,13 @@ const Settings = () => {
           onClick={() => setIsEditProfileOpen(false)}
         >
           <div
-            className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden transition-transform duration-300 animate-slide-up"
+            className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden transition-transform duration-300 animate-slide-up text-start"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
 
-            <h3 className="text-xl sm:text-2xl font-black text-white mb-6 text-left">
-              Edit Profile
+            <h3 className="text-xl sm:text-2xl font-black text-white mb-6 text-start">
+              {isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}
             </h3>
 
             <Formik
@@ -446,24 +471,24 @@ const Settings = () => {
                   <Input
                     name="name"
                     type="text"
-                    label="Full Name"
-                    placeholder="Full Name"
+                    label={isRTL ? "الاسم الكامل" : "Full Name"}
+                    placeholder={isRTL ? "الاسم الكامل" : "Full Name"}
                     icon={FiUser}
                     roleColor="admin"
                   />
                   <Input
                     name="email"
                     type="email"
-                    label="Email"
-                    placeholder="Email Address"
+                    label={isRTL ? "البريد الإلكتروني" : "Email"}
+                    placeholder={isRTL ? "عنوان البريد الإلكتروني" : "Email Address"}
                     icon={FiMail}
                     roleColor="admin"
                   />
                   <Input
                     name="phone"
                     type="text"
-                    label="Phone"
-                    placeholder="Phone Number"
+                    label={isRTL ? "رقم الهاتف" : "Phone"}
+                    placeholder={isRTL ? "رقم الهاتف" : "Phone Number"}
                     icon={FiPhone}
                     roleColor="admin"
                   />
@@ -471,7 +496,7 @@ const Settings = () => {
                     type="submit"
                     className="w-full py-4 mt-2 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(239,68,68,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer"
                   >
-                    <span>Save Changes</span>
+                    <span>{isRTL ? "حفظ التغييرات" : "Save Changes"}</span>
                     <FiCheck className="text-base" />
                   </button>
                 </Form>
@@ -488,13 +513,13 @@ const Settings = () => {
           onClick={() => setIsChangePasswordOpen(false)}
         >
           <div
-            className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden transition-transform duration-300 animate-slide-up"
+            className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden transition-transform duration-300 animate-slide-up text-start"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
 
-            <h3 className="text-xl sm:text-2xl font-black text-white mb-6 text-left">
-              Change Password
+            <h3 className="text-xl sm:text-2xl font-black text-white mb-6 text-start">
+              {isRTL ? "تغيير كلمة المرور" : "Change Password"}
             </h3>
 
             <Formik
@@ -511,8 +536,8 @@ const Settings = () => {
                   <Input
                     name="currentPassword"
                     type="password"
-                    label="Current Password"
-                    placeholder="Current Password"
+                    label={isRTL ? "كلمة المرور الحالية" : "Current Password"}
+                    placeholder={isRTL ? "كلمة المرور الحالية" : "Current Password"}
                     icon={FiLock}
                     showPasswordToggle={true}
                     roleColor="admin"
@@ -520,8 +545,8 @@ const Settings = () => {
                   <Input
                     name="newPassword"
                     type="password"
-                    label="New Password"
-                    placeholder="New Password"
+                    label={isRTL ? "كلمة المرور الجديدة" : "New Password"}
+                    placeholder={isRTL ? "كلمة المرور الجديدة" : "New Password"}
                     icon={FiLock}
                     showPasswordToggle={true}
                     roleColor="admin"
@@ -529,8 +554,8 @@ const Settings = () => {
                   <Input
                     name="confirmPassword"
                     type="password"
-                    label="Confirm Password"
-                    placeholder="Confirm Password"
+                    label={isRTL ? "تأكيد كلمة المرور" : "Confirm Password"}
+                    placeholder={isRTL ? "تأكيد كلمة المرور" : "Confirm Password"}
                     icon={FiLock}
                     showPasswordToggle={true}
                     roleColor="admin"
@@ -539,7 +564,7 @@ const Settings = () => {
                     type="submit"
                     className="w-full py-4 mt-2 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer"
                   >
-                    <span>Update Password</span>
+                    <span>{isRTL ? "تحديث كلمة المرور" : "Update Password"}</span>
                     <FiCheck className="text-base" />
                   </button>
                 </Form>

@@ -1,4 +1,4 @@
-  import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   FiChevronLeft,
@@ -21,7 +21,7 @@ import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTeacherSubjects, fetchWeaknessTopics, createQuestion, uploadQuestionImage } from '../../redux/slices/teacherSlice';
-import { useEffect } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 const getImageUrl = (path) => {
   if (!path) return '';
@@ -37,6 +37,7 @@ const getImageUrl = (path) => {
 const AddQuestion = () => {
   const navigate = useNavigate();
   const { subjectId } = useParams();
+  const { t, isRTL } = useLanguage();
 
   const fileInputRef = useRef(null);
   const optionFileInputRef = useRef(null);
@@ -105,7 +106,7 @@ const AddQuestion = () => {
       const reader = new FileReader();
       reader.onloadend = () => { setImage(reader.result); };
       reader.readAsDataURL(file);
-      toast.success('Image selected!');
+      toast.success(isRTL ? 'تم اختيار الصورة!' : 'Image selected!');
     }
   };
 
@@ -113,7 +114,7 @@ const AddQuestion = () => {
     setImage(null);
     setImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    toast.success('Image removed successfully!');
+    toast.success(isRTL ? 'تم إزالة الصورة بنجاح!' : 'Image removed successfully!');
   };
 
   // Option Image Handlers
@@ -125,7 +126,7 @@ const AddQuestion = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setOptionImages(prev => ({ ...prev, [letter]: reader.result }));
-        toast.success(`Image added to Option ${letter}!`);
+        toast.success(isRTL ? `تم إضافة صورة للخيار ${letter}!` : `Image added to Option ${letter}!`);
         setUploadingForOption(null);
       };
       reader.readAsDataURL(file);
@@ -140,33 +141,33 @@ const AddQuestion = () => {
   const handleRemoveOptionImage = (letter) => {
     setOptionImages(prev => ({ ...prev, [letter]: null }));
     setOptionImageFiles(prev => ({ ...prev, [letter]: null }));
-    toast.success(`Image removed from Option ${letter}`);
+    toast.success(isRTL ? `تم إزالة الصورة من الخيار ${letter}` : `Image removed from Option ${letter}`);
   };
 
   // Add Question Handler
   const handleSaveQuestion = async () => {
     if (!selectedSubjectId || selectedSubjectId === 'select') {
-      toast.error('Please select a subject');
+      toast.error(isRTL ? 'يرجى اختيار المادة' : 'Please select a subject');
       return;
     }
     if (!questionText.trim()) {
-      toast.error('Question text is required');
+      toast.error(isRTL ? 'نص السؤال مطلوب' : 'Question text is required');
       setActiveAccordion('question');
       return;
     }
     if (!optionsData.optionA.trim() || !optionsData.optionB.trim() || !optionsData.optionC.trim() || !optionsData.optionD.trim()) {
-      toast.error('Please fill in all options (A, B, C, D)');
+      toast.error(isRTL ? 'يرجى ملء جميع الخيارات (أ، ب، ج، د)' : 'Please fill in all options (A, B, C, D)');
       setActiveAccordion('options');
       return;
     }
     if (!correctOption) {
-      toast.error('Please select the correct option');
+      toast.error(isRTL ? 'يرجى تحديد الخيار الصحيح' : 'Please select the correct option');
       setActiveAccordion('options');
       return;
     }
 
     setIsSubmitting(true);
-    const loadingToast = toast.loading('Uploading images...');
+    const loadingToast = toast.loading(isRTL ? 'جاري رفع الصور...' : 'Uploading images...');
 
     try {
       // Upload main question image if a new file was selected
@@ -175,7 +176,7 @@ const AddQuestion = () => {
         try {
           uploadedImagePath = await dispatch(uploadQuestionImage(imageFile)).unwrap();
         } catch (uploadErr) {
-          toast.error('Failed to upload question image', { id: loadingToast });
+          toast.error(isRTL ? 'فشل رفع صورة السؤال' : 'Failed to upload question image', { id: loadingToast });
           setIsSubmitting(false);
           return;
         }
@@ -195,7 +196,7 @@ const AddQuestion = () => {
         }
       }
 
-      toast.loading('Adding question...', { id: loadingToast });
+      toast.loading(isRTL ? 'جاري إضافة السؤال...' : 'Adding question...', { id: loadingToast });
 
       const optionMap = { A: 0, B: 1, C: 2, D: 3 };
       const correctIdx = optionMap[correctOption] ?? 0;
@@ -220,12 +221,12 @@ const AddQuestion = () => {
       };
 
       await dispatch(createQuestion(payload)).unwrap();
-      toast.success('Question added successfully!', { id: loadingToast });
+      toast.success(isRTL ? 'تم إضافة السؤال بنجاح!' : 'Question added successfully!', { id: loadingToast });
       setIsSubmitting(false);
       navigate(`/teacher/subjects/${selectedSubjectId}`);
     } catch (err) {
       setIsSubmitting(false);
-      toast.error(err || 'Failed to add question', { id: loadingToast });
+      toast.error(err || (isRTL ? 'فشل إضافة السؤال' : 'Failed to add question'), { id: loadingToast });
     }
   };
 
@@ -233,10 +234,10 @@ const AddQuestion = () => {
     <DashboardLayout
       role="teacher"
       activeTab={subjectId === 'select' ? 'questions' : 'subjects'}
-      title="Add Question"
-      subtitle={subjectId === 'select' ? 'Choose subject and details' : `Subject: ${subject.name || subject.title}`}
+      title={isRTL ? "إضافة سؤال" : "Add Question"}
+      subtitle={subjectId === 'select' ? (isRTL ? 'اختر المادة والتفاصيل' : 'Choose subject and details') : `${isRTL ? 'المادة' : 'Subject'}: ${subject.name || subject.title}`}
     >
-      <div className="w-full max-w-full p-6 md:p-8 pb-32 text-left flex flex-col gap-6 animate-fade-in">
+      <div className="w-full max-w-full p-6 md:p-8 pb-32 text-start flex flex-col gap-6 animate-fade-in">
 
         {/* Hidden inputs always mounted */}
         <input
@@ -263,9 +264,9 @@ const AddQuestion = () => {
                 const targetId = (subjectId === 'select' ? selectedSubjectId : subjectId) || '';
                 navigate(targetId ? `/teacher/subjects/${targetId}` : '/teacher/subjects');
               }}
-              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer mr-3"
+              className={`w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer ${isRTL ? 'ml-3' : 'mr-3'}`}
             >
-              <FiChevronLeft size={20} />
+              <FiChevronLeft size={20} className={isRTL ? 'rotate-180' : ''} />
             </button>
           </div>
 
@@ -278,23 +279,23 @@ const AddQuestion = () => {
                 difficulty === 'Medium' ? 'bg-blue-400' :
                   'bg-red-400'
               }`} />
-            <span>{difficulty}</span>
+            <span>{difficulty === 'Easy' ? (isRTL ? 'سهل' : 'Easy') : difficulty === 'Medium' ? (isRTL ? 'متوسط' : 'Medium') : (isRTL ? 'صعب' : 'Hard')}</span>
           </div>
         </div>
 
         {/* Subject Dropdown Selector */}
-        <div className="flex flex-col gap-3 text-left">
+        <div className="flex flex-col gap-3 text-start">
           <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
-            Subject
+            {isRTL ? "المادة" : "Subject"}
           </span>
           <div className="relative w-full">
-            <FiBookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" size={18} />
+            <FiBookOpen className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-blue-500`} size={18} />
             <select
               value={selectedSubjectId}
               onChange={(e) => setSelectedSubjectId(e.target.value)}
-              className="w-full pl-12 pr-10 py-4 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0 text-base"
+              className={`w-full ${isRTL ? 'pr-12 pl-10' : 'pl-12 pr-10'} py-4 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0 text-base`}
             >
-              <option value="" disabled>Select Subject</option>
+              <option value="" disabled>{isRTL ? "اختر المادة" : "Select Subject"}</option>
               {subjects.map(s => {
                 const subId = s._id || s.id;
                 const subTitle = s.name || s.title;
@@ -303,14 +304,14 @@ const AddQuestion = () => {
                 );
               })}
             </select>
-            <FiChevronDown className="text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none`} />
           </div>
         </div>
 
         {/* 1. Difficulty Level Selector */}
-        <div className="flex flex-col gap-3 text-left">
+        <div className="flex flex-col gap-3 text-start">
           <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
-            Difficulty Level
+            {isRTL ? "مستوى الصعوبة" : "Difficulty Level"}
           </span>
           <div className="grid grid-cols-3 gap-3">
             {/* Easy */}
@@ -322,7 +323,7 @@ const AddQuestion = () => {
                 }`}
             >
               <FiSmile size={24} />
-              <span className="text-sm font-bold">Easy</span>
+              <span className="text-sm font-bold">{isRTL ? "سهل" : "Easy"}</span>
             </div>
             {/* Medium */}
             <div
@@ -333,7 +334,7 @@ const AddQuestion = () => {
                 }`}
             >
               <FiMeh size={24} />
-              <span className="text-sm font-bold">Medium</span>
+              <span className="text-sm font-bold">{isRTL ? "متوسط" : "Medium"}</span>
             </div>
             {/* Hard */}
             <div
@@ -344,23 +345,23 @@ const AddQuestion = () => {
                 }`}
             >
               <FiFrown size={24} />
-              <span className="text-sm font-bold">Hard</span>
+              <span className="text-sm font-bold">{isRTL ? "صعب" : "Hard"}</span>
             </div>
           </div>
         </div>
 
         {/* 1.5 Weakness Topic Selector */}
         {weaknessTopics.length > 0 && (
-          <div className="flex flex-col gap-3 text-left">
+          <div className="flex flex-col gap-3 text-start">
             <span className="text-xs font-black tracking-widest text-amber-500 uppercase px-1 flex items-center gap-1.5">
-              <span>🎯</span> Target Weakness Topic (Optional)
+              <span>🎯</span> {isRTL ? "موضوع الضعف المستهدف (اختياري)" : "Target Weakness Topic (Optional)"}
             </span>
             <select
               value={weaknessTopicId}
               onChange={(e) => setWeaknessTopicId(e.target.value)}
               className="w-full p-4 bg-[#0e101a] border border-gray-800 focus:border-amber-500/50 rounded-2xl text-white font-semibold text-sm outline-none cursor-pointer"
             >
-              <option value="">-- No Specific Weakness Topic --</option>
+              <option value="">{isRTL ? "-- لا يوجد موضوع ضعف محدد --" : "-- No Specific Weakness Topic --"}</option>
               {weaknessTopics.map((topic) => (
                 <option key={topic._id || topic.id} value={topic._id || topic.id}>
                   {topic.title} {topic.titleAr ? `(${topic.titleAr})` : ''}
@@ -383,22 +384,20 @@ const AddQuestion = () => {
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
                   <FiHelpCircle size={18} />
                 </div>
-                <span className="text-base font-extrabold text-white">Question</span>
+                <span className="text-base font-extrabold text-white">{isRTL ? "السؤال" : "Question"}</span>
               </div>
               <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${activeAccordion === 'question' ? 'rotate-180' : ''}`} />
             </div>
 
             {activeAccordion === 'question' && (
-              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
+              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-start">
                 <textarea
                   value={questionText}
                   onChange={(e) => setQuestionText(e.target.value)}
-                  placeholder="Question Text"
+                  placeholder={isRTL ? "نص السؤال" : "Question Text"}
                   rows={4}
                   className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
                 />
-
-
 
                 {!image ? (
                   <button
@@ -407,7 +406,7 @@ const AddQuestion = () => {
                     className="w-full py-4 border border-dashed border-gray-800 hover:border-blue-500/50 bg-[#0e101a]/30 hover:bg-blue-500/5 text-gray-400 hover:text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
                     <FiImage size={18} />
-                    <span>Add Image</span>
+                    <span>{isRTL ? "إضافة صورة" : "Add Image"}</span>
                   </button>
                 ) : (
                   <div className="relative rounded-2xl border border-gray-800 bg-[#0c0d19] overflow-hidden group max-w-full flex flex-col items-center p-4">
@@ -419,8 +418,8 @@ const AddQuestion = () => {
                     <button
                       type="button"
                       onClick={handleRemoveImage}
-                      className="absolute top-6 right-6 w-8 h-8 rounded-full bg-red-600/90 hover:bg-red-600 hover:scale-105 active:scale-95 flex items-center justify-center text-white cursor-pointer transition-all shadow-lg"
-                      title="Remove Image"
+                      className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} w-8 h-8 rounded-full bg-red-600/90 hover:bg-red-600 hover:scale-105 active:scale-95 flex items-center justify-center text-white cursor-pointer transition-all shadow-lg`}
+                      title={isRTL ? "حذف الصورة" : "Remove Image"}
                     >
                       <FiX size={16} />
                     </button>
@@ -440,16 +439,16 @@ const AddQuestion = () => {
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
                   <FiList size={18} />
                 </div>
-                <span className="text-base font-extrabold text-white">Answer Options</span>
+                <span className="text-base font-extrabold text-white">{isRTL ? "خيارات الإجابة" : "Answer Options"}</span>
               </div>
               <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${activeAccordion === 'options' ? 'rotate-180' : ''}`} />
             </div>
 
             {activeAccordion === 'options' && (
-              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
+              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-start">
                 <div className="flex items-center gap-3 p-3.5 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-400 text-sm font-semibold">
                   <FiInfo size={16} className="shrink-0" />
-                  <span>Tap the circle to mark the correct answer. Each option can have an optional image.</span>
+                  <span>{isRTL ? "انقر فوق الدائرة لتحديد الإجابة الصحيحة. يمكن أن تحتوي كل إشارة على صورة اختيارية." : "Tap the circle to mark the correct answer. Each option can have an optional image."}</span>
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -481,7 +480,7 @@ const AddQuestion = () => {
                             type="text"
                             value={value}
                             onChange={(e) => setOptionsData({ ...optionsData, [optionKey]: e.target.value })}
-                            placeholder={`Option ${letter}...`}
+                            placeholder={isRTL ? `الخيار ${letter}...` : `Option ${letter}...`}
                             className="w-full bg-transparent border-none text-white text-base font-semibold outline-none focus:outline-none focus:ring-0"
                           />
 
@@ -492,24 +491,24 @@ const AddQuestion = () => {
                             className={`p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer relative shrink-0 ${
                               hasImage ? 'text-blue-400' : 'text-gray-500 hover:text-white'
                             }`}
-                            title={hasImage ? "Change Option Image" : "Add Image to Option"}
+                            title={hasImage ? (isRTL ? "تغيير صورة الخيار" : "Change Option Image") : (isRTL ? "إضافة صورة للخيار" : "Add Image to Option")}
                           >
                             <FiImage size={18} />
                             {hasImage && (
-                              <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full border border-gray-900" />
+                              <span className={`absolute top-1 ${isRTL ? 'left-1' : 'right-1'} w-2 h-2 bg-blue-500 rounded-full border border-gray-900`} />
                             )}
                           </button>
 
                           {isCorrect && (
                             <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-black uppercase shrink-0">
-                              Correct
+                              {isRTL ? "صحيح" : "Correct"}
                             </span>
                           )}
                         </div>
 
                         {/* Image Preview if attached */}
                         {hasImage && (
-                          <div className="ml-11 relative rounded-xl border border-gray-800 bg-[#0c0d19] overflow-hidden group max-w-full flex items-center p-2 self-start gap-3">
+                          <div className={`${isRTL ? 'mr-11' : 'ml-11'} relative rounded-xl border border-gray-800 bg-[#0c0d19] overflow-hidden group max-w-full flex items-center p-2 self-start gap-3`}>
                             <img
                               src={getImageUrl(optionImages[letter])}
                               alt={`Option ${letter} Visual`}
@@ -519,7 +518,7 @@ const AddQuestion = () => {
                               type="button"
                               onClick={() => handleRemoveOptionImage(letter)}
                               className="w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-600 flex items-center justify-center text-white cursor-pointer transition-all"
-                              title="Remove Image"
+                              title={isRTL ? "حذف الصورة" : "Remove Image"}
                             >
                               <FiX size={12} />
                             </button>
@@ -543,35 +542,35 @@ const AddQuestion = () => {
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
                   <FiPlayCircle size={18} />
                 </div>
-                <span className="text-base font-extrabold text-white">Explanation & Video</span>
+                <span className="text-base font-extrabold text-white">{isRTL ? "الشرح والفيديو" : "Explanation & Video"}</span>
               </div>
               <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${activeAccordion === 'explanation' ? 'rotate-180' : ''}`} />
             </div>
 
             {activeAccordion === 'explanation' && (
-              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
+              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-start">
                 <div className="flex items-center gap-3 p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm font-semibold">
                   <FiInfo size={16} className="shrink-0" />
-                  <span>This explanation is shown to students when they answer incorrectly.</span>
+                  <span>{isRTL ? "يظهر هذا الشرح للطلاب عندما يجيبون بشكل غير صحيح." : "This explanation is shown to students when they answer incorrectly."}</span>
                 </div>
 
                 <textarea
                   value={explanation}
                   onChange={(e) => setExplanation(e.target.value)}
-                  placeholder="Explanation"
+                  placeholder={isRTL ? "الشرح" : "Explanation"}
                   rows={3}
                   className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
                 />
 
                 <div className="relative w-full">
-                  <FiPlayCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                  <FiPlayCircle className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
                   <input
                     type="text"
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
                     disabled={useGeneralVideo}
-                    placeholder={useGeneralVideo ? "Using Weakness Topic General Video" : "Explanation Video URL"}
-                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0 disabled:opacity-50"
+                    placeholder={useGeneralVideo ? (isRTL ? "استخدام الفيديو العام لموضوع الضعف" : "Using Weakness Topic General Video") : (isRTL ? "رابط فيديو الشرح" : "Explanation Video URL")}
+                    className={`w-full ${isRTL ? 'pr-11 pl-4' : 'pl-11 pr-4'} py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0 disabled:opacity-50`}
                   />
                 </div>
 
@@ -583,7 +582,7 @@ const AddQuestion = () => {
                     className="w-4 h-4 text-blue-600 rounded border-gray-700 bg-gray-900 focus:ring-blue-500"
                   />
                   <span className="text-xs font-semibold text-gray-300">
-                    Use Weakness Topic's general video (if available) instead of question video
+                    {isRTL ? "استخدام الفيديو العام لموضوع الضعف (إن وجد) بدلاً من فيديو السؤال" : "Use Weakness Topic's general video (if available) instead of question video"}
                   </span>
                 </label>
               </div>
@@ -598,7 +597,7 @@ const AddQuestion = () => {
           disabled={isSubmitting}
           className="w-full py-4 mt-6 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black text-base shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span>{isSubmitting ? 'Adding...' : 'Add Question'}</span>
+          <span>{isSubmitting ? (isRTL ? 'جاري الإضافة...' : 'Adding...') : (isRTL ? 'إضافة سؤال' : 'Add Question')}</span>
           <FiPlus className="text-base" />
         </button>
 

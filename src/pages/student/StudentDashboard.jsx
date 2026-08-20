@@ -16,10 +16,12 @@ import {
 import { FaFire } from 'react-icons/fa';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { fetchStudentDashboard } from '../../redux/slices/studentSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   const user = useSelector((state) => state.auth.user);
   const { dashboard, isLoading } = useSelector((state) => state.student);
@@ -38,22 +40,22 @@ const StudentDashboard = () => {
     return () => window.removeEventListener('themeChange', handleThemeChange);
   }, []);
 
-  const studentName = user?.name || user?.fullName || 'Ali';
+  const studentName = user?.name || user?.fullName || (isRTL ? 'علي' : 'Ali');
   const points = dashboard?.student?.totalPoints || 40;
   const streakDays = dashboard?.student?.streakDays || 1;
   const examsCount = dashboard?.student?.totalExamsTaken || 5;
   const recentExams = dashboard?.recentAttempts || [];
   const enrollments = dashboard?.enrollments || [];
-  const activeCourse = enrollments[0]?.subject?.name || 'Chemistry';
+  const activeCourse = enrollments[0]?.subject?.name || (isRTL ? 'الكيمياء' : 'Chemistry');
 
   return (
     <DashboardLayout
       role="student"
       activeTab="dashboard"
-      title=""
-      subtitle=""
+      title={t('student.dashboard.title')}
+      subtitle={t('student.dashboard.subtitle')}
     >
-      <div className="flex flex-col gap-6 text-left p-4 sm:p-6 md:p-8 pb-32 lg:pb-12 max-w-[1200px] mx-auto w-full">
+      <div className="flex flex-col gap-6 text-start p-4 sm:p-6 md:p-8 pb-32 lg:pb-12 max-w-[1200px] mx-auto w-full">
         
         {isLoading ? (
           /* Loading Skeleton */
@@ -74,16 +76,16 @@ const StudentDashboard = () => {
             className="flex flex-col gap-6 w-full"
           >
             {/* ── TOP GREETING HEADER ── */}
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-start">
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                Ready to level up, {studentName}?
+                {t('student.dashboard.greeting')}, {studentName}?
               </h1>
               <p className="text-sm font-semibold text-gray-400 mt-1">
-                Your daily mission is waiting.
+                {t('student.dashboard.dailyMissionWaiting')}
               </p>
             </div>
 
-            {/* ── 1. DAILY MISSION HERO CARD (Matching Screenshot 100%) ── */}
+            {/* ── 1. DAILY MISSION HERO CARD ── */}
             <div className={`relative rounded-[2.2rem] p-5 sm:p-6 transition-all duration-300 overflow-hidden flex flex-col gap-5 ${
               isLight 
                 ? 'bg-gradient-to-br from-indigo-50/95 via-purple-50/95 to-white border border-purple-200 shadow-[0_10px_30px_rgba(147,51,234,0.08)] text-slate-900' 
@@ -99,7 +101,9 @@ const StudentDashboard = () => {
                 }`}>
                   <FiTarget size={14} />
                 </div>
-                <span className={isLight ? 'text-slate-900 font-extrabold' : 'keep-white'}>Daily Mission</span>
+                <span className={isLight ? 'text-slate-900 font-extrabold' : 'keep-white'}>
+                  {t('student.dashboard.dailyMission')}
+                </span>
               </div>
 
               {/* Main Content Area: Progress Ring + Checklist Pill Box + 3D Robot Mascot */}
@@ -129,7 +133,7 @@ const StudentDashboard = () => {
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center font-black">
                     <span className={`text-2xl sm:text-3xl ${isLight ? 'text-slate-900' : 'keep-white'}`}>0</span>
-                    <span className={`text-sm font-bold ml-0.5 ${isLight ? 'text-purple-700' : 'keep-purple-light'}`}>/3</span>
+                    <span className={`text-sm font-bold ${isRTL ? 'mr-0.5' : 'ml-0.5'} ${isLight ? 'text-purple-700' : 'keep-purple-light'}`}>/3</span>
                   </div>
                 </div>
 
@@ -141,7 +145,7 @@ const StudentDashboard = () => {
                       : 'bg-white/10 border border-white/15 text-white'
                   }`}>
                     <FiBookOpen size={14} className={isLight ? "text-purple-600 shrink-0" : "text-purple-300 shrink-0"} />
-                    <span className="truncate">{activeCourse} Lesson</span>
+                    <span className="truncate">{activeCourse} {t('student.dashboard.lesson')}</span>
                   </div>
                   <div className={`px-3 py-2 rounded-xl flex items-center gap-2.5 text-xs font-bold shadow-sm ${
                     isLight 
@@ -149,7 +153,7 @@ const StudentDashboard = () => {
                       : 'bg-white/10 border border-white/15 text-white'
                   }`}>
                     <FiTarget size={14} className={isLight ? "text-cyan-600 shrink-0" : "text-cyan-300 shrink-0"} />
-                    <span className="truncate">Weakness Review</span>
+                    <span className="truncate">{t('student.dashboard.weaknessReview')}</span>
                   </div>
                   <div className={`px-3 py-2 rounded-xl flex items-center gap-2.5 text-xs font-bold shadow-sm ${
                     isLight 
@@ -157,7 +161,7 @@ const StudentDashboard = () => {
                       : 'bg-white/10 border border-white/15 text-white'
                   }`}>
                     <FiClipboard size={14} className={isLight ? "text-blue-600 shrink-0" : "text-blue-300 shrink-0"} />
-                    <span className="truncate">Daily Exam</span>
+                    <span className="truncate">{t('student.dashboard.dailyExam')}</span>
                   </div>
                 </div>
 
@@ -175,7 +179,12 @@ const StudentDashboard = () => {
               {/* Reward Subtext */}
               <div className={`flex items-center gap-1.5 text-xs font-bold ${isLight ? 'text-purple-900' : 'text-indigo-300'} mt-1`}>
                 <FiStar className="text-yellow-500 fill-yellow-500" size={13} />
-                <span>Complete all 3 to earn <strong className={isLight ? 'text-purple-950 font-black' : 'keep-white'}>60 points</strong></span>
+                <span>
+                  {t('student.dashboard.completeAllToEarn')}
+                  <strong className={isLight ? 'text-purple-950 font-black' : 'keep-white'}>
+                    {t('student.dashboard.pointsEarn')}
+                  </strong>
+                </span>
               </div>
 
               {/* Start Mission CTA Button */}
@@ -183,7 +192,7 @@ const StudentDashboard = () => {
                 onClick={() => navigate('/student/courses')}
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-base shadow-[0_0_25px_rgba(99,102,241,0.35)] hover:shadow-[0_0_35px_rgba(168,85,247,0.5)] transition-all cursor-pointer active:scale-[0.99]"
               >
-                Start Mission
+                {t('student.dashboard.startMission')}
               </button>
             </div>
 
@@ -194,11 +203,11 @@ const StudentDashboard = () => {
                 <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500 dark:text-cyan-400 shrink-0">
                   <FiStar size={18} />
                 </div>
-                <div className="flex flex-col text-left">
+                <div className="flex flex-col text-start">
                   <span className="text-xl sm:text-2xl font-black text-white leading-none">
                     {points}
                   </span>
-                  <span className="text-xs font-bold text-gray-400 mt-1">Points</span>
+                  <span className="text-xs font-bold text-gray-400 mt-1">{t('student.dashboard.points')}</span>
                 </div>
               </div>
 
@@ -207,11 +216,11 @@ const StudentDashboard = () => {
                 <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 dark:text-orange-400 shrink-0">
                   <FaFire size={18} />
                 </div>
-                <div className="flex flex-col text-left">
+                <div className="flex flex-col text-start">
                   <span className="text-xl sm:text-2xl font-black text-white leading-none flex items-center gap-1">
-                    {streakDays} <span className="text-xs font-bold text-gray-300">day</span>
+                    {streakDays} <span className="text-xs font-bold text-gray-300">{t('student.dashboard.day')}</span>
                   </span>
-                  <span className="text-xs font-bold text-gray-400 mt-1">Streak</span>
+                  <span className="text-xs font-bold text-gray-400 mt-1">{t('student.dashboard.streak')}</span>
                 </div>
               </div>
 
@@ -220,18 +229,18 @@ const StudentDashboard = () => {
                 <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                   <FiClipboard size={18} />
                 </div>
-                <div className="flex flex-col text-left">
+                <div className="flex flex-col text-start">
                   <span className="text-xl sm:text-2xl font-black text-white leading-none">
                     {examsCount}
                   </span>
-                  <span className="text-xs font-bold text-gray-400 mt-1">Exams</span>
+                  <span className="text-xs font-bold text-gray-400 mt-1">{t('student.dashboard.exams')}</span>
                 </div>
               </div>
             </div>
 
             {/* ── 3. "JUMP BACK IN" SECTION ── */}
-            <div className="flex flex-col gap-3.5 text-left mt-1">
-              <h3 className="text-lg font-black text-white">Jump Back In</h3>
+            <div className="flex flex-col gap-3.5 text-start mt-1">
+              <h3 className="text-lg font-black text-white">{t('student.dashboard.jumpBackIn')}</h3>
 
               {/* Main Course Progress Box */}
               <div className="p-4 sm:p-5 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center justify-between gap-4 shadow-md">
@@ -239,15 +248,15 @@ const StudentDashboard = () => {
                   <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-500/30 flex items-center justify-center text-purple-700 dark:text-purple-400 shrink-0 shadow-inner">
                     <FiBookOpen size={22} />
                   </div>
-                  <div className="flex flex-col text-left min-w-0">
+                  <div className="flex flex-col text-start min-w-0">
                     <h4 className="text-base font-black text-white truncate">
                       {activeCourse}
                     </h4>
                     <span className="text-xs font-semibold text-gray-400 mt-0.5">
-                      Unit 1 • Lesson 1
+                      {t('student.dashboard.unitLesson')}
                     </span>
                     <div className="flex items-center gap-2 mt-1.5 w-full">
-                      <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">0% complete</span>
+                      <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">{t('student.dashboard.completePercent')}</span>
                       <div className="h-1.5 w-24 bg-slate-200 dark:bg-gray-900 rounded-full overflow-hidden border border-slate-300 dark:border-gray-800">
                         <div className="h-full bg-blue-500 rounded-full w-0" />
                       </div>
@@ -259,7 +268,7 @@ const StudentDashboard = () => {
                   onClick={() => navigate('/student/courses')}
                   className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 border border-blue-600 dark:border-blue-500/40 text-white dark:text-blue-300 text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm"
                 >
-                  Continue
+                  {t('student.dashboard.continue')}
                 </button>
               </div>
 
@@ -272,16 +281,16 @@ const StudentDashboard = () => {
                     <div className="w-10 h-10 rounded-full bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
                       <FiTarget size={18} />
                     </div>
-                    <div className="flex flex-col text-left">
-                      <h5 className="text-sm font-black text-white">Fix Weak Topics</h5>
-                      <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 mt-0.5">5 questions due</span>
+                    <div className="flex flex-col text-start">
+                      <h5 className="text-sm font-black text-white">{t('student.dashboard.fixWeakTopics')}</h5>
+                      <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 mt-0.5">{t('student.dashboard.questionsDue')}</span>
                     </div>
                   </div>
                   <button 
                     onClick={() => navigate('/student/weaknesses')}
                     className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 dark:bg-cyan-500/10 dark:hover:bg-cyan-500/20 border border-cyan-600 dark:border-cyan-500/40 text-white dark:text-cyan-300 text-xs font-bold transition-all cursor-pointer shadow-sm"
                   >
-                    Review
+                    {t('student.dashboard.review')}
                   </button>
                 </div>
 
@@ -291,16 +300,16 @@ const StudentDashboard = () => {
                     <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-400/30 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                       <FiAward size={18} />
                     </div>
-                    <div className="flex flex-col text-left">
-                      <h5 className="text-sm font-black text-white">Challenge a Friend</h5>
-                      <span className="text-xs font-bold text-purple-600 dark:text-purple-400 mt-0.5">Start an exam duel</span>
+                    <div className="flex flex-col text-start">
+                      <h5 className="text-sm font-black text-white">{t('student.dashboard.challengeFriend')}</h5>
+                      <span className="text-xs font-bold text-purple-600 dark:text-purple-400 mt-0.5">{t('student.dashboard.examDuel')}</span>
                     </div>
                   </div>
                   <button 
                     onClick={() => navigate('/student/exams')}
                     className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 border border-purple-600 dark:border-purple-500/40 text-white dark:text-purple-300 text-xs font-bold transition-all cursor-pointer shadow-sm"
                   >
-                    Challenge
+                    {t('student.dashboard.challenge')}
                   </button>
                 </div>
 
@@ -308,15 +317,15 @@ const StudentDashboard = () => {
             </div>
 
             {/* ── 4. "RECENT RESULT" SECTION ── */}
-            <div className="flex flex-col gap-3.5 text-left mt-1">
-              <h3 className="text-lg font-black text-white">Recent Result</h3>
+            <div className="flex flex-col gap-3.5 text-start mt-1">
+              <h3 className="text-lg font-black text-white">{t('student.dashboard.recentResult')}</h3>
 
               <div className="p-4 sm:p-5 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center justify-between gap-4 shadow-md">
                 <div className="flex items-center gap-3.5">
                   <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-500/30 flex items-center justify-center text-purple-700 dark:text-purple-400 shrink-0">
                     <FiClipboard size={22} />
                   </div>
-                  <div className="flex flex-col text-left">
+                  <div className="flex flex-col text-start">
                     <h4 className="text-base font-black text-white">
                       {recentExams[0]?.exam?.title || recentExams[0]?.subject?.name || activeCourse}
                     </h4>
@@ -334,23 +343,23 @@ const StudentDashboard = () => {
                     onClick={() => navigate('/student/results')}
                     className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 border border-blue-600 dark:border-blue-500/40 text-white dark:text-blue-300 text-xs font-bold transition-all cursor-pointer shrink-0 shadow-sm"
                   >
-                    Review Mistakes
+                    {t('student.dashboard.reviewMistakes')}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* ── 5. "MY COURSES" SECTION (Matching Screenshot 2) ── */}
-            <div className="flex flex-col gap-3.5 text-left mt-1">
+            {/* ── 5. "MY COURSES" SECTION ── */}
+            <div className="flex flex-col gap-3.5 text-start mt-1">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <span>📚</span> My Courses
+                  <span>📚</span> {t('student.dashboard.myCourses')}
                 </h3>
                 <button 
                   onClick={() => navigate('/student/courses')}
                   className="px-4 py-1.5 rounded-full bg-purple-100 hover:bg-purple-200 dark:bg-white/5 dark:hover:bg-white/10 text-xs font-extrabold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/20 transition-all cursor-pointer shadow-sm"
                 >
-                  See all
+                  {t('student.dashboard.seeAll')}
                 </button>
               </div>
 
@@ -380,14 +389,14 @@ const StudentDashboard = () => {
                             ? 'text-slate-900 group-hover:text-purple-700' 
                             : 'text-white group-hover:text-purple-200'
                         }`}>
-                          {enrollment.subject?.name || 'Chemistry'}
+                          {enrollment.subject?.name || t('student.dashboard.chemistry')}
                         </h4>
                         <span className={`text-xs font-semibold mt-1 ${
                           isLight 
                             ? 'text-purple-700 font-bold' 
                             : 'text-purple-200'
                         }`}>
-                          {enrollment.completedLessons || 0}/{enrollment.subject?.totalLessons || 0} lessons
+                          {enrollment.completedLessons || 0}/{enrollment.subject?.totalLessons || 0} {t('student.dashboard.lessons')}
                         </span>
                       </div>
                     </div>
@@ -416,14 +425,14 @@ const StudentDashboard = () => {
                             ? 'text-slate-900 group-hover:text-purple-700' 
                             : 'text-white group-hover:text-purple-200'
                         }`}>
-                          chemistry
+                          {t('student.dashboard.chemistry')}
                         </h4>
                         <span className={`text-xs font-semibold mt-1 ${
                           isLight 
                             ? 'text-purple-700 font-bold' 
                             : 'text-purple-200'
                         }`}>
-                          0/1 lessons
+                          0/1 {t('student.dashboard.lessons')}
                         </span>
                       </div>
                     </div>
@@ -450,14 +459,14 @@ const StudentDashboard = () => {
                             ? 'text-slate-900 group-hover:text-purple-700' 
                             : 'text-white group-hover:text-purple-200'
                         }`}>
-                          gytgg
+                          {t('student.dashboard.physics')}
                         </h4>
                         <span className={`text-xs font-semibold mt-1 ${
                           isLight 
                             ? 'text-purple-700 font-bold' 
                             : 'text-purple-200'
                         }`}>
-                          0/0 lessons
+                          0/0 {t('student.dashboard.lessons')}
                         </span>
                       </div>
                     </div>

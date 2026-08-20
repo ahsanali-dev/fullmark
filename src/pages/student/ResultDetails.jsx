@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { fetchAttemptDetail, fetchSimilarQuestion } from '../../redux/slices/studentSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const getImageUrl = (path) => {
   if (!path) return '';
@@ -33,6 +34,7 @@ const ResultDetails = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   const { resultDetail: attempt, similarQuestion, isLoading } = useSelector((state) => state.student);
 
@@ -54,12 +56,12 @@ const ResultDetails = () => {
     setSelectedPracticeOpt(null);
     setSubmittedPractice(false);
     setSimilarModalOpen(true);
-    const loadingToast = toast.loading('Generating similar question variant...');
+    const loadingToast = toast.loading(isRTL ? 'جاري إنشاء سؤال مماثل...' : 'Generating similar question variant...');
     try {
       await dispatch(fetchSimilarQuestion(questionId)).unwrap();
       toast.dismiss(loadingToast);
     } catch (err) {
-      toast.error(err || 'Failed to fetch similar question', { id: loadingToast });
+      toast.error(err || (isRTL ? 'فشل جلب سؤال مماثل' : 'Failed to fetch similar question'), { id: loadingToast });
       setSimilarModalOpen(false);
     } finally {
       setFetchingSimilar(false);
@@ -71,7 +73,7 @@ const ResultDetails = () => {
       <DashboardLayout
         role="student"
         activeTab="results"
-        title="Loading Result Details..."
+        title={isRTL ? "جاري تحميل تفاصيل النتيجة..." : "Loading Result Details..."}
         showBackButton={true}
         onBackClick={() => navigate('/student/results')}
       >
@@ -87,12 +89,12 @@ const ResultDetails = () => {
       <DashboardLayout
         role="student"
         activeTab="results"
-        title="Result Not Found"
+        title={isRTL ? "النتيجة غير موجودة" : "Result Not Found"}
         showBackButton={true}
         onBackClick={() => navigate('/student/results')}
       >
         <div className="p-8 text-center text-gray-500 font-bold">
-          Failed to load attempt result details.
+          {isRTL ? "فشل تحميل تفاصيل نتيجة الاختبار." : "Failed to load attempt result details."}
         </div>
       </DashboardLayout>
     );
@@ -118,12 +120,12 @@ const ResultDetails = () => {
     <DashboardLayout
       role="student"
       activeTab="results"
-      title="Exam Result"
-      subtitle={attempt.exam?.title || 'Practice Exam'}
+      title={isRTL ? "نتيجة الاختبار" : "Exam Result"}
+      subtitle={attempt.exam?.title || (isRTL ? 'اختبار تجريبي' : 'Practice Exam')}
       showBackButton={true}
       onBackClick={() => navigate('/student/results')}
     >
-      <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-3xl mx-auto">
+      <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-3xl mx-auto">
 
         {/* Large Score Main Card */}
         <div className={`p-6 rounded-[2.5rem] bg-gradient-to-br relative overflow-hidden flex flex-col items-center justify-center text-center gap-4 py-10 shadow-2xl border ${isPassed
@@ -171,17 +173,17 @@ const ResultDetails = () => {
 
           {/* Result Tagline Text */}
           <h2 className="text-xl font-black text-white mt-1">
-            {isPassed ? 'Outstanding! 🌟' : 'Keep Practicing! 💪'}
+            {isPassed ? (isRTL ? 'ممتاز! 🌟' : 'Outstanding! 🌟') : (isRTL ? 'واصل التدريب! 💪' : 'Keep Practicing! 💪')}
           </h2>
 
           {/* Status pill action representation */}
           {isPassed ? (
             <span className="px-6 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-sm font-black text-emerald-400 flex items-center gap-1.5 shadow-sm animate-pulse">
-              <FiCheckCircle /> Passed ✓
+              <FiCheckCircle /> {isRTL ? "ناجح ✓" : "Passed ✓"}
             </span>
           ) : (
             <span className="px-6 py-2.5 rounded-2xl bg-pink-500/10 border border-pink-500/30 text-sm font-black text-pink-400 flex items-center gap-1.5 shadow-sm">
-              <FiXCircle /> Failed ✗
+              <FiXCircle /> {isRTL ? "راسب ✗" : "Failed ✗"}
             </span>
           )}
         </div>
@@ -191,25 +193,25 @@ const ResultDetails = () => {
           <div className="p-3.5 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
             <FiCheckCircle className="text-emerald-400 text-base mb-1.5" />
             <span className="text-base font-black text-white leading-none mb-1">{correctCount}</span>
-            <span className="text-[10px] font-extrabold text-emerald-400/80 uppercase tracking-wider">Correct</span>
+            <span className="text-[10px] font-extrabold text-emerald-400/80 uppercase tracking-wider">{isRTL ? "صحيح" : "Correct"}</span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
             <FiXCircle className="text-pink-500 text-base mb-1.5" />
             <span className="text-base font-black text-white leading-none mb-1">{wrongCount}</span>
-            <span className="text-[10px] font-extrabold text-pink-400/80 uppercase tracking-wider">Wrong</span>
+            <span className="text-[10px] font-extrabold text-pink-400/80 uppercase tracking-wider">{isRTL ? "خطأ" : "Wrong"}</span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
             <FiStar className="text-yellow-500 text-base mb-1.5" />
             <span className="text-base font-black text-white leading-none mb-1">{score}%</span>
-            <span className="text-[10px] font-extrabold text-yellow-500/80 uppercase tracking-wider">Score</span>
+            <span className="text-[10px] font-extrabold text-yellow-500/80 uppercase tracking-wider">{isRTL ? "النتيجة" : "Score"}</span>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
             <FiClock className="text-blue-400 text-base mb-1.5" />
-            <span className="text-base font-black text-white leading-none mb-1">{attempt.timeTaken || 0}s</span>
-            <span className="text-[10px] font-extrabold text-blue-400/80 uppercase tracking-wider">Time</span>
+            <span className="text-base font-black text-white leading-none mb-1">{attempt.timeTaken || 0}ث</span>
+            <span className="text-[10px] font-extrabold text-blue-400/80 uppercase tracking-wider">{isRTL ? "الوقت" : "Time"}</span>
           </div>
         </div>
 
@@ -219,7 +221,7 @@ const ResultDetails = () => {
             <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
               <FiBarChart2 size={18} />
             </div>
-            <h3 className="text-base font-black text-white uppercase tracking-wider">Performance Breakdown</h3>
+            <h3 className="text-base font-black text-white uppercase tracking-wider">{isRTL ? "تفاصيل الأداء" : "Performance Breakdown"}</h3>
           </div>
 
           {answers.map((ans, idx) => {
@@ -233,7 +235,7 @@ const ResultDetails = () => {
             return (
               <div
                 key={ans._id || idx}
-                className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 shadow-md flex flex-col gap-4 text-left"
+                className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 shadow-md flex flex-col gap-4 text-start"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -241,7 +243,7 @@ const ResultDetails = () => {
                       Q{idx + 1}
                     </span>
                     <span className="px-2.5 py-0.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-black text-emerald-400 capitalize">
-                      {q.difficulty || 'medium'}
+                      {q.difficulty || (isRTL ? 'متوسط' : 'medium')}
                     </span>
                   </div>
 
@@ -254,7 +256,7 @@ const ResultDetails = () => {
                           onClick={() => setVideoModalUrl(videoLink)}
                           className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                         >
-                          <FiPlayCircle size={15} /> Watch Explanation Video
+                          <FiPlayCircle size={15} /> {isRTL ? "شاهد فيديو الشرح" : "Watch Explanation Video"}
                         </button>
                       )}
 
@@ -263,7 +265,7 @@ const ResultDetails = () => {
                         onClick={() => handleOpenSimilarQuestion(q._id || q.id)}
                         className="px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                       >
-                        <FiZap size={15} /> Try Similar Question
+                        <FiZap size={15} /> {isRTL ? "جرب سؤالاً مماثلاً" : "Try Similar Question"}
                       </button>
                     </div>
                   )}
@@ -321,7 +323,7 @@ const ResultDetails = () => {
                           <div className="flex items-center gap-1.5">
                             {isCorrectOpt && (
                               <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-black text-emerald-400">
-                                Correct
+                                {isRTL ? "صحيح" : "Correct"}
                               </span>
                             )}
                             {isUserChoice && (
@@ -329,7 +331,7 @@ const ResultDetails = () => {
                                   ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                                   : 'bg-pink-500/10 border-pink-500/20 text-pink-400'
                                 }`}>
-                                {isCorrectOpt ? 'You ✓' : 'Your answer'}
+                                {isCorrectOpt ? (isRTL ? 'إجابتك ✓' : 'You ✓') : (isRTL ? 'إجابتك' : 'Your answer')}
                               </span>
                             )}
                           </div>
@@ -360,14 +362,14 @@ const ResultDetails = () => {
             onClick={() => navigate('/student/results')}
             className="w-full py-3.5 rounded-2xl bg-gray-900 border border-gray-800 hover:bg-gray-800/80 text-sm font-black text-gray-300 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <FiBarChart2 className="text-sm" /> All Results
+            <FiBarChart2 className="text-sm" /> {isRTL ? "جميع النتائج" : "All Results"}
           </button>
 
           <button
             onClick={() => navigate('/student/dashboard')}
             className="w-full py-3.5 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 hover:bg-gray-850/80 text-sm font-black text-gray-400 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <FiHome className="text-sm" /> Back to Home
+            <FiHome className="text-sm" /> {isRTL ? "العودة للرئيسية" : "Back to Home"}
           </button>
         </div>
 
@@ -381,15 +383,15 @@ const ResultDetails = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-2xl bg-[#0e101a] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 text-left relative"
+              className="w-full max-w-2xl bg-[#0e101a] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 text-start relative"
             >
               <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                 <h3 className="text-base font-black text-white flex items-center gap-2">
-                  <FiPlayCircle className="text-emerald-400" /> Question Explanation Video
+                  <FiPlayCircle className="text-emerald-400" /> {isRTL ? "فيديو شرح السؤال" : "Question Explanation Video"}
                 </h3>
                 <button
                   onClick={() => setVideoModalUrl(null)}
-                  className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white"
+                  className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white cursor-pointer"
                 >
                   <FiX size={18} />
                 </button>
@@ -420,15 +422,15 @@ const ResultDetails = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-xl bg-[#0e101a] border border-purple-500/30 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-left relative"
+              className="w-full max-w-xl bg-[#0e101a] border border-purple-500/30 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-start relative"
             >
               <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                 <h3 className="text-base font-black text-white flex items-center gap-2">
-                  <FiZap className="text-purple-400" /> Practice Similar Variant Question
+                  <FiZap className="text-purple-400" /> {isRTL ? "تدرب على سؤال مماثل" : "Practice Similar Variant Question"}
                 </h3>
                 <button
                   onClick={() => setSimilarModalOpen(false)}
-                  className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white"
+                  className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white cursor-pointer"
                 >
                   <FiX size={18} />
                 </button>
@@ -436,7 +438,7 @@ const ResultDetails = () => {
 
               {fetchingSimilar ? (
                 <div className="py-12 flex items-center justify-center text-purple-400 font-bold">
-                  Generating similar question variant...
+                  {isRTL ? "جاري إنشاء سؤال مماثل..." : "Generating similar question variant..."}
                 </div>
               ) : similarQuestion ? (
                 <div className="flex flex-col gap-4">
@@ -466,7 +468,7 @@ const ResultDetails = () => {
                           key={optIdx}
                           disabled={submittedPractice}
                           onClick={() => setSelectedPracticeOpt(optIdx)}
-                          className={`p-3.5 rounded-xl border flex items-center gap-3 text-left transition-all cursor-pointer ${btnStyle}`}
+                          className={`p-3.5 rounded-xl border flex items-center gap-3 text-start transition-all cursor-pointer ${btnStyle}`}
                         >
                           <span className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-black">
                             {letters[optIdx]}
@@ -481,16 +483,16 @@ const ResultDetails = () => {
                     <div className="p-4 rounded-2xl bg-white/5 border border-gray-800 flex flex-col gap-2 mt-2">
                       {selectedPracticeOpt === (typeof similarQuestion.correctOption === 'number' ? similarQuestion.correctOption : ['A', 'B', 'C', 'D'].indexOf(similarQuestion.correctOption)) ? (
                         <span className="text-sm font-black text-emerald-400 flex items-center gap-1.5">
-                          <FiCheck /> Correct! Great job mastering this concept!
+                          <FiCheck /> {isRTL ? "إجابة صحيحة! أحسنت في إتقان هذا المفهوم!" : "Correct! Great job mastering this concept!"}
                         </span>
                       ) : (
                         <span className="text-sm font-black text-pink-400 flex items-center gap-1.5">
-                          <FiX /> Incorrect this time. Keep practicing!
+                          <FiX /> {isRTL ? "إجابة غير صحيحة هذه المرة. استمر في التدريب!" : "Incorrect this time. Keep practicing!"}
                         </span>
                       )}
                       {similarQuestion.explanation && (
                         <p className="text-xs text-gray-400 font-medium">
-                          Explanation: {similarQuestion.explanation}
+                          {isRTL ? "الشرح:" : "Explanation:"} {similarQuestion.explanation}
                         </p>
                       )}
                     </div>
@@ -498,20 +500,20 @@ const ResultDetails = () => {
                     <button
                       onClick={() => {
                         if (selectedPracticeOpt === null) {
-                          toast.error('Please select an option first');
+                          toast.error(isRTL ? 'الرجاء اختيار خيار أولاً' : 'Please select an option first');
                           return;
                         }
                         setSubmittedPractice(true);
                       }}
                       className="mt-2 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-black text-sm transition-all cursor-pointer"
                     >
-                      Check Answer
+                      {isRTL ? "التحقق من الإجابة" : "Check Answer"}
                     </button>
                   )}
                 </div>
               ) : (
                 <div className="py-8 text-center text-gray-400 font-bold">
-                  No similar question available.
+                  {isRTL ? "لا يتوفر سؤال مماثل." : "No similar question available."}
                 </div>
               )}
             </motion.div>

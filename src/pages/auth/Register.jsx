@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +22,8 @@ import Background3D from '../../components/shared/Background3D';
 import RoleSelector from '../../components/auth/RoleSelector';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import AuthHeader from '../../components/auth/AuthHeader';
+import { useLanguage } from '../../context/LanguageContext';
 
 const RegisterSchema = Yup.object().shape({
   fullName: Yup.string()
@@ -45,8 +47,18 @@ const RegisterSchema = Yup.object().shape({
 const Register = () => {
   const [step, setStep] = useState(1);
   const [selectedRole, setSelectedRole] = useState('student');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
+
+  useEffect(() => {
+    const handleThemeChange = () => setTheme(localStorage.getItem('theme') || 'dark');
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
+  const isLight = theme === 'light';
 
   const handleBack = () => {
     if (step === 2) {
@@ -80,32 +92,41 @@ const Register = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden select-none z-0">
+    <div className={`relative min-h-screen w-full overflow-hidden select-none z-0 transition-colors duration-300 ${
+      isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#080911] text-gray-100'
+    }`}>
       {/* Background Starry Layer */}
-      <Background3D roleColor={selectedRole} />
+      {!isLight && <Background3D roleColor={selectedRole} />}
+
+      {/* Top Header Controls */}
+      <AuthHeader />
 
       {/* Centered Form Container */}
       <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-8 relative z-10">
         <div className="w-full max-w-lg z-20 flex flex-col justify-center">
           
           {/* Header Layout */}
-          <div className="flex items-center gap-5 mb-6">
+          <div className="flex items-center gap-5 mb-6 text-start">
             <motionFramer.button 
               type="button"
               onClick={handleBack}
-              whileHover={{ scale: 1.05, borderColor: 'rgba(255,255,255,0.2)' }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="w-12 h-12 rounded-xl border border-gray-800 flex items-center justify-center text-white bg-gray-950/40 hover:bg-gray-800/60 transition-colors cursor-pointer"
+              className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
+                isLight 
+                  ? 'border-slate-300 text-slate-700 bg-white hover:bg-slate-100 shadow-sm' 
+                  : 'border-gray-800 text-white bg-gray-950/40 hover:bg-gray-800/60'
+              }`}
             >
-              <FiArrowLeft size={20} />
+              <FiArrowLeft size={20} className={isRTL ? "rotate-180" : ""} />
             </motionFramer.button>
 
             <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-none mb-1">
-                Create Account
+              <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight leading-none mb-1 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                {t('auth.createTitle')}
               </h1>
-              <p className="text-gray-400 text-sm md:text-base font-semibold tracking-wide">
-                Join the FullMark universe
+              <p className={`text-sm md:text-base font-semibold tracking-wide ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+                {t('auth.createSubtitle')}
               </p>
             </div>
           </div>
@@ -143,7 +164,7 @@ const Register = () => {
                   {step === 2 ? <FiCheck size={16} /> : '1'}
                 </motionFramer.div>
                 <span className={`text-xs font-bold mt-2 select-none ${step === 2 ? 'text-indigo-400' : 'text-indigo-300'}`}>
-                  Personal Info
+                  {t('auth.personalInfo')}
                 </span>
               </div>
 
@@ -153,16 +174,17 @@ const Register = () => {
                   animate={{ 
                     background: step === 2 
                       ? 'linear-gradient(135deg, #6366f1 0%, #3b82f6 100%)' 
-                      : '#111827',
-                    borderColor: step === 2 ? '#6366f1' : '#1f2937',
+                      : (isLight ? '#f1f5f9' : '#111827'),
+                    borderColor: step === 2 ? '#6366f1' : (isLight ? '#cbd5e1' : '#1f2937'),
+                    color: step === 2 ? '#ffffff' : (isLight ? '#64748b' : '#ffffff'),
                     boxShadow: step === 2 ? '0 0 15px rgba(99,102,241,0.4)' : 'none'
                   }}
-                  className="w-10 h-10 rounded-full border-2 flex items-center justify-center text-white font-bold text-sm"
+                  className="w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-sm"
                 >
                   2
                 </motionFramer.div>
-                <span className={`text-xs font-bold mt-2 select-none ${step === 2 ? 'text-indigo-300' : 'text-gray-500'}`}>
-                  Credentials
+                <span className={`text-xs font-bold mt-2 select-none ${step === 2 ? 'text-indigo-400' : (isLight ? 'text-slate-500' : 'text-gray-500')}`}>
+                  {t('auth.credentials')}
                 </span>
               </div>
 
@@ -188,7 +210,9 @@ const Register = () => {
                 {/* 3D Indigo Theme Card */}
                 <motionFramer.div
                   layout
-                  className="p-5 md:p-6 rounded-3xl mb-4 flex flex-col relative overflow-hidden transition-all duration-500 card-3d-auth"
+                  className={`p-5 md:p-6 rounded-3xl mb-4 flex flex-col relative overflow-hidden transition-all duration-500 text-start ${
+                    isLight ? 'bg-white/90 border border-slate-200 shadow-xl text-slate-900' : 'card-3d-auth'
+                  }`}
                 >
                   <AnimatePresence mode="wait">
                     {step === 1 ? (
@@ -201,17 +225,21 @@ const Register = () => {
                       >
                         {/* Card Header inside Step */}
                         <div className="flex items-center gap-3 mb-6">
-                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                            isLight ? 'bg-blue-50 border border-blue-200 text-blue-600' : 'bg-blue-500/10 border border-blue-500/20 text-blue-400'
+                          }`}>
                             <FiUser size={20} />
                           </div>
-                          <h2 className="text-white font-bold text-lg md:text-xl">Personal Info</h2>
+                          <h2 className={`font-bold text-lg md:text-xl ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                            {t('auth.personalInfo')}
+                          </h2>
                         </div>
 
                         <Input
                           name="fullName"
                           type="text"
-                          label="Full Name"
-                          placeholder="Ahmad Al-Khalidi"
+                          label={t('auth.fullNameLabel')}
+                          placeholder={t('auth.fullNamePlaceholder')}
                           icon={FiUser}
                           roleColor={selectedRole}
                         />
@@ -219,8 +247,8 @@ const Register = () => {
                         <Input
                           name="email"
                           type="email"
-                          label="Email Address"
-                          placeholder="example@email.com"
+                          label={t('auth.emailLabel')}
+                          placeholder={t('auth.emailPlaceholder')}
                           icon={FiMail}
                           roleColor={selectedRole}
                         />
@@ -228,7 +256,7 @@ const Register = () => {
                         <Input
                           name="phoneNumber"
                           type="text"
-                          label="Phone Number (optional)"
+                          label={t('auth.phoneLabel')}
                           placeholder="+962 77 123 4567"
                           icon={FiPhone}
                           roleColor={selectedRole}
@@ -240,7 +268,6 @@ const Register = () => {
                             roleColor={selectedRole}
                             icon={FiArrowRight}
                             onClick={async () => {
-                              // Touch fields to reveal any initial errors
                               setFieldTouched('fullName', true);
                               setFieldTouched('email', true);
                               const step1Errors = await validateForm();
@@ -249,7 +276,7 @@ const Register = () => {
                               }
                             }}
                           >
-                            Continue
+                            {t('auth.continue')}
                           </Button>
                         </div>
                       </motionFramer.div>
@@ -263,17 +290,21 @@ const Register = () => {
                       >
                         {/* Card Header inside Step */}
                         <div className="flex items-center gap-3 mb-6">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                            isLight ? 'bg-indigo-50 border border-indigo-200 text-indigo-600' : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400'
+                          }`}>
                             <FiLock size={20} />
                           </div>
-                          <h2 className="text-white font-bold text-lg md:text-xl">Credentials</h2>
+                          <h2 className={`font-bold text-lg md:text-xl ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                            {t('auth.credentials')}
+                          </h2>
                         </div>
 
                         <Input
                           name="password"
                           type="password"
-                          label="Password"
-                          placeholder="••••••••"
+                          label={t('auth.passwordLabel')}
+                          placeholder={t('auth.passwordPlaceholder')}
                           icon={FiLock}
                           showPasswordToggle={true}
                           roleColor={selectedRole}
@@ -282,7 +313,7 @@ const Register = () => {
                         <Input
                           name="confirmPassword"
                           type="password"
-                          label="Confirm Password"
+                          label={t('auth.confirmPasswordLabel')}
                           placeholder="••••••••"
                           icon={FiLock}
                           showPasswordToggle={true}
@@ -290,26 +321,30 @@ const Register = () => {
                         />
 
                         {/* Custom Themed Terms of Service Checkbox */}
-                        <div className="mb-6 pl-1 flex flex-col">
-                          <label className="flex items-center gap-3 cursor-pointer text-gray-400 hover:text-white text-xs md:text-sm select-none">
+                        <div className="mb-6 flex flex-col">
+                          <label className={`flex items-center gap-3 cursor-pointer text-xs md:text-sm select-none ${
+                            isLight ? 'text-slate-600 hover:text-slate-900' : 'text-gray-400 hover:text-white'
+                          }`}>
                             <div className="relative">
                               <input
                                 type="checkbox"
                                 name="agreeToTerms"
                                 checked={values.agreeToTerms}
                                 onChange={(e) => setFieldValue('agreeToTerms', e.target.checked)}
-                                className={`w-5 h-5 rounded border border-gray-700 bg-gray-900/60 focus:ring-0 focus:outline-none transition-colors duration-200 appearance-none flex items-center justify-center cursor-pointer checked:bg-${selectedRole === 'student' ? 'emerald' : selectedRole === 'teacher' ? 'blue' : 'purple'}-600 checked:border-${selectedRole === 'student' ? 'emerald' : selectedRole === 'teacher' ? 'blue' : 'purple'}-500`}
+                                className={`w-5 h-5 rounded border focus:ring-0 focus:outline-none transition-colors duration-200 appearance-none flex items-center justify-center cursor-pointer ${
+                                  isLight ? 'border-slate-300 bg-slate-100' : 'border-gray-700 bg-gray-900/60'
+                                } checked:bg-${selectedRole === 'student' ? 'emerald' : selectedRole === 'teacher' ? 'blue' : 'purple'}-600`}
                               />
                               {values.agreeToTerms && (
                                 <FiCheck className="absolute top-1 left-1 text-white pointer-events-none" size={12} />
                               )}
                             </div>
                             <span className="leading-tight">
-                              I agree to the <a href="#terms" className={`text-${selectedRole === 'student' ? 'emerald' : selectedRole === 'teacher' ? 'blue' : 'purple'}-400 hover:underline font-bold`}>Terms of Service</a> and <a href="#privacy" className={`text-${selectedRole === 'student' ? 'emerald' : selectedRole === 'teacher' ? 'blue' : 'purple'}-400 hover:underline font-bold`}>Privacy Policy</a>
+                              {t('auth.agreeTerms')}
                             </span>
                           </label>
                           {touched.agreeToTerms && errors.agreeToTerms && (
-                            <span className="text-red-400 text-xs font-bold mt-1 ml-8">
+                            <span className="text-red-400 text-xs font-bold mt-1">
                               {errors.agreeToTerms}
                             </span>
                           )}
@@ -321,7 +356,7 @@ const Register = () => {
                           roleColor={selectedRole}
                           icon={FiUserCheck}
                         >
-                          {isSubmitting ? 'Creating Account...' : 'Create Account'}
+                          {isSubmitting ? t('common.loading') : t('auth.submitRegister')}
                         </Button>
                       </motionFramer.div>
                     )}
@@ -334,14 +369,14 @@ const Register = () => {
 
           {/* Sign In Link */}
           <div className="text-center mt-4">
-            <p className="text-gray-500 text-xs md:text-sm font-semibold tracking-wide select-none">
-              Already have an account?{' '}
+            <p className={`text-xs md:text-sm font-semibold tracking-wide select-none ${isLight ? 'text-slate-600' : 'text-gray-500'}`}>
+              {t('auth.alreadyHaveAccount')}{' '}
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                className="text-indigo-400 hover:text-indigo-300 font-bold transition-colors cursor-pointer outline-none focus:outline-none"
+                className="text-indigo-500 hover:text-indigo-600 font-bold transition-colors cursor-pointer outline-none focus:outline-none"
               >
-                Sign In
+                {t('nav.signIn')}
               </button>
             </p>
           </div>

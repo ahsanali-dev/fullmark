@@ -19,13 +19,14 @@ import {
   fetchChildSubjects, 
   fetchChildResults 
 } from '../../redux/slices/parentsSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 // ─── Score Trend Chart ─────────────────────────────────────────
-const ScoreTrendChart = ({ attempts, isLight }) => {
+const ScoreTrendChart = ({ attempts, isLight, isRTL, t }) => {
   if (!attempts || attempts.length === 0) {
     return (
       <p className="text-sm font-semibold text-gray-500 text-center py-6">
-        Not enough exam data yet.
+        {t('parent.reports.notEnoughData')}
       </p>
     );
   }
@@ -41,7 +42,7 @@ const ScoreTrendChart = ({ attempts, isLight }) => {
         const isPassed = exam.passed;
         const barH = Math.max(12, ((exam.score || 0) / maxScore) * chartH);
         const formattedDate = exam.createdAt 
-          ? new Date(exam.createdAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+          ? new Date(exam.createdAt).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { month: 'numeric', day: 'numeric' })
           : '';
 
         return (
@@ -73,7 +74,7 @@ const CompareBar = ({ label, valA = 0, valB = 0, displayA, displayB }) => {
   const labelB = displayB !== undefined ? displayB : String(numB);
 
   return (
-    <div className="flex flex-col gap-1.5 text-left">
+    <div className="flex flex-col gap-1.5 text-start">
       <span className="text-xs font-bold text-gray-400">{label}</span>
       <div className="flex w-full h-10 rounded-2xl overflow-hidden">
         <div
@@ -96,6 +97,7 @@ const CompareBar = ({ label, valA = 0, valB = 0, displayA, displayB }) => {
 const ParentReports = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   const [isLight, setIsLight] = useState(() => document.documentElement.classList.contains('light'));
 
@@ -157,7 +159,7 @@ const ParentReports = () => {
   const trend = sortedAttempts.length >= 2
     ? (sortedAttempts[sortedAttempts.length - 1].score || 0) - (sortedAttempts[0].score || 0)
     : 0;
-  const trendLabel = trend > 0 ? 'Improving' : trend < 0 ? 'Declining' : 'Stable';
+  const trendLabel = trend > 0 ? t('parent.reports.improving') : trend < 0 ? t('parent.reports.declining') : t('parent.reports.stable');
 
   // Other child stats (for comparison)
   const otherAvg = otherChild ? otherChild.avgScore : 0;
@@ -169,9 +171,9 @@ const ParentReports = () => {
   const recommendations = childSubjects
     .filter(s => (s.averageScore || 0) < 70)
     .map(s => ({
-      subject: s.subject?.name || 'Subject',
+      subject: s.subject?.name || t('parent.reports.subject'),
       score: Math.round(s.averageScore || 0),
-      tip: `Score: ${Math.round(s.averageScore || 0)}% — Recommend scheduling practice sessions or reviewing lesson completion.`,
+      tip: t('parent.reports.tipBelow70', { score: Math.round(s.averageScore || 0) }),
     }));
 
   const card = isLight
@@ -184,12 +186,12 @@ const ParentReports = () => {
     <DashboardLayout
       role="parent"
       activeTab="reports"
-      title="Reports"
-      subtitle="Detailed performance analysis"
+      title={t('parent.reports.title')}
+      subtitle={t('parent.reports.subtitle')}
       showBackButton
       onBackClick={() => navigate('/parent/dashboard')}
     >
-      <div className="flex flex-col gap-5 p-5 pb-36 lg:pb-16 animate-fade-in">
+      <div className="flex flex-col gap-5 p-5 pb-36 lg:pb-16 animate-fade-in text-start">
 
         {/* ── 1. CHILD SELECTOR CARDS ─────────────────────────── */}
         <div className="grid grid-cols-2 gap-3">
@@ -213,11 +215,11 @@ const ParentReports = () => {
                   }`}>
                   {initials}
                 </div>
-                <div className="text-left min-w-0">
+                <div className="text-start min-w-0">
                   <p className={`text-sm font-black capitalize truncate ${textPrimary}`}>{c.name}</p>
-                  <p className="text-[11px] text-gray-400 font-semibold">{c.totalExams || 0} exams</p>
+                  <p className="text-[11px] text-gray-400 font-semibold">{c.totalExams || 0} {t('parent.reports.exams')}</p>
                   {isSelected && (
-                    <p className="text-[11px] text-emerald-400 font-black">{avgScore}% avg</p>
+                    <p className="text-[11px] text-emerald-400 font-black">{avgScore}% {t('parent.reports.avg')}</p>
                   )}
                 </div>
               </button>
@@ -240,7 +242,7 @@ const ParentReports = () => {
                   }`}
               >
                 {mode === 'Performance' ? <FiBarChart2 size={22} /> : <FiUsers size={22} />}
-                <span className="text-sm font-black">{mode}</span>
+                <span className="text-sm font-black">{mode === 'Performance' ? t('parent.reports.performance') : t('parent.reports.comparison')}</span>
               </button>
             ))}
           </div>
@@ -255,22 +257,22 @@ const ParentReports = () => {
               <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-yellow-500/5 border border-yellow-500/20 text-center">
                 <FiStar className="text-yellow-400" size={18} />
                 <span className="text-base font-black text-yellow-400">{avgScore}%</span>
-                <span className="text-[9px] font-bold text-gray-505 uppercase tracking-wide leading-tight">Avg Score</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide leading-tight">{t('parent.reports.avgScore')}</span>
               </div>
               <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-purple-500/5 border border-purple-500/20 text-center">
                 <FaFire className="text-purple-400" size={18} />
                 <span className="text-base font-black text-purple-400">{stats.streakDays || 0}d</span>
-                <span className="text-[9px] font-bold text-gray-505 uppercase tracking-wide leading-tight">Streak</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide leading-tight">{t('parent.reports.streak')}</span>
               </div>
               <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-center">
                 <FiCheckCircle className="text-emerald-400" size={18} />
                 <span className="text-base font-black text-emerald-400">{passedExams.length}/{totalExams}</span>
-                <span className="text-[9px] font-bold text-gray-505 uppercase tracking-wide leading-tight">Passed</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide leading-tight">{t('parent.reports.passed')}</span>
               </div>
               <div className="flex flex-col items-center justify-center gap-1 p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-center">
                 <FiTrendingUp className="text-emerald-400" size={18} />
                 <span className="text-base font-black text-emerald-400">{trend >= 0 ? '+' : ''}{trend}</span>
-                <span className="text-[9px] font-bold text-gray-505 uppercase tracking-wide leading-tight">Trend</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide leading-tight">{t('parent.reports.trend')}</span>
               </div>
             </div>
 
@@ -281,7 +283,7 @@ const ParentReports = () => {
                   <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center">
                     <FiTrendingUp className="text-white" size={18} />
                   </div>
-                  <span className={`text-base font-black ${textPrimary}`}>Score Trend</span>
+                  <span className={`text-base font-black ${textPrimary}`}>{t('parent.reports.scoreTrend')}</span>
                 </div>
                 {attempts.length > 0 && (
                   <span className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black border ${trend >= 0
@@ -295,7 +297,7 @@ const ParentReports = () => {
               {isLoading && attempts.length === 0 ? (
                 <TableRowSkeleton />
               ) : (
-                <ScoreTrendChart attempts={attempts} isLight={isLight} />
+                <ScoreTrendChart attempts={attempts} isLight={isLight} isRTL={isRTL} t={t} />
               )}
             </div>
 
@@ -305,20 +307,20 @@ const ParentReports = () => {
                 <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
                   <FiBookOpen className="text-white" size={18} />
                 </div>
-                <span className={`text-base font-black ${textPrimary}`}>Subject Breakdown</span>
+                <span className={`text-base font-black ${textPrimary}`}>{t('parent.reports.subjectBreakdown')}</span>
               </div>
               {isLoading && childSubjects.length === 0 ? (
                 <TableRowSkeleton />
               ) : childSubjects.length === 0 ? (
                 <p className="text-sm text-gray-500 font-semibold text-center py-2">
-                  No subjects enrolled yet.
+                  {t('parent.reports.noSubjectsEnrolled')}
                 </p>
               ) : (
                 <div className="flex flex-col gap-3">
                   {childSubjects.map((subj) => {
                     const subAvg = Math.round(subj.averageScore || 0);
                     return (
-                      <div key={subj._id} className="text-left">
+                      <div key={subj._id} className="text-start">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center shrink-0">
                             <FiBookOpen className="text-amber-400" size={14} />
@@ -347,26 +349,26 @@ const ParentReports = () => {
                 <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center">
                   <FaLightbulb className="text-white" size={16} />
                 </div>
-                <span className={`text-base font-black ${textPrimary}`}>Recommendations</span>
+                <span className={`text-base font-black ${textPrimary}`}>{t('parent.reports.recommendations')}</span>
               </div>
               {recommendations.length === 0 ? (
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                   <FiCheckCircle className="text-emerald-400 shrink-0" size={16} />
-                  <p className="text-sm font-semibold text-emerald-300">Great performance! Keep it up 🎉</p>
+                  <p className="text-sm font-semibold text-emerald-300">{t('parent.reports.greatPerformance')}</p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
                   {recommendations.map((rec, i) => (
                     <div
                       key={i}
-                      className={`flex items-start gap-3 p-3.5 rounded-xl border text-left ${isLight ? 'bg-gray-50 border-gray-200' : 'bg-[#0e101a] border-gray-800/60'}`}
+                      className={`flex items-start gap-3 p-3.5 rounded-xl border text-start ${isLight ? 'bg-gray-50 border-gray-200' : 'bg-[#0e101a] border-gray-800/60'}`}
                     >
                       <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
                         <FiBookOpen className="text-amber-400" size={14} />
                       </div>
                       <div>
                         <p className={`text-sm font-black capitalize ${textPrimary}`}>
-                          {rec.subject} needs attention
+                          {rec.subject} {t('parent.reports.needsAttention')}
                         </p>
                         <p className="text-[11px] text-gray-400 font-semibold mt-1 leading-relaxed">
                           {rec.tip}
@@ -411,10 +413,10 @@ const ParentReports = () => {
                 {/* VS badge */}
                 <div className="flex flex-col items-center gap-1 shrink-0">
                   <div className={`w-12 h-12 rounded-full border flex items-center justify-center ${isLight ? 'border-gray-300 bg-white' : 'border-gray-600 bg-transparent'}`}>
-                    <span className={`text-sm font-black ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>vs</span>
+                    <span className={`text-sm font-black ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>{t('parent.reports.vs')}</span>
                   </div>
                   <p className={`text-[10px] font-bold capitalize ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
-                    Leading: {leadingName}
+                    {t('parent.reports.leading')} {leadingName}
                   </p>
                 </div>
 
@@ -442,28 +444,28 @@ const ParentReports = () => {
                 <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
                   <FiRefreshCw className="text-white" size={16} />
                 </div>
-                <span className={`text-base font-black ${textPrimary}`}>Metrics Comparison</span>
+                <span className={`text-base font-black ${textPrimary}`}>{t('parent.reports.metricsComparison')}</span>
               </div>
               <div className="flex flex-col gap-4">
                 <CompareBar
-                  label="Avg Score"
+                  label={t('parent.reports.avgScore')}
                   valA={avgScore}
                   valB={otherAvg}
                   displayA={`${avgScore}%`}
                   displayB={`${otherAvg}%`}
                 />
                 <CompareBar
-                  label="Streak (days)"
+                  label={t('parent.reports.streakDays')}
                   valA={stats.streakDays || 0}
                   valB={otherChild.streak || 0}
                 />
                 <CompareBar
-                  label="Exams Taken"
+                  label={t('parent.reports.examsTaken')}
                   valA={totalExams}
                   valB={otherExamsCount}
                 />
                 <CompareBar
-                  label="Passed"
+                  label={t('parent.reports.passed')}
                   valA={passedExams.length}
                   valB={otherPassed}
                 />
@@ -487,11 +489,11 @@ const ParentReports = () => {
                 <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
                   <FiBookOpen className="text-white" size={16} />
                 </div>
-                <span className={`text-base font-black ${textPrimary}`}>Subject Scores</span>
+                <span className={`text-base font-black ${textPrimary}`}>{t('parent.reports.subjectScores')}</span>
               </div>
               {childSubjects.length === 0 ? (
                 <p className="text-sm text-gray-500 font-semibold text-center py-2">
-                  No subjects enrolled.
+                  {t('parent.reports.noSubjectsEnrolledShort')}
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2 justify-start">

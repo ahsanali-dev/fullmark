@@ -11,10 +11,12 @@ import {
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';
 import { fetchMyResults } from '../../redux/slices/studentSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Results = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   const { resultsData, isLoading } = useSelector((state) => state.student);
 
@@ -35,12 +37,12 @@ const Results = () => {
     <DashboardLayout
       role="student"
       activeTab="results"
-      title="My Results"
-      subtitle={`${totalAttempts} attempts`}
+      title={t('student.results.title')}
+      subtitle={t('student.results.subtitle')}
       showBackButton={true}
       onBackClick={() => navigate('/student/dashboard')}
     >
-      <div className="flex flex-col gap-6 text-left p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
+      <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
         
         {/* Top metrics row */}
         <div className="grid grid-cols-3 gap-4">
@@ -48,21 +50,21 @@ const Results = () => {
           <div className="p-4 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
             <FiTrendingUp className="text-cyan-400 text-lg mb-2" />
             <span className="text-lg sm:text-xl font-black text-white leading-none mb-1">{averageScore}%</span>
-            <span className="text-[10px] font-bold text-cyan-400/80 uppercase tracking-widest">Avg Score</span>
+            <span className="text-[10px] font-bold text-cyan-400/80 uppercase tracking-widest">{t('student.results.avgScore')}</span>
           </div>
 
           {/* Best Score Card */}
           <div className="p-4 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
             <FiAward className="text-yellow-500 text-lg mb-2" />
             <span className="text-lg sm:text-xl font-black text-white leading-none mb-1">{bestScore}%</span>
-            <span className="text-[10px] font-bold text-yellow-500/80 uppercase tracking-widest">Best Score</span>
+            <span className="text-[10px] font-bold text-yellow-500/80 uppercase tracking-widest">{t('student.results.bestScore')}</span>
           </div>
 
           {/* Passed Count Card */}
           <div className="p-4 rounded-2xl bg-[#0c0d19]/90 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
             <FiCheckCircle className="text-emerald-400 text-lg mb-2" />
             <span className="text-lg sm:text-xl font-black text-white leading-none mb-1">{passedAttempts}</span>
-            <span className="text-[10px] font-bold text-emerald-400/80 uppercase tracking-widest">Passed</span>
+            <span className="text-[10px] font-bold text-emerald-400/80 uppercase tracking-widest">{t('student.results.passed')}</span>
           </div>
         </div>
 
@@ -76,14 +78,14 @@ const Results = () => {
               const totalQs = attempt.totalQuestions || 0;
               const correctCount = attempt.correctAnswers || 0;
               const formattedDate = attempt.createdAt 
-                ? new Date(attempt.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                ? new Date(attempt.createdAt).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                 : '';
 
               return (
                 <div 
                   key={attempt._id}
                   onClick={() => navigate(`/student/results/${attempt._id}`)}
-                  className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 hover:border-emerald-500/20 shadow-xl flex flex-col justify-between gap-5 cursor-pointer transition-all duration-300 hover:translate-y-[-2px] group"
+                  className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 hover:border-emerald-500/20 shadow-xl flex flex-col justify-between gap-5 cursor-pointer transition-all duration-300 hover:translate-y-[-2px] group text-start"
                 >
                   {/* Circle gauge centered on top */}
                   <div className="flex flex-col items-center gap-3">
@@ -113,7 +115,7 @@ const Results = () => {
 
                     <div className="text-center mt-1">
                       <h3 className="text-base font-black text-white capitalize leading-tight group-hover:text-emerald-400 transition-colors">
-                        {attempt.exam?.title || 'Practice Exam'}
+                        {attempt.exam?.title || (isRTL ? 'اختبار تجريبي' : 'Practice Exam')}
                       </h3>
                       {attempt.subject && (
                         <span className="text-xs text-gray-500 font-extrabold mt-1 inline-block uppercase">
@@ -128,7 +130,7 @@ const Results = () => {
                     <div className="flex items-center justify-between text-xs font-bold text-gray-400">
                       <span className="flex items-center gap-1">
                         <FiCheckCircle className="text-blue-400 shrink-0" />
-                        {correctCount}/{totalQs} Correct
+                        {isRTL ? `${correctCount}/${totalQs} صحيحة` : `${correctCount}/${totalQs} Correct`}
                       </span>
                       <span className="flex items-center gap-1">
                         <FiCalendar className="text-blue-400 shrink-0" />
@@ -139,15 +141,15 @@ const Results = () => {
                     <div className="flex items-center justify-between gap-2">
                       {isPassed ? (
                         <span className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-black text-emerald-400">
-                          Passed
+                          {isRTL ? "ناجح" : "Passed"}
                         </span>
                       ) : (
                         <span className="px-2.5 py-1 rounded-xl bg-pink-500/10 border border-pink-500/20 text-xs font-black text-pink-400">
-                          Failed
+                          {isRTL ? "راسب" : "Failed"}
                         </span>
                       )}
                       <span className="text-xs font-black text-gray-400 group-hover:text-white transition-colors flex items-center gap-0.5">
-                        Details <FiChevronRight />
+                        {isRTL ? "التفاصيل" : "Details"} <FiChevronRight className={isRTL ? 'rotate-180' : ''} />
                       </span>
                     </div>
                   </div>
@@ -156,7 +158,7 @@ const Results = () => {
             })
           ) : (
             <div className="col-span-1 md:col-span-2 lg:col-span-3 p-8 text-center bg-[#0c0d19]/40 border border-gray-800/80 rounded-3xl flex flex-col items-center justify-center">
-              <span className="text-sm font-bold text-gray-500">No exam attempts found. Take an exam to see your results!</span>
+              <span className="text-sm font-bold text-gray-500">{isRTL ? "لم يتم العثور على محاولات اختبار. قم بأداء اختبار لرؤية نتائجك!" : "No exam attempts found. Take an exam to see your results!"}</span>
             </div>
           )}
         </div>

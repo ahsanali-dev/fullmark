@@ -5,9 +5,22 @@ import { FiArrowLeft, FiPlay, FiSquare, FiRotateCcw, FiEye, FiActivity, FiCpu } 
 import Background3D from '../components/shared/Background3D';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function BoyleLaw() {
   const navigate = useNavigate();
+  const { t, isRTL } = useLanguage();
+
+  // --- Theme State ---
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setTheme(localStorage.getItem('theme') || 'dark');
+    };
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+  const isLight = theme === 'light';
 
   // --- React State for UI Readouts ---
   const [pressure, setPressure] = useState(1.0);
@@ -35,7 +48,10 @@ export default function BoyleLaw() {
     dragStartPressure: 1.0,
     lastMX: 0,
     lastMY: 0,
+    isLight: false,
   });
+
+  simStateRef.current.isLight = isLight;
 
   const pvHistoryRef = useRef([]);
   const animIntervalRef = useRef(null);
@@ -127,9 +143,10 @@ export default function BoyleLaw() {
       ctx.clearRect(0, 0, W, H);
 
       // Radial background inside canvas
+      const isLightMode = simStateRef.current.isLight;
       const bg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.75);
-      bg.addColorStop(0, 'rgba(11, 12, 22, 0.85)');
-      bg.addColorStop(1, 'rgba(8, 9, 17, 0.95)');
+      bg.addColorStop(0, isLightMode ? 'rgba(241, 245, 249, 0.95)' : 'rgba(11, 12, 22, 0.85)');
+      bg.addColorStop(1, isLightMode ? 'rgba(226, 232, 240, 0.98)' : 'rgba(8, 9, 17, 0.95)');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
@@ -350,8 +367,10 @@ export default function BoyleLaw() {
 
       gCtx.clearRect(0, 0, gW, gH);
 
+      const isLightMode = simStateRef.current.isLight;
+
       // Grid Lines
-      gCtx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+      gCtx.strokeStyle = isLightMode ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.06)';
       gCtx.lineWidth = 1;
       for (let i = 0; i <= 4; i++) {
         const yCoord = (i / 4) * (gH - 30 * gDPR) + 10 * gDPR;
@@ -369,14 +388,14 @@ export default function BoyleLaw() {
 
       // Axis Labels
       gCtx.font = `${9 * gDPR}px 'Orbitron', monospace`;
-      gCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      gCtx.fillStyle = isLightMode ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.5)';
       gCtx.textAlign = 'center';
-      gCtx.fillText('Pressure P (atm)', gW / 2 + 10 * gDPR, gH - 4 * gDPR);
+      gCtx.fillText(t('boyleLaw.graphAxisP'), gW / 2 + 10 * gDPR, gH - 4 * gDPR);
 
       gCtx.save();
       gCtx.translate(12 * gDPR, gH / 2 - 5 * gDPR);
       gCtx.rotate(-Math.PI / 2);
-      gCtx.fillText('Volume V (L)', 0, 0);
+      gCtx.fillText(t('boyleLaw.graphAxisV'), 0, 0);
       gCtx.restore();
 
       // Draw Ideal Boyle's Law Curve (Hyperbola)
@@ -608,17 +627,19 @@ export default function BoyleLaw() {
 
   // Density strings
   const getDensityString = () => {
-    if (pressure > 7.5) return { text: 'Critical High', color: 'text-red-500' };
-    if (pressure > 5.0) return { text: 'High', color: 'text-orange-500' };
-    if (pressure > 2.5) return { text: 'Medium', color: 'text-yellow-500' };
-    return { text: 'Low', color: 'text-emerald-400' };
+    if (pressure > 7.5) return { text: t('boyleLaw.criticalHigh'), color: 'text-red-500' };
+    if (pressure > 5.0) return { text: t('boyleLaw.high'), color: 'text-orange-500' };
+    if (pressure > 2.5) return { text: t('boyleLaw.medium'), color: 'text-yellow-500' };
+    return { text: t('boyleLaw.low'), color: 'text-emerald-400' };
   };
   const densityInfo = getDensityString();
 
   return (
-    <div className="min-h-screen bg-[#080911] text-gray-100 font-sans relative overflow-x-hidden">
+    <div className={`min-h-screen font-sans relative overflow-x-hidden transition-colors duration-300 ${
+      isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#080911] text-gray-100'
+    }`}>
       {/* Dynamic particles space background */}
-      <Background3D roleColor="teacher" />
+      {!isLight && <Background3D roleColor="teacher" />}
 
       {/* --- TOPBAR --- */}
       <Navbar />
@@ -628,15 +649,21 @@ export default function BoyleLaw() {
         
         {/* Header Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] text-blue-400 border border-blue-500/20 bg-blue-500/5 px-4 py-1.5 rounded-full mb-4">
+          <div className={`inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.25em] border px-4 py-1.5 rounded-full mb-4 ${
+            isLight ? 'text-sky-700 border-sky-300 bg-sky-50' : 'text-blue-400 border-blue-500/20 bg-blue-500/5'
+          }`}>
             <FiCpu className="animate-pulse" />
-            <span>Virtual Chemistry Lab • 3D Simulator</span>
+            <span>{t('boyleLaw.badge')}</span>
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
-            Boyle's Gas <span className="color-flow-text">Law Experiment</span>
+          <h1 className={`text-3xl md:text-5xl font-black leading-tight ${
+            isLight ? 'text-slate-900' : 'text-white'
+          }`}>
+            {t('boyleLaw.title')}
           </h1>
-          <p className="text-sm text-gray-400 font-semibold mt-2 tracking-wide font-mono">
-            P × V = k (Constant) | Isothermal Process (Constant Temp)
+          <p className={`text-sm font-semibold mt-2 tracking-wide font-mono ${
+            isLight ? 'text-slate-600' : 'text-gray-400'
+          }`}>
+            {t('boyleLaw.subtitle')}
           </p>
         </div>
 
@@ -645,7 +672,9 @@ export default function BoyleLaw() {
           
           {/* LEFT: 3D INTERACTIVE CANVAS PANEL (col-span-8) */}
           <div className="lg:col-span-8 flex flex-col gap-4">
-            <div className="relative bg-[#0c0d19]/60 backdrop-blur-xl border border-gray-800/80 rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+            <div className={`relative backdrop-blur-xl border rounded-2xl overflow-hidden shadow-xl ${
+              isLight ? 'bg-white/90 border-slate-200' : 'bg-[#0c0d19]/60 border-gray-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+            }`}>
               {/* Dynamic top glowing strip matching the pressure value */}
               <div 
                 className="absolute top-0 left-0 right-0 h-[2px] transition-all duration-300"
@@ -655,13 +684,15 @@ export default function BoyleLaw() {
                 }}
               />
               
-              <div className="absolute top-4 left-5 font-mono text-[10px] tracking-wider text-gray-500 flex items-center gap-1.5">
+              <div className="absolute top-4 left-5 font-mono text-[10px] tracking-wider text-gray-500 flex items-center gap-1.5 z-10">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                <span>3D_SIM_ACTIVE</span>
+                <span className={isLight ? 'text-slate-600 font-bold' : 'text-gray-400'}>{t('boyleLaw.simActive')}</span>
               </div>
               
-              <div className="absolute top-4 right-5 font-mono text-[10px] tracking-wider text-orange-400 bg-orange-500/5 border border-orange-500/25 px-2.5 py-1 rounded-md">
-                🖱️ Drag Piston Handle ↕ or Container 🔄
+              <div className={`absolute top-4 right-5 font-mono text-[10px] tracking-wider z-10 px-2.5 py-1 rounded-md border ${
+                isLight ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-orange-400 bg-orange-500/5 border-orange-500/25'
+              }`}>
+                {t('boyleLaw.dragHintHeader')}
               </div>
 
               {/* Simulation Canvas */}
@@ -675,44 +706,60 @@ export default function BoyleLaw() {
               />
 
               {/* Helper Drag Hints */}
-              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 font-sans text-xs text-gray-400 bg-[#080911]/90 border border-gray-800/80 px-4 py-2 rounded-full pointer-events-none shadow-lg max-w-[90%] text-center">
-                Drag the <span className="text-white font-bold">top piston sphere ↕</span> to change volume. Drag container backgrounds to <span className="text-white font-bold">rotate chamber 🔄</span>.
+              <div className={`absolute bottom-5 left-1/2 -translate-x-1/2 font-sans text-xs border px-4 py-2 rounded-full pointer-events-none shadow-lg max-w-[90%] text-center z-10 ${
+                isLight ? 'bg-white/95 border-slate-300 text-slate-700 font-medium' : 'bg-[#080911]/90 border-gray-800/80 text-gray-400'
+              }`}>
+                {t('boyleLaw.dragHintBottom')}
               </div>
             </div>
 
             {/* Secondary Row under the Canvas: Graph & Math Equation */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* P-V Isotherm Graph */}
-              <div className="relative bg-[#0c0d19]/60 backdrop-blur-xl border border-gray-800/80 rounded-2xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex flex-col justify-between h-full">
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-700/50 to-transparent" />
-                <h3 className="font-mono text-xs uppercase tracking-wider text-gray-400 mb-4">
-                  P-V Curve (Isotherm Graph)
+              <div className={`relative backdrop-blur-xl border rounded-2xl p-6 shadow-xl flex flex-col justify-between h-full ${
+                isLight ? 'bg-white/90 border-slate-200' : 'bg-[#0c0d19]/60 border-gray-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+              }`}>
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-400/30 to-transparent" />
+                <h3 className={`font-mono text-xs uppercase tracking-wider mb-4 ${
+                  isLight ? 'text-slate-600 font-bold' : 'text-gray-400'
+                }`}>
+                  {t('boyleLaw.pvCurveTitle')}
                 </h3>
                 <div className="flex-grow flex items-center justify-center">
                   <canvas 
                     ref={graphRef}
-                    className="w-full h-[180px] bg-black/40 border border-gray-800/60 rounded-xl block"
+                    className={`w-full h-[180px] border rounded-xl block ${
+                      isLight ? 'bg-slate-100/90 border-slate-300/80' : 'bg-black/40 border-gray-800/60'
+                    }`}
                   />
                 </div>
               </div>
 
               {/* Boyle's Law Math Verification */}
-              <div className="relative bg-[#0c0d19]/60 backdrop-blur-xl border border-gray-800/80 rounded-2xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex flex-col justify-between h-full">
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-700/50 to-transparent" />
+              <div className={`relative backdrop-blur-xl border rounded-2xl p-6 shadow-xl flex flex-col justify-between h-full ${
+                isLight ? 'bg-white/90 border-slate-200' : 'bg-[#0c0d19]/60 border-gray-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+              }`}>
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-400/30 to-transparent" />
                 <div>
-                  <h3 className="font-mono text-xs uppercase tracking-wider text-gray-400 mb-4">
-                    Boyle's Mathematical Equation
+                  <h3 className={`font-mono text-xs uppercase tracking-wider mb-4 ${
+                    isLight ? 'text-slate-600 font-bold' : 'text-gray-400'
+                  }`}>
+                    {t('boyleLaw.equationTitle')}
                   </h3>
-                  <p className="text-xs text-gray-500 font-semibold mb-4 leading-relaxed">
-                    At a constant temperature, the product of pressure and volume of an ideal gas is always constant:
+                  <p className={`text-xs font-semibold mb-4 leading-relaxed ${
+                    isLight ? 'text-slate-600' : 'text-gray-500'
+                  }`}>
+                    {t('boyleLaw.equationDesc')}
                   </p>
                 </div>
-                <div className="bg-[#080911]/80 border border-gray-800/50 rounded-xl p-4.5 text-center mt-auto">
-                  <div className="font-mono text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-red-400 tracking-wider mb-2">
+                <div className={`border rounded-xl p-4.5 text-center mt-auto ${
+                  isLight ? 'bg-slate-100/80 border-slate-200' : 'bg-[#080911]/80 border-gray-800/50'
+                }`}>
+                  <div className="font-mono text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-red-500 tracking-wider mb-2">
                     P₁V₁ = P₂V₂
                   </div>
-                  <div className="text-xs text-gray-500 font-medium">
-                    Verified Constant (k) = <span className="font-mono text-emerald-400 font-bold">10.00 L·atm</span>
+                  <div className={`text-xs font-medium ${isLight ? 'text-slate-600' : 'text-gray-500'}`}>
+                    {t('boyleLaw.verifiedConstant')} <span className="font-mono text-emerald-500 font-bold">10.00 L·atm</span>
                   </div>
                 </div>
               </div>
@@ -723,11 +770,15 @@ export default function BoyleLaw() {
           <div className="lg:col-span-4 flex flex-col gap-6">
             
             {/* 1. Real-Time Readings Panel */}
-            <div className="relative bg-[#0c0d19]/60 backdrop-blur-xl border border-gray-800/80 rounded-2xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-700/50 to-transparent" />
-              <h3 className="font-mono text-xs uppercase tracking-wider text-gray-400 mb-6 flex items-center gap-2">
+            <div className={`relative backdrop-blur-xl border rounded-2xl p-6 shadow-xl overflow-hidden ${
+              isLight ? 'bg-white/90 border-slate-200' : 'bg-[#0c0d19]/60 border-gray-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+            }`}>
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-400/30 to-transparent" />
+              <h3 className={`font-mono text-xs uppercase tracking-wider mb-6 flex items-center gap-2 ${
+                isLight ? 'text-slate-600 font-bold' : 'text-gray-400'
+              }`}>
                 <FiActivity className="text-red-500" />
-                <span>Real-Time Sensor Readings</span>
+                <span>{t('boyleLaw.sensorReadings')}</span>
               </h3>
 
               <div className="flex items-center gap-6">
@@ -736,7 +787,7 @@ export default function BoyleLaw() {
                 <div className="relative w-24 h-24 shrink-0">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 90 90">
                     <circle 
-                      className="fill-none stroke-gray-800" 
+                      className={`fill-none ${isLight ? 'stroke-slate-200' : 'stroke-gray-800'}`} 
                       cx="45" 
                       cy="45" 
                       r="35" 
@@ -762,26 +813,26 @@ export default function BoyleLaw() {
                     >
                       {pressure.toFixed(1)}
                     </div>
-                    <div className="text-[9px] uppercase tracking-wider text-gray-500 font-bold">ATM</div>
+                    <div className={`text-[9px] uppercase tracking-wider font-bold ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>ATM</div>
                   </div>
                 </div>
 
                 {/* Digital Labels */}
                 <div className="flex-grow flex flex-col gap-2 font-mono">
-                  <div className="flex justify-between items-center py-1.5 border-b border-gray-800/50">
-                    <span className="text-xs text-gray-500 font-bold uppercase">Pressure (P)</span>
+                  <div className={`flex justify-between items-center py-1.5 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/50'}`}>
+                    <span className={`text-xs font-bold uppercase ${isLight ? 'text-slate-600' : 'text-gray-500'}`}>{t('boyleLaw.pressureLabel')}</span>
                     <span className="text-sm font-black tracking-tight" style={{ color: dynamicColor }}>
                       {pressure.toFixed(2)} atm
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-1.5 border-b border-gray-800/50">
-                    <span className="text-xs text-gray-500 font-bold uppercase">Volume (V)</span>
-                    <span className="text-sm font-black text-orange-400 tracking-tight">
+                  <div className={`flex justify-between items-center py-1.5 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/50'}`}>
+                    <span className={`text-xs font-bold uppercase ${isLight ? 'text-slate-600' : 'text-gray-500'}`}>{t('boyleLaw.volumeLabel')}</span>
+                    <span className="text-sm font-black text-orange-500 tracking-tight">
                       {volume.toFixed(2)} L
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1.5">
-                    <span className="text-xs text-gray-500 font-bold uppercase">Gas Density</span>
+                    <span className={`text-xs font-bold uppercase ${isLight ? 'text-slate-600' : 'text-gray-500'}`}>{t('boyleLaw.gasDensityLabel')}</span>
                     <span className={`text-xs font-black uppercase ${densityInfo.color}`}>
                       {densityInfo.text}
                     </span>
@@ -790,25 +841,31 @@ export default function BoyleLaw() {
               </div>
 
               {/* P x V Constant check readout */}
-              <div className="mt-5 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15 flex justify-between items-center">
-                <span className="text-xs text-gray-400 font-medium">Boyle's constant (P × V)</span>
-                <span className="font-mono text-sm font-black text-emerald-400">
+              <div className={`mt-5 p-3 rounded-xl border flex justify-between items-center ${
+                isLight ? 'bg-emerald-50 border-emerald-200' : 'bg-emerald-500/5 border-emerald-500/15'
+              }`}>
+                <span className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{t('boyleLaw.constantLabel')}</span>
+                <span className="font-mono text-sm font-black text-emerald-500">
                   {(pressure * volume).toFixed(2)}
                 </span>
               </div>
             </div>
 
             {/* 2. Piston Control & Temperature */}
-            <div className="relative bg-[#0c0d19]/60 backdrop-blur-xl border border-gray-800/80 rounded-2xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
-              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-700/50 to-transparent" />
-              <h3 className="font-mono text-xs uppercase tracking-wider text-gray-400 mb-6">
-                Piston Compression Slider
+            <div className={`relative backdrop-blur-xl border rounded-2xl p-6 shadow-xl ${
+              isLight ? 'bg-white/90 border-slate-200' : 'bg-[#0c0d19]/60 border-gray-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+            }`}>
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-400/30 to-transparent" />
+              <h3 className={`font-mono text-xs uppercase tracking-wider mb-6 ${
+                isLight ? 'text-slate-600 font-bold' : 'text-gray-400'
+              }`}>
+                {t('boyleLaw.sliderTitle')}
               </h3>
 
               {/* Slider wrapper */}
               <div className="mb-6">
                 <div className="flex justify-between items-center mb-2.5">
-                  <span className="text-xs text-gray-400 font-medium">Adjust Pressure Input</span>
+                  <span className={`text-xs font-medium ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{t('boyleLaw.adjustPressureInput')}</span>
                   <span className="font-mono text-sm font-black" style={{ color: dynamicColor }}>
                     {pressure.toFixed(1)}x
                   </span>
@@ -819,19 +876,23 @@ export default function BoyleLaw() {
                   max="100" 
                   value={Math.round(10 + ((pressure - 1) / 9) * 90)}
                   onChange={handleSliderChange}
-                  className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-red-500 outline-none"
+                  className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-red-500 outline-none ${
+                    isLight ? 'bg-slate-200' : 'bg-gray-800'
+                  }`}
                   style={{
-                    background: `linear-gradient(90deg, ${dynamicColor} 0%, #1f2937 100%)`
+                    background: `linear-gradient(90deg, ${dynamicColor} 0%, ${isLight ? '#cbd5e1' : '#1f2937'} 100%)`
                   }}
                 />
               </div>
 
               {/* Temperature Readout (Constant) */}
-              <div className="flex items-center gap-3.5 p-3 rounded-xl bg-orange-500/5 border border-orange-500/20 mb-5">
+              <div className={`flex items-center gap-3.5 p-3 rounded-xl border mb-5 ${
+                isLight ? 'bg-amber-50 border-amber-200' : 'bg-orange-500/5 border-orange-500/20'
+              }`}>
                 <span className="text-2xl">🌡️</span>
                 <div>
-                  <div className="text-[10px] text-gray-500 uppercase font-black font-mono">Chamber Temperature</div>
-                  <div className="text-sm font-black text-orange-400 font-mono">298 K (25°C) • Fixed</div>
+                  <div className={`text-[10px] uppercase font-black font-mono ${isLight ? 'text-amber-800' : 'text-gray-500'}`}>{t('boyleLaw.chamberTempLabel')}</div>
+                  <div className="text-sm font-black text-amber-600 font-mono">{t('boyleLaw.chamberTempValue')}</div>
                 </div>
               </div>
 
@@ -848,38 +909,46 @@ export default function BoyleLaw() {
                   {isAnimating ? (
                     <>
                       <FiSquare size={13} />
-                      <span>Stop Auto</span>
+                      <span>{t('boyleLaw.stopAuto')}</span>
                     </>
                   ) : (
                     <>
                       <FiPlay size={13} />
-                      <span>Auto Compress</span>
+                      <span>{t('boyleLaw.autoCompress')}</span>
                     </>
                   )}
                 </button>
                 <button 
                   onClick={handleReset}
-                  className="px-4.5 py-3 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-xs font-bold text-gray-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                  className={`px-4.5 py-3 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md ${
+                    isLight 
+                      ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200' 
+                      : 'bg-gray-900 border-gray-800 hover:bg-gray-800 hover:border-gray-700 text-gray-300 hover:text-white'
+                  }`}
                 >
                   <FiRotateCcw size={13} />
-                  <span>Reset</span>
+                  <span>{t('boyleLaw.reset')}</span>
                 </button>
               </div>
             </div>
 
             {/* 3. Visualizer Configurations */}
-            <div className="relative bg-[#0c0d19]/60 backdrop-blur-xl border border-gray-800/80 rounded-2xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
-              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-700/50 to-transparent" />
-              <h3 className="font-mono text-xs uppercase tracking-wider text-gray-400 mb-4">
-                Visualizer Configurations
+            <div className={`relative backdrop-blur-xl border rounded-2xl p-6 shadow-xl ${
+              isLight ? 'bg-white/90 border-slate-200' : 'bg-[#0c0d19]/60 border-gray-800/80 shadow-[0_20px_50px_rgba(0,0,0,0.6)]'
+            }`}>
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gray-400/30 to-transparent" />
+              <h3 className={`font-mono text-xs uppercase tracking-wider mb-4 ${
+                isLight ? 'text-slate-600 font-bold' : 'text-gray-400'
+              }`}>
+                {t('boyleLaw.visualizerConfigs')}
               </h3>
 
-              <div className="flex flex-col gap-3 font-medium text-xs text-gray-300">
+              <div className={`flex flex-col gap-3 font-medium text-xs ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 {/* Option 1 */}
                 <div className="flex justify-between items-center py-1">
                   <span className="flex items-center gap-2">
-                    <FiEye className="text-blue-400" />
-                    <span>Show Gas Molecules</span>
+                    <FiEye className="text-blue-500" />
+                    <span>{t('boyleLaw.showGasMolecules')}</span>
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
@@ -888,15 +957,17 @@ export default function BoyleLaw() {
                       onChange={(e) => setShowMolecules(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-gray-850 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-350 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500 peer-checked:after:bg-white" />
+                    <div className={`w-9 h-5 rounded-full peer peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500 ${
+                      isLight ? 'bg-slate-300' : 'bg-gray-800'
+                    }`} />
                   </label>
                 </div>
 
                 {/* Option 2 */}
                 <div className="flex justify-between items-center py-1">
                   <span className="flex items-center gap-2">
-                    <FiActivity className="text-orange-400" />
-                    <span>Kinetic Molecular Motion</span>
+                    <FiActivity className="text-orange-500" />
+                    <span>{t('boyleLaw.kineticMotion')}</span>
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
@@ -905,15 +976,17 @@ export default function BoyleLaw() {
                       onChange={(e) => setAnimMolecules(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-gray-850 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-350 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500 peer-checked:after:bg-white" />
+                    <div className={`w-9 h-5 rounded-full peer peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500 ${
+                      isLight ? 'bg-slate-300' : 'bg-gray-800'
+                    }`} />
                   </label>
                 </div>
 
                 {/* Option 3 */}
                 <div className="flex justify-between items-center py-1">
                   <span className="flex items-center gap-2">
-                    <FiRotateCcw className="text-purple-400" />
-                    <span>Auto Rotate Container</span>
+                    <FiRotateCcw className="text-purple-500" />
+                    <span>{t('boyleLaw.autoRotateContainer')}</span>
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
@@ -925,7 +998,9 @@ export default function BoyleLaw() {
                       }}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-gray-850 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-400 after:border-gray-350 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500 peer-checked:after:bg-white" />
+                    <div className={`w-9 h-5 rounded-full peer peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500 ${
+                      isLight ? 'bg-slate-300' : 'bg-gray-800'
+                    }`} />
                   </label>
                 </div>
               </div>
@@ -936,7 +1011,6 @@ export default function BoyleLaw() {
         </div>
 
       </div>
-      <Footer />
     </div>
   );
 }

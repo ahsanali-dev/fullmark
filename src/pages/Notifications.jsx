@@ -33,11 +33,13 @@ import {
   fetchAllSubjects,
   fetchAllUsers 
 } from '../redux/slices/adminSlice';
+import { useLanguage } from '../context/LanguageContext';
 import Skeleton from 'react-loading-skeleton';
 
 const Notifications = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t, isRTL } = useLanguage();
 
   const user = useSelector((state) => state.auth.user);
   const role = user?.role || 'student';
@@ -138,15 +140,15 @@ const Notifications = () => {
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return 'Recently';
-    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleString(isRTL ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
   return (
     <DashboardLayout
       role={role}
       activeTab=""
-      title="Notifications & Broadcasts"
-      subtitle={isAdmin ? "Targeted Messaging & Notification History" : "Stay updated with recent alerts 🔔"}
+      title={t('notif.title')}
+      subtitle={isAdmin ? t('notif.subtitleAdmin') : t('notif.subtitleUser')}
       showBackButton
       onBackClick={() => navigate(`/${role}/dashboard`)}
     >
@@ -164,7 +166,7 @@ const Notifications = () => {
               }`}
             >
               <FiSend size={16} />
-              <span>Send Broadcast</span>
+              <span>{t('notif.sendBroadcast')}</span>
             </button>
             <button
               onClick={() => setAdminTab('history')}
@@ -175,7 +177,7 @@ const Notifications = () => {
               }`}
             >
               <FiRotateCcw size={16} />
-              <span>Notification History</span>
+              <span>{t('notif.history')}</span>
             </button>
           </div>
         )}
@@ -405,7 +407,7 @@ const Notifications = () => {
         {/* 3. Non-Admin / Standard Received Alerts View */}
         {(!isAdmin || adminTab === 'compose') && (
           <div className="flex flex-col gap-3 mt-4">
-            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Your Notifications</h4>
+            <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider">{t('notif.yourNotifs')}</h4>
             {notifications.length > 0 ? (
               notifications.map((n) => (
                 <div key={n._id} className="p-4 bg-[#0e101a]/60 border border-gray-800/80 rounded-2xl flex items-center justify-between">
@@ -421,7 +423,7 @@ const Notifications = () => {
               ))
             ) : (
               <div className="p-6 text-center text-xs text-gray-500 font-bold bg-[#0e101a]/30 rounded-2xl">
-                No personal unread notifications.
+                {t('notif.noNotifs')}
               </div>
             )}
           </div>

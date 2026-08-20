@@ -30,10 +30,12 @@ import {
   markNotificationRead,
   deleteNotification,
 } from '../../redux/slices/notificationsSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', title, subtitle, disableScroll, isModalOpen = false, showBackButton = false, onBackClick, headerActions }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t } = useLanguage();
 
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
@@ -55,53 +57,53 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
         return {
           color: 'emerald',
           avatarText: 'AL',
-          roleName: 'Student',
+          roleName: t('auth.studentRole'),
           gradientClass: 'from-emerald-600 to-teal-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]',
           badgeClass: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
           dotClass: 'bg-emerald-500',
           activeMenuClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]',
           menus: [
-            { id: 'dashboard', label: 'Home', icon: FiHome },
-            { id: 'courses', label: 'Courses', icon: FiBookOpen },
-            { id: 'weaknesses', label: 'Weaknesses', icon: FiHelpCircle },
-            { id: 'exams', label: 'Exams', icon: FiClipboard },
-            { id: 'results', label: 'Results', icon: FiBarChart2 },
-            { id: 'profile', label: 'Profile', icon: FiUser }
+            { id: 'dashboard', label: t('dashboard.home'), icon: FiHome },
+            { id: 'courses', label: t('dashboard.courses'), icon: FiBookOpen },
+            { id: 'weaknesses', label: t('dashboard.weaknesses'), icon: FiHelpCircle },
+            { id: 'exams', label: t('dashboard.exams'), icon: FiClipboard },
+            { id: 'results', label: t('dashboard.results'), icon: FiBarChart2 },
+            { id: 'profile', label: t('dashboard.profile'), icon: FiUser }
           ]
         };
       case 'teacher':
         return {
           color: 'blue',
           avatarText: 'TR',
-          roleName: 'Teacher',
+          roleName: t('auth.teacherRole'),
           gradientClass: 'from-blue-600 to-indigo-500 shadow-[0_0_20px_rgba(59,130,246,0.3)]',
           badgeClass: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
           dotClass: 'bg-blue-500',
           activeMenuClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]',
           menus: [
-            { id: 'dashboard', label: 'Home', icon: FiHome },
-            { id: 'subjects', label: 'Subjects', icon: FiBookOpen },
-            { id: 'questions', label: 'Questions', icon: FiHelpCircle },
-            { id: 'exams', label: 'Exams', icon: FiClipboard },
-            { id: 'notifications/compose', label: 'Announce', icon: FiBell },
-            { id: 'settings', label: 'Profile', icon: FiUser }
+            { id: 'dashboard', label: t('dashboard.home'), icon: FiHome },
+            { id: 'subjects', label: t('dashboard.subjects'), icon: FiBookOpen },
+            { id: 'questions', label: t('dashboard.questions'), icon: FiHelpCircle },
+            { id: 'exams', label: t('dashboard.exams'), icon: FiClipboard },
+            { id: 'notifications/compose', label: t('dashboard.announce'), icon: FiBell },
+            { id: 'settings', label: t('dashboard.profile'), icon: FiUser }
           ]
         };
       case 'parent':
         return {
           color: 'purple',
           avatarText: 'PT',
-          roleName: 'Parent',
+          roleName: t('auth.parentRole'),
           gradientClass: 'from-purple-600 to-fuchsia-500 shadow-[0_0_20px_rgba(168,85,247,0.3)]',
           badgeClass: 'bg-purple-500/10 border-purple-500/20 text-purple-400',
           dotClass: 'bg-purple-500',
           activeMenuClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]',
           menus: [
-            { id: 'dashboard', label: 'Home', icon: FiHome },
-            { id: 'children', label: 'Children', icon: FiUsers },
-            { id: 'attendance', label: 'Analysis', icon: FiBarChart2 },
-            { id: 'reports', label: 'Reports', icon: FiFileText },
-            { id: 'settings', label: 'Profile', icon: FiUser }
+            { id: 'dashboard', label: t('dashboard.home'), icon: FiHome },
+            { id: 'children', label: t('dashboard.children'), icon: FiUsers },
+            { id: 'attendance', label: t('dashboard.analysis'), icon: FiBarChart2 },
+            { id: 'reports', label: t('dashboard.reports'), icon: FiFileText },
+            { id: 'settings', label: t('dashboard.profile'), icon: FiUser }
           ]
         };
       case 'admin':
@@ -115,12 +117,12 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
           dotClass: 'bg-red-500',
           activeMenuClass: 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]',
           menus: [
-            { id: 'dashboard', label: 'Dashboard', icon: FiGrid },
-            { id: 'users', label: 'Users', icon: FiUsers },
-            { id: 'content', label: 'Content', icon: FiBookOpen },
-            { id: 'coupons', label: 'Coupons', icon: FiTag },
-            { id: 'reports', label: 'Reports', icon: FiBarChart2 },
-            { id: 'settings', label: 'Settings', icon: FiSettings }
+            { id: 'dashboard', label: t('dashboard.home'), icon: FiGrid },
+            { id: 'users', label: t('dashboard.users'), icon: FiUsers },
+            { id: 'content', label: t('dashboard.content'), icon: FiBookOpen },
+            { id: 'coupons', label: t('dashboard.coupons'), icon: FiTag },
+            { id: 'reports', label: t('dashboard.reports'), icon: FiBarChart2 },
+            { id: 'settings', label: t('dashboard.settings'), icon: FiSettings }
           ]
         };
     }
@@ -331,18 +333,18 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                     navigate(profileRoute);
                     setShowUserMenu(false);
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-300 hover:bg-gray-800/40 rounded-xl transition-all duration-200 cursor-pointer mb-1 text-left"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-300 hover:bg-gray-800/40 rounded-xl transition-all duration-200 cursor-pointer mb-1 text-start"
                 >
                   <FiUser className="text-base" />
-                  My Profile
+                  {t('dashboard.myProfile')}
                 </button>
               )}
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200 cursor-pointer text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200 cursor-pointer text-start"
               >
                 <FiLogOut className="text-base" />
-                Log Out
+                {t('dashboard.logOut')}
               </button>
             </div>
           )}

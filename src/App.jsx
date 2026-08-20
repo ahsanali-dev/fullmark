@@ -1,10 +1,11 @@
 import React from 'react';
 import { Toaster } from 'react-hot-toast';
 import AppRoutes from './routes/AppRoutes';
+import { LanguageProvider } from './context/LanguageContext';
 
 function App() {
   return (
-    <>
+    <LanguageProvider>
       <AppRoutes />
       <Toaster 
         position="top-center"
@@ -14,7 +15,7 @@ function App() {
             color: '#f3f4f6',
             border: '1.5px solid rgba(255, 255, 255, 0.12)',
             borderRadius: '24px',
-            fontFamily: "'Outfit', sans-serif",
+            fontFamily: "'Outfit', 'Cairo', sans-serif",
             fontSize: '14px',
             fontWeight: '600',
             letterSpacing: '0.02em',
@@ -44,7 +45,7 @@ function App() {
           }
         }}
       />
-    </>
+    </LanguageProvider>
   );
 }
 

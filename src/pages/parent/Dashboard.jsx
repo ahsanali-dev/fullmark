@@ -10,6 +10,7 @@ import {
   FiLink,
   FiHash,
   FiChevronRight,
+  FiChevronLeft,
   FiUserPlus,
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -22,10 +23,12 @@ import {
   fetchChildOverview, 
   fetchChildSubjects 
 } from '../../redux/slices/parentsSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t, isRTL } = useLanguage();
 
   // Select parent data from parentsSlice
   const { 
@@ -75,9 +78,9 @@ const ParentDashboard = () => {
   // Greeting based on time
   const hour = new Date().getHours();
   const greeting =
-    hour < 12 ? 'Good Morning' :
-    hour < 17 ? 'Good Afternoon' :
-    'Good Evening';
+    hour < 12 ? t('common.goodMorning') :
+    hour < 17 ? t('common.goodAfternoon') :
+    t('common.goodEvening');
   const greetingEmoji = hour < 12 ? '☀️' : hour < 17 ? '🌤️' : '🌙';
 
   // Stats for selected child
@@ -95,32 +98,31 @@ const ParentDashboard = () => {
   const handleLinkChild = async () => {
     const code = linkCode.trim().toUpperCase();
     if (!code) {
-      toast.error('Please enter a link code');
+      toast.error(t('parent.dashboard.enterLinkCode'));
       return;
     }
     
     try {
       const res = await dispatch(linkChild(code)).unwrap();
-      toast.success(res?.message || 'Child linked successfully! 🔗');
+      toast.success(res?.message || t('parent.dashboard.childLinkedSuccess'));
       setIsLinkModalOpen(false);
       setLinkCode('');
       
       // Refresh children list
       const kids = await dispatch(fetchChildrenList()).unwrap();
       if (kids && kids.length > 0) {
-        // If no child was selected, select the newly added one
         if (!selectedChildId) {
           setSelectedChildId(kids[kids.length - 1]._id);
         }
       }
     } catch (err) {
-      toast.error(err || 'Failed to link child');
+      toast.error(err || t('parent.dashboard.linkChildFailed'));
     }
   };
 
   const statCards = [
     {
-      label: 'Avg Score',
+      label: t('parent.dashboard.avgScore'),
       value: `${avgScore}%`,
       icon: FiStar,
       iconColor: 'text-yellow-400',
@@ -128,7 +130,7 @@ const ParentDashboard = () => {
       border: 'border-yellow-500/20',
     },
     {
-      label: 'Exams',
+      label: t('parent.dashboard.exams'),
       value: totalExams,
       icon: FiClipboard,
       iconColor: 'text-blue-400',
@@ -136,7 +138,7 @@ const ParentDashboard = () => {
       border: 'border-blue-500/20',
     },
     {
-      label: 'Courses',
+      label: t('parent.dashboard.courses'),
       value: childCoursesCount,
       icon: FiBookOpen,
       iconColor: 'text-cyan-400',
@@ -144,7 +146,7 @@ const ParentDashboard = () => {
       border: 'border-cyan-500/20',
     },
     {
-      label: 'Points',
+      label: t('parent.dashboard.points'),
       value: childPoints,
       icon: FiAward,
       iconColor: 'text-orange-400',
@@ -157,13 +159,13 @@ const ParentDashboard = () => {
     <DashboardLayout
       role="parent"
       activeTab="dashboard"
-      title="Parent Panel"
-      subtitle="Parent Portal Overview 👨‍👩‍👧"
+      title={t('parent.dashboard.title')}
+      subtitle={t('parent.dashboard.subtitle')}
       isModalOpen={isLinkModalOpen}
     >
       {/* Main scrollable content */}
       <div
-        className={`flex flex-col gap-6 text-left p-6 md:p-8 pb-36 lg:pb-16 transition-all duration-300 ${
+        className={`flex flex-col gap-6 text-start p-6 md:p-8 pb-36 lg:pb-16 transition-all duration-300 ${
           isLinkModalOpen ? 'blur-sm pointer-events-none' : ''
         }`}
       >
@@ -173,17 +175,17 @@ const ParentDashboard = () => {
             {greeting} {greetingEmoji}
           </p>
           <h2 className={`text-2xl md:text-3xl font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>
-            {profile?.user?.name || 'Parent'}
+            {profile?.user?.name || t('roles.parent.title')}
           </h2>
           <span className="inline-flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full text-xs font-black bg-purple-500/10 border border-purple-500/20 text-purple-400 w-fit">
             <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-            Parent
+            {t('auth.parentRole')}
           </span>
         </div>
 
         {/* 2. MY CHILDREN SELECTOR */}
         <div className="flex flex-col gap-3">
-          <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>My Children</h3>
+          <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{t('parent.dashboard.myChildren')}</h3>
           {isLoading && children.length === 0 ? (
             <div className="grid grid-cols-2 gap-4">
               <CardSkeleton />
@@ -191,12 +193,12 @@ const ParentDashboard = () => {
             </div>
           ) : children.length === 0 ? (
             <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl">
-              <p className="text-sm font-bold text-gray-500 mb-3">No children linked to your account yet.</p>
+              <p className="text-sm font-bold text-gray-500 mb-3">{t('parent.dashboard.noChildren')}</p>
               <button 
                 onClick={() => setIsLinkModalOpen(true)}
-                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-black text-white"
+                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-black text-white cursor-pointer"
               >
-                Link a Child now
+                {t('parent.dashboard.linkChildNow')}
               </button>
             </div>
           ) : (
@@ -227,7 +229,7 @@ const ParentDashboard = () => {
                     </div>
                     <span className={`text-sm font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{child.name}</span>
                     <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black">
-                      {isSelected ? avgScore : (child.avgScore || 0)}% avg
+                      {isSelected ? avgScore : (child.avgScore || 0)}% {t('parent.dashboard.avg')}
                     </span>
                   </button>
                 );
@@ -261,12 +263,12 @@ const ParentDashboard = () => {
         {selectedChildId && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>Subject Performance</h3>
+              <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{t('parent.dashboard.subjectPerformance')}</h3>
               <button
                 onClick={() => navigate('/parent/children')}
                 className="text-sm font-extrabold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
               >
-                Full Report
+                {t('parent.dashboard.fullReport')}
               </button>
             </div>
 
@@ -276,7 +278,7 @@ const ParentDashboard = () => {
                 <TableRowSkeleton />
               </div>
             ) : childSubjects.length === 0 ? (
-              <p className="text-sm text-gray-500 font-semibold py-2">No subjects enrolled yet.</p>
+              <p className="text-sm text-gray-500 font-semibold py-2">{t('parent.dashboard.noSubjectsEnrolled')}</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {childSubjects.map((subj) => {
@@ -292,12 +294,12 @@ const ParentDashboard = () => {
                         <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
                           <FiBookOpen size={16} />
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 text-start">
                           <div className="flex items-center justify-between">
                             <span className={`text-sm font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{subjectData.name}</span>
                             <span className="text-sm font-black text-emerald-400">{subj.bestScore || 0}%</span>
                           </div>
-                          <span className="text-xs text-gray-500 font-semibold">Best score</span>
+                          <span className="text-xs text-gray-500 font-semibold">{t('parent.dashboard.bestScore')}</span>
                         </div>
                       </div>
                       {/* Progress bar */}
@@ -317,14 +319,14 @@ const ParentDashboard = () => {
 
         {selectedChildId && (
           <div className="relative rounded-3xl overflow-hidden p-5 bg-gradient-to-br from-emerald-600 to-teal-600 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full pointer-events-none" />
+            <div className={`absolute top-0 ${isRTL ? 'left-0 rounded-br-full' : 'right-0 rounded-bl-full'} w-32 h-32 bg-white/5 pointer-events-none`} />
             <div className="flex items-center justify-between gap-4 relative z-10">
-              <div>
-                <p className="text-white/70 text-sm font-semibold">Overall Performance</p>
+              <div className="text-start">
+                <p className="text-white/70 text-sm font-semibold">{t('parent.dashboard.overallPerformance')}</p>
                 <h4 className="text-xl font-black text-white capitalize mt-0.5">{selectedChild?.name}</h4>
                 <p className="text-white/80 text-sm font-semibold mt-2 flex items-center gap-1.5">
-                  {avgScore >= 70 ? '🏆 Great performance!' :
-                    avgScore >= 50 ? '📈 Improving steadily' : '😔 Needs improvement'}
+                  {avgScore >= 70 ? t('parent.dashboard.greatPerf') :
+                    avgScore >= 50 ? t('parent.dashboard.improvingSteadily') : t('parent.dashboard.needsImprovement')}
                 </p>
               </div>
               <div className="relative shrink-0">
@@ -344,7 +346,7 @@ const ParentDashboard = () => {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-lg font-black text-white">{avgScore}%</span>
-                  <span className="text-[9px] font-bold text-white/70 uppercase tracking-wider">Avg</span>
+                  <span className="text-[9px] font-bold text-white/70 uppercase tracking-wider">{t('parent.dashboard.avg')}</span>
                 </div>
               </div>
             </div>
@@ -355,12 +357,12 @@ const ParentDashboard = () => {
         {selectedChildId && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>Recent Exams</h3>
+              <h3 className={`text-lg font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{t('parent.dashboard.recentExams')}</h3>
               <button
                 onClick={() => navigate('/parent/children')}
                 className="text-sm font-extrabold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
               >
-                View all
+                {t('parent.dashboard.viewAll')}
               </button>
             </div>
 
@@ -371,19 +373,19 @@ const ParentDashboard = () => {
                 isLight ? 'bg-white border-gray-200 text-gray-500' : 'bg-[#0e101a] border-gray-800/60 text-gray-500'
               }`}>
                 <FiClipboard size={18} />
-                <span className="text-sm font-semibold">No exams taken yet.</span>
+                <span className="text-sm font-semibold">{t('parent.dashboard.noExamsTakenYet')}</span>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
                 {recentAttempts.map((exam) => {
                   const isPassed = exam.passed;
                   const formattedDate = exam.createdAt 
-                    ? new Date(exam.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    ? new Date(exam.createdAt).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : '';
                   return (
                     <div
                       key={exam._id}
-                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 ${
+                      className={`flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 text-start ${
                         isLight ? 'bg-white border-gray-200 hover:border-gray-300' : 'bg-[#0c0d19]/60 border border-gray-800 hover:border-gray-700'
                       }`}
                     >
@@ -409,9 +411,9 @@ const ParentDashboard = () => {
                             </span>
                           </div>
                         </div>
-                        <div>
+                        <div className="text-start">
                           <p className={`text-sm font-bold capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>
-                            {exam.subject?.name || 'Exam'}
+                            {exam.subject?.name || t('parent.dashboard.exam')}
                           </p>
                           <p className="text-xs text-gray-500 font-semibold">{formattedDate}</p>
                         </div>
@@ -425,7 +427,7 @@ const ParentDashboard = () => {
                             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                             : 'bg-red-500/10 border-red-500/20 text-red-400'
                         }`}>
-                          {isPassed ? '✓' : '✗'} {isPassed ? 'Passed' : 'Failed'}
+                          {isPassed ? '✓' : '✗'} {isPassed ? t('parent.dashboard.passed') : t('parent.dashboard.failed')}
                         </span>
                       </div>
                     </div>
@@ -440,8 +442,8 @@ const ParentDashboard = () => {
       {/* FLOATING LINK CHILD BUTTON */}
       <button
         onClick={() => setIsLinkModalOpen(true)}
-        className="fixed bottom-28 lg:bottom-8 right-6 w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white flex items-center justify-center shadow-[0_8px_25px_rgba(168,85,247,0.4)] hover:shadow-[0_8px_30px_rgba(168,85,247,0.6)] transition-all duration-300 active:scale-95 cursor-pointer z-30"
-        title="Link a Child"
+        className={`fixed bottom-28 lg:bottom-8 ${isRTL ? 'left-6' : 'right-6'} w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white flex items-center justify-center shadow-[0_8px_25px_rgba(168,85,247,0.4)] hover:shadow-[0_8px_30px_rgba(168,85,247,0.6)] transition-all duration-300 active:scale-95 cursor-pointer z-30`}
+        title={t('parent.dashboard.linkChild')}
       >
         <FiUserPlus size={22} />
       </button>
@@ -457,7 +459,7 @@ const ParentDashboard = () => {
           }}
         >
           <div
-            className={`border rounded-3xl p-6 w-full max-w-sm shadow-[0_20px_60px_rgba(0,0,0,0.8)] animate-fade-in relative text-left ${
+            className={`border rounded-3xl p-6 w-full max-w-sm shadow-[0_20px_60px_rgba(0,0,0,0.8)] animate-fade-in relative text-start ${
               isLight ? 'bg-white border-gray-200' : 'bg-[#0f1020] border border-gray-800'
             }`}
             onClick={(e) => e.stopPropagation()}
@@ -469,7 +471,7 @@ const ParentDashboard = () => {
                 setIsLinkModalOpen(false);
                 setLinkCode('');
               }}
-              className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+              className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} w-8 h-8 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                 isLight ? 'bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800' : 'bg-gray-800/60 hover:bg-gray-700/60 text-gray-400 hover:text-white'
               }`}
             >
@@ -478,16 +480,16 @@ const ParentDashboard = () => {
 
             {/* Modal Header */}
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-fuchsia-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(168,85,247,0.3)] shrink-0">
                 <FiLink size={20} />
               </div>
               <div>
-                <h3 className={`text-xl font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>Link a Child</h3>
+                <h3 className={`text-xl font-black ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{t('parent.dashboard.linkChild')}</h3>
               </div>
             </div>
 
             <p className={`text-sm font-semibold mb-5 leading-relaxed ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>
-              Ask your child to share their link code from their profile, then enter it below.
+              {t('parent.dashboard.linkChildDesc')}
             </p>
 
             {/* Code Input */}
@@ -523,14 +525,14 @@ const ParentDashboard = () => {
                   isLight ? 'bg-transparent border-gray-300 text-gray-750 hover:bg-gray-50 hover:text-gray-900' : 'bg-transparent border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600'
                 }`}
               >
-                Cancel
+                {t('parent.dashboard.cancel')}
               </button>
               <button
                 disabled={isActionLoading}
                 onClick={handleLinkChild}
                 className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-black text-sm shadow-[0_4px_20px_rgba(168,85,247,0.3)] active:scale-95 transition-all cursor-pointer disabled:opacity-55"
               >
-                {isActionLoading ? 'Linking...' : 'Link'}
+                {isActionLoading ? t('parent.dashboard.linking') : t('parent.dashboard.link')}
               </button>
             </div>
           </div>
@@ -541,3 +543,4 @@ const ParentDashboard = () => {
 };
 
 export default ParentDashboard;
+

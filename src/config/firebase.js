@@ -3,13 +3,13 @@ import { getAnalytics } from "firebase/analytics";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBB_87iTYF6-N0WolrRvpiAr15PVxeZgjk",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "fullmark-c72f7.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "fullmark-c72f7",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "fullmark-c72f7.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "446929874415",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:446929874415:web:d421428b10762572989a1a",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-8Q9RXKYRR4"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ""
 };
 
 const app = initializeApp(firebaseConfig);

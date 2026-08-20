@@ -29,6 +29,7 @@ import {
   generateVariants,
   fetchVariantsStatus
 } from '../../redux/slices/teacherSlice';
+import { useLanguage } from '../../context/LanguageContext';
 
 const getImageUrl = (path) => {
   if (!path) return '';
@@ -44,6 +45,7 @@ const getImageUrl = (path) => {
 const EditQuestion = () => {
   const navigate = useNavigate();
   const { subjectId, questionId } = useParams();
+  const { t, isRTL } = useLanguage();
 
   const fileInputRef = useRef(null);
   const optionFileInputRef = useRef(null);
@@ -136,40 +138,40 @@ const EditQuestion = () => {
   }, [existingQuestion]);
 
   const handleApprove = async () => {
-    const loadingToast = toast.loading('Approving question...');
+    const loadingToast = toast.loading(isRTL ? 'جاري الموافقة على السؤال...' : 'Approving question...');
     try {
       await dispatch(approveQuestion(questionId)).unwrap();
       setIsApproved(true);
-      toast.success('Question approved!', { id: loadingToast });
+      toast.success(isRTL ? 'تمت الموافقة على السؤال!' : 'Question approved!', { id: loadingToast });
       dispatch(fetchQuestions());
     } catch (err) {
-      toast.error(err || 'Failed to approve question', { id: loadingToast });
+      toast.error(err || (isRTL ? 'فشلت الموافقة على السؤال' : 'Failed to approve question'), { id: loadingToast });
     }
   };
 
   const handleGenerateVariantsAction = async () => {
     setIsGeneratingVariants(true);
-    const loadingToast = toast.loading('Triggering AI variant generation...');
+    const loadingToast = toast.loading(isRTL ? 'جاري بدء توليد النماذج الذكية...' : 'Triggering AI variant generation...');
     try {
       const res = await dispatch(generateVariants(questionId)).unwrap();
-      toast.success(res.message || 'Variant generation started!', { id: loadingToast });
+      toast.success(res.message || (isRTL ? 'بدأ توليد النماذج!' : 'Variant generation started!'), { id: loadingToast });
       setTimeout(() => {
         dispatch(fetchVariantsStatus(questionId));
         setIsGeneratingVariants(false);
       }, 3000);
     } catch (err) {
       setIsGeneratingVariants(false);
-      toast.error(err || 'Failed to trigger variant generation', { id: loadingToast });
+      toast.error(err || (isRTL ? 'فشل توليد النماذج' : 'Failed to trigger variant generation'), { id: loadingToast });
     }
   };
 
   // Handle errors or missing questions after loading
   useEffect(() => {
     if (!isLoading && questions.length > 0 && !existingQuestion) {
-      toast.error('Question not found');
+      toast.error(isRTL ? 'السؤال غير موجود' : 'Question not found');
       navigate(`/teacher/subjects/${subjectId}`);
     }
-  }, [isLoading, questions, existingQuestion, subjectId, navigate]);
+  }, [isLoading, questions, existingQuestion, subjectId, navigate, isRTL]);
 
   // Image handlers — store File + generate base64 preview
   const handleImageChange = (e) => {
@@ -179,7 +181,7 @@ const EditQuestion = () => {
       const reader = new FileReader();
       reader.onloadend = () => { setImage(reader.result); };
       reader.readAsDataURL(file);
-      toast.success('Image selected!');
+      toast.success(isRTL ? 'تم تحديد الصورة!' : 'Image selected!');
     }
   };
 
@@ -187,7 +189,7 @@ const EditQuestion = () => {
     setImage(null);
     setImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    toast.success('Image removed successfully!');
+    toast.success(isRTL ? 'تمت إزالة الصورة بنجاح!' : 'Image removed successfully!');
   };
 
   // Option Image Handlers
@@ -199,7 +201,7 @@ const EditQuestion = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setOptionImages(prev => ({ ...prev, [letter]: reader.result }));
-        toast.success(`Image added to Option ${letter}!`);
+        toast.success(isRTL ? `تم إضافة صورة للخيار ${letter}!` : `Image added to Option ${letter}!`);
         setUploadingForOption(null);
       };
       reader.readAsDataURL(file);
@@ -214,29 +216,29 @@ const EditQuestion = () => {
   const handleRemoveOptionImage = (letter) => {
     setOptionImages(prev => ({ ...prev, [letter]: null }));
     setOptionImageFiles(prev => ({ ...prev, [letter]: null }));
-    toast.success(`Image removed from Option ${letter}`);
+    toast.success(isRTL ? `تمت إزالة الصورة من الخيار ${letter}` : `Image removed from Option ${letter}`);
   };
 
   // Save changes handler
   const handleSaveQuestion = async () => {
     if (!questionText.trim()) {
-      toast.error('Question text is required');
+      toast.error(isRTL ? 'نص السؤال مطلوب' : 'Question text is required');
       setActiveAccordion('question');
       return;
     }
     if (!optionsData.optionA.trim() || !optionsData.optionB.trim() || !optionsData.optionC.trim() || !optionsData.optionD.trim()) {
-      toast.error('Please fill in all options (A, B, C, D)');
+      toast.error(isRTL ? 'يرجى ملء جميع الخيارات (أ، ب، ج، د)' : 'Please fill in all options (A, B, C, D)');
       setActiveAccordion('options');
       return;
     }
     if (!correctOption) {
-      toast.error('Please select the correct option');
+      toast.error(isRTL ? 'يرجى تحديد الخيار الصحيح' : 'Please select the correct option');
       setActiveAccordion('options');
       return;
     }
 
     setIsSubmitting(true);
-    const loadingToast = toast.loading('Uploading images...');
+    const loadingToast = toast.loading(isRTL ? 'جاري رفع الصور...' : 'Uploading images...');
 
     try {
       // Upload new question image if user chose a new file
@@ -245,7 +247,7 @@ const EditQuestion = () => {
         try {
           finalImagePath = await dispatch(uploadQuestionImage(imageFile)).unwrap();
         } catch {
-          toast.error('Failed to upload question image', { id: loadingToast });
+          toast.error(isRTL ? 'فشل رفع صورة السؤال' : 'Failed to upload question image', { id: loadingToast });
           setIsSubmitting(false);
           return;
         }
@@ -270,7 +272,7 @@ const EditQuestion = () => {
         }
       }
 
-      toast.loading('Updating question...', { id: loadingToast });
+      toast.loading(isRTL ? 'جاري تحديث السؤال...' : 'Updating question...', { id: loadingToast });
 
       const optionMap = { A: 0, B: 1, C: 2, D: 3 };
       const correctIdx = optionMap[correctOption] ?? 0;
@@ -295,12 +297,12 @@ const EditQuestion = () => {
       };
 
       await dispatch(updateQuestion({ id: questionId, questionData: payload })).unwrap();
-      toast.success('Question updated successfully!', { id: loadingToast });
+      toast.success(isRTL ? 'تم تحديث السؤال بنجاح!' : 'Question updated successfully!', { id: loadingToast });
       setIsSubmitting(false);
       navigate(`/teacher/subjects/${subjectId}`);
     } catch (err) {
       setIsSubmitting(false);
-      toast.error(err || 'Failed to update question', { id: loadingToast });
+      toast.error(err || (isRTL ? 'فشل تحديث السؤال' : 'Failed to update question'), { id: loadingToast });
     }
   };
 
@@ -308,10 +310,10 @@ const EditQuestion = () => {
     <DashboardLayout
       role="teacher"
       activeTab="subjects"
-      title="Edit Question"
-      subtitle={`Subject: ${subject.name || subject.title}`}
+      title={isRTL ? "تعديل السؤال" : "Edit Question"}
+      subtitle={isRTL ? `المادة: ${subject.name || subject.title}` : `Subject: ${subject.name || subject.title}`}
     >
-      <div className="w-full max-w-full p-6 md:p-8 pb-32 text-left flex flex-col gap-6 animate-fade-in">
+      <div className="w-full max-w-full p-6 md:p-8 pb-32 text-start flex flex-col gap-6 animate-fade-in">
 
         {/* Hidden file inputs — always mounted so refs never go null */}
         <input
@@ -334,24 +336,26 @@ const EditQuestion = () => {
           <div className="flex items-center">
             <button 
               onClick={() => navigate(`/teacher/subjects/${subjectId}`)}
-              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer mr-3"
+              className={`w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer ${isRTL ? 'ml-3' : 'mr-3'}`}
             >
-              <FiChevronLeft size={20} />
+              <FiChevronLeft size={20} className={isRTL ? 'rotate-180' : ''} />
             </button>
-            <div>
+            <div className="text-start">
               <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
-                Edit Question
+                {isRTL ? "تعديل السؤال" : "Edit Question"}
                 {isApproved ? (
                   <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black flex items-center gap-1">
-                    <FiCheck size={14} /> Approved
+                    <FiCheck size={14} /> {isRTL ? "تمت الموافقة" : "Approved"}
                   </span>
                 ) : (
                   <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black">
-                    Pending Approval
+                    {isRTL ? "قيد الانتظار" : "Pending Approval"}
                   </span>
                 )}
               </h2>
-              <p className="text-sm text-gray-500 font-semibold mt-1">Modify question details for {subject.name || subject.title}</p>
+              <p className="text-sm text-gray-500 font-semibold mt-1">
+                {isRTL ? `تعديل تفاصيل السؤال للمادة ${subject.name || subject.title}` : `Modify question details for ${subject.name || subject.title}`}
+              </p>
             </div>
           </div>
 
@@ -362,7 +366,7 @@ const EditQuestion = () => {
                 onClick={handleApprove}
                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-600/20"
               >
-                <FiCheck size={16} /> Approve Question
+                <FiCheck size={16} /> {isRTL ? "الموافقة على السؤال" : "Approve Question"}
               </button>
             )}
 
@@ -372,7 +376,7 @@ const EditQuestion = () => {
               disabled={isGeneratingVariants}
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white text-xs font-black flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-purple-600/20 disabled:opacity-50"
             >
-              <FiPlus size={16} /> {isGeneratingVariants ? 'Generating...' : 'Generate Practice Variants'}
+              <FiPlus size={16} /> {isGeneratingVariants ? (isRTL ? "جاري التوليد..." : "Generating...") : (isRTL ? "توليد نماذج تدريبية" : "Generate Practice Variants")}
             </button>
 
             {/* Difficulty Level Indicator */}
@@ -386,19 +390,19 @@ const EditQuestion = () => {
                 difficulty === 'Medium' ? 'bg-blue-400' :
                 'bg-red-400'
               }`} />
-              <span>{difficulty}</span>
+              <span>{difficulty === 'Easy' ? (isRTL ? 'سهل' : 'Easy') : difficulty === 'Medium' ? (isRTL ? 'متوسط' : 'Medium') : (isRTL ? 'صعب' : 'Hard')}</span>
             </div>
           </div>
         </div>
 
         {/* AI Variants Status Card (if status returned) */}
         {variantsStatus && (
-          <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between text-left">
-            <div>
-              <span className="text-xs font-black text-purple-400 uppercase tracking-wider block">AI Variant Generator Status</span>
+          <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between text-start">
+            <div className="text-start">
+              <span className="text-xs font-black text-purple-400 uppercase tracking-wider block">{isRTL ? "حالة مولد النماذج" : "AI Variant Generator Status"}</span>
               <span className="text-sm font-bold text-white mt-0.5 block">
-                Status: <span className="capitalize text-purple-300">{variantsStatus.status || variantsStatus.state || 'Completed'}</span>
-                {variantsStatus.variantsCount !== undefined && ` • Generated: ${variantsStatus.variantsCount} variants`}
+                {isRTL ? 'الحالة:' : 'Status:'} <span className="capitalize text-purple-300">{variantsStatus.status || variantsStatus.state || (isRTL ? 'مكتمل' : 'Completed')}</span>
+                {variantsStatus.variantsCount !== undefined && ` • ${isRTL ? 'المولدة:' : 'Generated:'} ${variantsStatus.variantsCount} ${isRTL ? 'نماذج' : 'variants'}`}
               </span>
             </div>
           </div>
@@ -406,16 +410,16 @@ const EditQuestion = () => {
 
         {/* Weakness Topic Selector */}
         {weaknessTopics.length > 0 && (
-          <div className="flex flex-col gap-2 text-left">
+          <div className="flex flex-col gap-2 text-start">
             <span className="text-xs font-black tracking-widest text-amber-500 uppercase px-1 flex items-center gap-1.5">
-              <span>🎯</span> Target Weakness Topic (Optional)
+              <span>🎯</span> {isRTL ? "موضوع الضعف المستهدف (اختياري)" : "Target Weakness Topic (Optional)"}
             </span>
             <select
               value={weaknessTopicId}
               onChange={(e) => setWeaknessTopicId(e.target.value)}
               className="w-full p-4 bg-[#0e101a] border border-gray-800 focus:border-amber-500/50 rounded-2xl text-white font-semibold text-sm outline-none cursor-pointer"
             >
-              <option value="">-- No Specific Weakness Topic --</option>
+              <option value="">{isRTL ? "-- لا يوجد موضوع ضعف محدد --" : "-- No Specific Weakness Topic --"}</option>
               {weaknessTopics.map((topic) => (
                 <option key={topic._id || topic.id} value={topic._id || topic.id}>
                   {topic.title} {topic.titleAr ? `(${topic.titleAr})` : ''}
@@ -426,9 +430,9 @@ const EditQuestion = () => {
         )}
 
         {/* 1. Difficulty Level Selector */}
-        <div className="flex flex-col gap-3 text-left">
+        <div className="flex flex-col gap-3 text-start">
           <span className="text-xs font-black tracking-widest text-gray-500 uppercase px-1">
-            Difficulty Level
+            {isRTL ? "مستوى الصعوبة" : "Difficulty Level"}
           </span>
           <div className="grid grid-cols-3 gap-3">
             {/* Easy */}
@@ -441,7 +445,7 @@ const EditQuestion = () => {
               }`}
             >
               <FiSmile size={24} />
-              <span className="text-sm font-bold">Easy</span>
+              <span className="text-sm font-bold">{isRTL ? "سهل" : "Easy"}</span>
             </div>
             {/* Medium */}
             <div 
@@ -453,7 +457,7 @@ const EditQuestion = () => {
               }`}
             >
               <FiMeh size={24} />
-              <span className="text-sm font-bold">Medium</span>
+              <span className="text-sm font-bold">{isRTL ? "متوسط" : "Medium"}</span>
             </div>
             {/* Hard */}
             <div 
@@ -465,7 +469,7 @@ const EditQuestion = () => {
               }`}
             >
               <FiFrown size={24} />
-              <span className="text-sm font-bold">Hard</span>
+              <span className="text-sm font-bold">{isRTL ? "صعب" : "Hard"}</span>
             </div>
           </div>
         </div>
@@ -483,19 +487,19 @@ const EditQuestion = () => {
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
                   <FiHelpCircle size={18} />
                 </div>
-                <span className="text-base font-extrabold text-white">Question</span>
+                <span className="text-base font-extrabold text-white">{isRTL ? "السؤال" : "Question"}</span>
               </div>
               <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${activeAccordion === 'question' ? 'rotate-180' : ''}`} />
             </div>
 
             {activeAccordion === 'question' && (
-              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
+              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-start">
                 <textarea
                   value={questionText}
                   onChange={(e) => setQuestionText(e.target.value)}
-                  placeholder="Question Text"
+                  placeholder={isRTL ? "نص السؤال" : "Question Text"}
                   rows={4}
-                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
+                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0 text-start"
                 />
 
                 {!image ? (
@@ -505,7 +509,7 @@ const EditQuestion = () => {
                     className="w-full py-4 border border-dashed border-gray-800 hover:border-blue-500/50 bg-[#0e101a]/30 hover:bg-blue-500/5 text-gray-400 hover:text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
                   >
                     <FiImage size={18} />
-                    <span>Add Image</span>
+                    <span>{isRTL ? "إضافة صورة" : "Add Image"}</span>
                   </button>
                 ) : (
                   <div className="relative rounded-2xl border border-gray-800 bg-[#0c0d19] overflow-hidden group max-w-full flex flex-col items-center p-4">
@@ -517,8 +521,8 @@ const EditQuestion = () => {
                     <button
                       type="button"
                       onClick={handleRemoveImage}
-                      className="absolute top-6 right-6 w-8 h-8 rounded-full bg-red-600/90 hover:bg-red-600 hover:scale-105 active:scale-95 flex items-center justify-center text-white cursor-pointer transition-all shadow-lg"
-                      title="Remove Image"
+                      className={`absolute top-6 ${isRTL ? 'left-6' : 'right-6'} w-8 h-8 rounded-full bg-red-600/90 hover:bg-red-600 hover:scale-105 active:scale-95 flex items-center justify-center text-white cursor-pointer transition-all shadow-lg`}
+                      title={isRTL ? "إزالة الصورة" : "Remove Image"}
                     >
                       <FiX size={16} />
                     </button>
@@ -538,16 +542,16 @@ const EditQuestion = () => {
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
                   <FiList size={18} />
                 </div>
-                <span className="text-base font-extrabold text-white">Answer Options</span>
+                <span className="text-base font-extrabold text-white">{isRTL ? "خيارات الإجابة" : "Answer Options"}</span>
               </div>
               <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${activeAccordion === 'options' ? 'rotate-180' : ''}`} />
             </div>
 
             {activeAccordion === 'options' && (
-              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
+              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-start">
                 <div className="flex items-center gap-3 p-3.5 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-400 text-sm font-semibold">
                   <FiInfo size={16} className="shrink-0" />
-                  <span>Tap the circle to mark the correct answer</span>
+                  <span>{isRTL ? "انقر على الدائرة لتحديد الإجابة الصحيحة" : "Tap the circle to mark the correct answer"}</span>
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -579,8 +583,8 @@ const EditQuestion = () => {
                             type="text"
                             value={value}
                             onChange={(e) => setOptionsData({ ...optionsData, [optionKey]: e.target.value })}
-                            placeholder={`Option ${letter}...`}
-                            className="w-full bg-transparent border-none text-white text-base font-semibold outline-none focus:outline-none focus:ring-0"
+                            placeholder={isRTL ? `الخيار ${letter}...` : `Option ${letter}...`}
+                            className="w-full bg-transparent border-none text-white text-base font-semibold outline-none focus:outline-none focus:ring-0 text-start"
                           />
 
                           {/* Image upload button */}
@@ -590,24 +594,24 @@ const EditQuestion = () => {
                             className={`p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer relative shrink-0 ${
                               hasImage ? 'text-blue-400' : 'text-gray-500 hover:text-white'
                             }`}
-                            title={hasImage ? "Change Option Image" : "Add Image to Option"}
+                            title={hasImage ? (isRTL ? "تغيير صورة الخيار" : "Change Option Image") : (isRTL ? "إضافة صورة للخيار" : "Add Image to Option")}
                           >
                             <FiImage size={18} />
                             {hasImage && (
-                              <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full border border-gray-900" />
+                              <span className={`absolute top-1 ${isRTL ? 'left-1' : 'right-1'} w-2 h-2 bg-blue-500 rounded-full border border-gray-900`} />
                             )}
                           </button>
 
                           {isCorrect && (
                             <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-black uppercase shrink-0">
-                              Correct
+                              {isRTL ? "صحيح" : "Correct"}
                             </span>
                           )}
                         </div>
 
                         {/* Image Preview if attached */}
                         {hasImage && (
-                          <div className="ml-11 relative rounded-xl border border-gray-850 bg-[#0c0d19] overflow-hidden group max-w-full flex items-center p-2 self-start gap-3">
+                          <div className={`${isRTL ? 'mr-11' : 'ml-11'} relative rounded-xl border border-gray-850 bg-[#0c0d19] overflow-hidden group max-w-full flex items-center p-2 self-start gap-3`}>
                             <img
                               src={getImageUrl(optionImages[letter])}
                               alt={`Option ${letter} Visual`}
@@ -617,7 +621,7 @@ const EditQuestion = () => {
                               type="button"
                               onClick={() => handleRemoveOptionImage(letter)}
                               className="w-6 h-6 rounded-full bg-red-600/90 hover:bg-red-600 flex items-center justify-center text-white cursor-pointer transition-all"
-                              title="Remove Image"
+                              title={isRTL ? "إزالة الصورة" : "Remove Image"}
                             >
                               <FiX size={12} />
                             </button>
@@ -641,39 +645,39 @@ const EditQuestion = () => {
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
                   <FiPlayCircle size={18} />
                 </div>
-                <span className="text-base font-extrabold text-white">Explanation & Video</span>
+                <span className="text-base font-extrabold text-white">{isRTL ? "الشرح والفيديو" : "Explanation & Video"}</span>
               </div>
               <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${activeAccordion === 'explanation' ? 'rotate-180' : ''}`} />
             </div>
 
             {activeAccordion === 'explanation' && (
-              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-left">
+              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-start">
                 <div className="flex items-center gap-3 p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm font-semibold">
                   <FiInfo size={16} className="shrink-0" />
-                  <span>This explanation is shown to students when they answer incorrectly.</span>
+                  <span>{isRTL ? "يظهر هذا الشرح للطلاب عندما يجيبون بشكل خاطئ." : "This explanation is shown to students when they answer incorrectly."}</span>
                 </div>
 
                 <textarea
                   value={explanation}
                   onChange={(e) => setExplanation(e.target.value)}
-                  placeholder="Explanation"
+                  placeholder={isRTL ? "الشرح" : "Explanation"}
                   rows={3}
-                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0"
+                  className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0 text-start"
                 />
 
                 <div className="relative w-full">
-                  <FiPlayCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                  <FiPlayCircle className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
                   <input
                     type="text"
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
                     disabled={useGeneralVideo}
-                    placeholder={useGeneralVideo ? "Using Weakness Topic General Video" : "Explanation Video URL"}
-                    className="w-full pl-11 pr-4 py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0 disabled:opacity-50"
+                    placeholder={useGeneralVideo ? (isRTL ? "استخدام الفيديو العام لموضوع الضعف" : "Using Weakness Topic General Video") : (isRTL ? "رابط فيديو الشرح" : "Explanation Video URL")}
+                    className={`w-full ${isRTL ? 'pr-11 pl-4' : 'pl-11 pr-4'} py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0 disabled:opacity-50 text-start`}
                   />
                 </div>
 
-                <label className="flex items-center gap-3 p-3 bg-white/5 border border-gray-800 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
+                <label className="flex items-center gap-3 p-3 bg-white/5 border border-gray-800 rounded-xl cursor-pointer hover:bg-white/10 transition-all text-start">
                   <input
                     type="checkbox"
                     checked={useGeneralVideo}
@@ -681,7 +685,7 @@ const EditQuestion = () => {
                     className="w-4 h-4 text-blue-600 rounded border-gray-700 bg-gray-900 focus:ring-blue-500"
                   />
                   <span className="text-xs font-semibold text-gray-300">
-                    Use Weakness Topic's general video (if available) instead of question video
+                    {isRTL ? "استخدام الفيديو العام لموضوع الضعف (إن وجد) بدلاً من فيديو السؤال" : "Use Weakness Topic's general video (if available) instead of question video"}
                   </span>
                 </label>
               </div>
@@ -696,7 +700,7 @@ const EditQuestion = () => {
           disabled={isSubmitting}
           className="w-full py-4 mt-6 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black text-base shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span>{isSubmitting ? 'Saving...' : 'Save Changes'}</span>
+          <span>{isSubmitting ? (isRTL ? "جاري الحفظ..." : "Saving...") : (isRTL ? "حفظ التغييرات" : "Save Changes")}</span>
           <FiCheck className="text-base" />
         </button>
 
