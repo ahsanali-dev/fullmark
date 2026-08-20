@@ -103,14 +103,27 @@ const CreateExam = () => {
 
     setIsSubmitting(true);
 
+    const getDifficultyEnum = (mix) => {
+      if (mix === 'Easy Only') return 'easy';
+      if (mix === 'Medium Only') return 'medium';
+      if (mix === 'Hard Only') return 'hard';
+      return 'mixed';
+    };
+
     const payload = {
       title: examTitle,
+      subject: selectedSubjectId,
       subjectId: selectedSubjectId,
-      duration: enableTimer ? duration : 0,
+      questionIds: selectedQuestionIds,
       questions: selectedQuestionIds,
+      hasTimer: enableTimer,
+      durationMinutes: enableTimer ? duration : 0,
+      duration: enableTimer ? duration : 0,
+      difficulty: getDifficultyEnum(difficultyMix),
       difficultyMix: difficultyMix,
       showExplanations: showExplanations,
-      allowRetake: allowRetake
+      allowRetake: allowRetake,
+      isPublished: true
     };
 
     const loadingToast = toast.loading(isRTL ? 'جاري نشر الاختبار...' : 'Publishing exam...');
