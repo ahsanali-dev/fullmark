@@ -327,12 +327,27 @@ export const extractQuestionsFromPdf = createAsyncThunk(
       const state = thunkAPI.getState();
       const token = state.auth.token;
       const user = state.auth.user;
+      const subjects = state.teacher?.subjects || [];
+      const selectedSub = subjects.find(s => (s._id || s.id) === subjectId);
+
       const formData = new FormData();
       formData.append('subjectId', subjectId);
       
-      const teacherId = user?._id || user?.id || user?.teacherProfileId;
-      if (teacherId) {
-        formData.append('teacherId', teacherId);
+      let teacherUserId = null;
+      if (selectedSub?.teacher) {
+        teacherUserId = typeof selectedSub.teacher === 'object' 
+          ? (selectedSub.teacher._id || selectedSub.teacher.id) 
+          : selectedSub.teacher;
+      }
+      if (!teacherUserId) {
+        teacherUserId = (typeof user?.user === 'object' ? user?.user?._id : user?.user) 
+          || user?.userId 
+          || user?.user_id 
+          || user?._id;
+      }
+
+      if (teacherUserId) {
+        formData.append('teacherId', teacherUserId);
       }
       formData.append('pdf', pdfFile);
 
