@@ -57,7 +57,7 @@ const Profile = () => {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [bio, setBio] = useState(user?.bio || (isRTL ? 'أنا طالب شغوف أسعى لتحقيق العلامة الكاملة!' : 'I am a passionate student striving to hit a perfect full score!'));
+  const [bio, setBio] = useState(user?.bio || '');
 
   useEffect(() => {
     dispatch(fetchStudentProfile());
@@ -70,9 +70,9 @@ const Profile = () => {
       setName(user.name || '');
       setEmail(user.email || '');
       setPhone(user.phone || '');
-      setBio(user.bio || (isRTL ? 'أنا طالب شغوف أسعى لتحقيق العلامة الكاملة!' : 'I am a passionate student striving to hit a perfect full score!'));
+      setBio(user.bio || '');
     }
-  }, [user, isRTL]);
+  }, [user]);
 
   // Modals state
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -271,7 +271,7 @@ const Profile = () => {
               </div>
 
               <p className="text-xs font-semibold text-gray-400 italic leading-relaxed">
-                "{bio || (isRTL ? 'لا يوجد ملف شخصي بعد. اضغط تعديل للإضافة.' : 'No bio yet. Tap Edit to add one.')}"
+                {bio ? `"${bio}"` : (isRTL ? 'لا يوجد نبذة شخصية بعد. اضغط تعديل للإضافة.' : 'No bio yet. Tap Edit to add one.')}
               </p>
 
               <div className="flex flex-col gap-2.5 mt-2 text-xs font-semibold text-gray-400">
@@ -837,8 +837,8 @@ const Profile = () => {
                 <button
                   onClick={() => setTempLanguage('English')}
                   className={`w-full p-4 rounded-2xl border transition-all text-start flex items-center justify-between cursor-pointer ${tempLanguage === 'English'
-                      ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5'
-                      : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
+                    ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5'
+                    : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
                     }`}
                 >
                   <div className="flex items-center gap-3">
@@ -856,8 +856,8 @@ const Profile = () => {
                 <button
                   onClick={() => setTempLanguage('Arabic')}
                   className={`w-full p-4 rounded-2xl border transition-all text-start flex items-center justify-between cursor-pointer ${tempLanguage === 'Arabic'
-                      ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5'
-                      : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
+                    ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5'
+                    : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
                     }`}
                 >
                   <div className="flex items-center gap-3">

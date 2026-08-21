@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FiGrid, 
-  FiUsers, 
-  FiBookOpen, 
-  FiBarChart2, 
-  FiSettings, 
-  FiSun, 
-  FiMoon, 
-  FiBell, 
-  FiLogOut, 
-  FiChevronUp, 
+import {
+  FiGrid,
+  FiUsers,
+  FiBookOpen,
+  FiBarChart2,
+  FiSettings,
+  FiSun,
+  FiMoon,
+  FiBell,
+  FiLogOut,
+  FiChevronUp,
   FiChevronDown,
   FiChevronLeft,
   FiFileText,
@@ -164,7 +164,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
               setProfileAvatar(parsed.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().substring(0, 2));
               return;
             }
-          } catch {}
+          } catch { }
         }
         setProfileName('Teacher');
         setProfileAvatar('TR');
@@ -188,7 +188,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
               setProfileAvatar(parsed.initials || 'PT');
               return;
             }
-          } catch {}
+          } catch { }
         }
         setProfileName('Parent');
         setProfileAvatar('PT');
@@ -236,7 +236,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
     const handleClickOutside = (event) => {
       const clickedOutsideDesktop = !desktopUserMenuRef.current || !desktopUserMenuRef.current.contains(event.target);
       const clickedOutsideMobile = !mobileUserMenuRef.current || !mobileUserMenuRef.current.contains(event.target);
-      
+
       if (clickedOutsideDesktop && clickedOutsideMobile) {
         setShowUserMenu(false);
       }
@@ -278,14 +278,13 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
 
   return (
     <div className="h-screen bg-[#080911] text-gray-100 flex font-sans select-none w-full overflow-hidden">
-      
+
       {/* 1. DESKTOP SIDEBAR */}
-      <aside className={`hidden lg:flex flex-col w-64 border-r border-gray-800 bg-[#0c0d19]/80 backdrop-blur-xl p-6 justify-between shrink-0 transition-all duration-300 ${
-        isModalOpen ? 'blur-sm pointer-events-none' : ''
-      }`}>
+      <aside className={`hidden lg:flex flex-col w-64 border-r border-gray-800 bg-[#0c0d19]/80 backdrop-blur-xl p-6 justify-between shrink-0 transition-all duration-300 ${isModalOpen ? 'blur-sm pointer-events-none' : ''
+        }`}>
         <div className="flex flex-col gap-8">
           {/* Logo / Header */}
-          <div 
+          <div
             onClick={() => navigate('/')}
             className="flex items-center gap-3 cursor-pointer group hover:opacity-90 transition-opacity"
             title="Go to Landing Page"
@@ -308,11 +307,10 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                 <button
                   key={item.id}
                   onClick={() => navigate(`/${role}/${item.id}`)}
-                  className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold tracking-wide transition-all duration-300 cursor-pointer ${
-                    isActive 
-                      ? config.activeMenuClass 
+                  className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl font-semibold tracking-wide transition-all duration-300 cursor-pointer ${isActive
+                      ? config.activeMenuClass
                       : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/20 border border-transparent'
-                  }`}
+                    }`}
                 >
                   <Icon className="text-lg" />
                   {item.label}
@@ -368,14 +366,13 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
 
       {/* 2. MAIN CONTENT CONTAINER */}
       <main className="flex-1 flex flex-col h-full overflow-hidden w-full">
-        
+
         {/* Top Header Section */}
-        <header className={`px-3.5 sm:px-6 md:px-8 py-2.5 sm:py-4 flex items-center justify-between border-b border-gray-800/50 bg-[#080911]/70 backdrop-blur-md shrink-0 z-10 transition-all duration-300 gap-2 ${
-          isModalOpen ? 'blur-sm pointer-events-none' : ''
-        }`}>
+        <header className={`px-3.5 sm:px-6 md:px-8 py-2.5 sm:py-4 flex items-center justify-between border-b border-gray-800/50 bg-[#080911]/70 backdrop-blur-md shrink-0 z-10 transition-all duration-300 gap-2 ${isModalOpen ? 'blur-sm pointer-events-none' : ''
+          }`}>
           <div className="flex items-center gap-2 sm:gap-4 text-start min-w-0 flex-1">
             {showBackButton && (
-              <button 
+              <button
                 onClick={onBackClick || (() => navigate(-1))}
                 className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 cursor-pointer shrink-0"
               >
@@ -400,7 +397,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {headerActions}
             {/* Theme Toggle */}
-            <button 
+            <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-yellow-500 transition-all duration-300 cursor-pointer"
             >
@@ -409,7 +406,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
 
             {/* Notifications Dropdown */}
             <div className="relative" ref={notificationsRef}>
-              <button 
+              <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border border-gray-800 bg-gray-950/30 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 relative cursor-pointer"
               >
@@ -424,7 +421,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                   <div className="flex items-center justify-between pb-3 border-b border-gray-800/50 mb-2">
                     <h4 className="text-sm font-black text-white">{t('dashboard.notifications')}</h4>
                     {notifications.some(n => !n.isRead) && (
-                      <button 
+                      <button
                         onClick={() => {
                           dispatch(markAllNotificationsRead());
                           toast.success(t('dashboard.markAllRead'));
@@ -443,26 +440,24 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                           const isSystem = n.type === 'system';
                           const isExam = n.type === 'exam_result';
                           return (
-                            <div 
+                            <div
                               key={n._id}
                               onClick={() => {
                                 if (!n.isRead) {
                                   dispatch(markNotificationRead(n._id));
                                 }
                               }}
-                              className={`p-3 rounded-2xl border flex gap-3 text-start transition-all cursor-pointer ${
-                                n.isRead 
-                                  ? 'bg-transparent border-gray-800/40 opacity-60' 
+                              className={`p-3 rounded-2xl border flex gap-3 text-start transition-all cursor-pointer ${n.isRead
+                                  ? 'bg-transparent border-gray-800/40 opacity-60'
                                   : 'bg-[#16172b]/60 border-gray-800'
-                              }`}
+                                }`}
                             >
-                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                                isStudent 
-                                  ? 'bg-emerald-500/10 text-emerald-400' 
-                                  : isSystem 
-                                  ? 'bg-blue-500/10 text-blue-400' 
-                                  : 'bg-purple-500/10 text-purple-400'
-                              }`}>
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isStudent
+                                  ? 'bg-emerald-500/10 text-emerald-400'
+                                  : isSystem
+                                    ? 'bg-blue-500/10 text-blue-400'
+                                    : 'bg-purple-500/10 text-purple-400'
+                                }`}>
                                 {isStudent ? <FiUser size={14} /> : isSystem ? <FiShield size={14} /> : isExam ? <FiClipboard size={14} /> : <FiBookOpen size={14} />}
                               </div>
                               <div className="flex flex-col min-w-0 flex-1">
@@ -492,7 +487,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
             </div>
             {/* Mobile User Profile Trigger */}
             <div className="relative lg:hidden" ref={mobileUserMenuRef}>
-              <button 
+              <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center font-bold text-white text-xs sm:text-sm transition-transform active:scale-95 cursor-pointer bg-gradient-to-r ${config.gradientClass}`}
               >
@@ -538,9 +533,8 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
       </main>
 
       {/* 3. MOBILE BOTTOM NAVIGATION BAR */}
-      <div className={`lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0c0d19]/95 border-t border-gray-800/80 backdrop-blur-xl z-40 pb-2 transition-all duration-300 ${
-        isModalOpen ? 'blur-sm pointer-events-none' : ''
-      }`}>
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0c0d19]/95 border-t border-gray-800/80 backdrop-blur-xl z-40 pb-2 transition-all duration-300 ${isModalOpen ? 'blur-sm pointer-events-none' : ''
+        }`}>
         <div className="w-full h-full flex items-center gap-1.5 px-2.5 overflow-x-auto no-scrollbar scroll-smooth">
           {config.menus.map((item) => {
             const Icon = item.icon;
@@ -549,11 +543,10 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
               <button
                 key={item.id}
                 onClick={() => navigate(`/${role}/${item.id}`)}
-                className={`flex-1 min-w-[66px] flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-2xl transition-all duration-300 cursor-pointer shrink-0 ${
-                  isActive 
-                    ? `${config.badgeClass} shadow-[0_0_12px_rgba(0,0,0,0.05)]` 
+                className={`flex-1 min-w-[66px] flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-2xl transition-all duration-300 cursor-pointer shrink-0 ${isActive
+                    ? `${config.badgeClass} shadow-[0_0_12px_rgba(0,0,0,0.05)]`
                     : 'text-gray-500 hover:text-gray-300'
-                }`}
+                  }`}
               >
                 <Icon className="text-lg shrink-0" />
                 <span className="text-[9px] font-bold tracking-wide uppercase whitespace-nowrap">{item.label}</span>

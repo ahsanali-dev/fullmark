@@ -121,7 +121,7 @@ const ResultDetails = () => {
       role="student"
       activeTab="results"
       title={isRTL ? "نتيجة الاختبار" : "Exam Result"}
-      subtitle={attempt.exam?.title || (isRTL ? 'اختبار تجريبي' : 'Practice Exam')}
+      subtitle={typeof attempt.exam === 'object' && attempt.exam?.title ? attempt.exam.title : (isRTL ? 'اختبار تجريبي' : 'Practice Exam')}
       showBackButton={true}
       onBackClick={() => navigate('/student/results')}
     >
@@ -133,9 +133,9 @@ const ResultDetails = () => {
             : 'from-pink-950/40 to-[#0c0d19]/90 border-pink-500/20 shadow-pink-500/5'
           }`}>
           {/* Subject tag */}
-          {attempt.subject && (
+          {attempt.subject && typeof attempt.subject === 'object' && (attempt.subject.name || attempt.subject.nameAr) && (
             <span className="px-4 py-1.5 rounded-full bg-gray-950/65 border border-gray-800 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-              {attempt.subject.name}
+              {(isRTL && attempt.subject.nameAr) ? attempt.subject.nameAr : (attempt.subject.name || '')}
             </span>
           )}
 

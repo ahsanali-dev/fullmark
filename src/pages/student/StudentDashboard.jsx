@@ -46,7 +46,9 @@ const StudentDashboard = () => {
   const examsCount = dashboard?.student?.totalExamsTaken || 5;
   const recentExams = dashboard?.recentAttempts || [];
   const enrollments = dashboard?.enrollments || [];
-  const activeCourse = enrollments[0]?.subject?.name || (isRTL ? 'الكيمياء' : 'Chemistry');
+  const activeCourse = (isRTL && enrollments[0]?.subject?.nameAr) 
+    ? enrollments[0].subject.nameAr 
+    : (enrollments[0]?.subject?.name || (isRTL ? 'الكيمياء' : 'Chemistry'));
 
   return (
     <DashboardLayout
@@ -327,7 +329,7 @@ const StudentDashboard = () => {
                   </div>
                   <div className="flex flex-col text-start">
                     <h4 className="text-base font-black text-white">
-                      {recentExams[0]?.exam?.title || recentExams[0]?.subject?.name || activeCourse}
+                      {recentExams[0]?.exam?.title || ((isRTL && recentExams[0]?.subject?.nameAr) ? recentExams[0].subject.nameAr : (recentExams[0]?.subject?.name || activeCourse))}
                     </h4>
                     <span className="text-xs font-semibold text-gray-400 mt-0.5">
                       {recentExams[0]?.createdAt ? new Date(recentExams[0].createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '15 Aug 2026'}
@@ -389,7 +391,7 @@ const StudentDashboard = () => {
                             ? 'text-slate-900 group-hover:text-purple-700' 
                             : 'text-white group-hover:text-purple-200'
                         }`}>
-                          {enrollment.subject?.name || t('student.dashboard.chemistry')}
+                          {(isRTL && enrollment.subject?.nameAr) ? enrollment.subject.nameAr : (enrollment.subject?.name || t('student.dashboard.chemistry'))}
                         </h4>
                         <span className={`text-xs font-semibold mt-1 ${
                           isLight 

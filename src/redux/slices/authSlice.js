@@ -140,6 +140,25 @@ export const updateTeacherProfile = createAsyncThunk(
   }
 );
 
+export const uploadAvatar = createAsyncThunk(
+  'auth/uploadAvatar',
+  async (formData, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(apiEndpoints.common.uploadAvatar, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to upload avatar';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 export const changePassword = createAsyncThunk(
   'auth/changePassword',
   async (passwordData, thunkAPI) => {
@@ -216,7 +235,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
-      
+
       // Verify OTP
       .addCase(verifyOtp.pending, (state) => {
         state.isLoading = true;
@@ -246,7 +265,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.token = action.payload.token;
-        state.user = action.payload.profile 
+        state.user = action.payload.profile
           ? { ...action.payload.user, ...action.payload.profile }
           : action.payload.user;
       })
@@ -264,7 +283,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         const userData = action.payload.user || action.payload.data || action.payload;
-        state.user = action.payload.profile 
+        state.user = action.payload.profile
           ? { ...userData, ...action.payload.profile }
           : userData;
       })
@@ -285,7 +304,7 @@ const authSlice = createSlice({
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.isLoading = false;
         const updatedUser = action.payload.user || action.payload.data || action.payload;
-        state.user = state.user 
+        state.user = state.user
           ? { ...state.user, ...updatedUser }
           : updatedUser;
       })
@@ -306,6 +325,23 @@ const authSlice = createSlice({
         }
       })
       .addCase(updateTeacherProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+
+      // Upload Avatar
+      .addCase(uploadAvatar.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(uploadAvatar.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const avatarUrl = action.payload?.data?.avatar || action.payload?.avatar;
+        if (state.user && avatarUrl) {
+          state.user.avatar = avatarUrl;
+        }
+      })
+      .addCase(uploadAvatar.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       })

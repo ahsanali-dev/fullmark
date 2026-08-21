@@ -87,7 +87,9 @@ const DailyImprovementTest = () => {
   // Result Summary View
   if (testResult) {
     const totalCount = questions.length;
-    const score = testResult.score !== undefined ? testResult.score : testResult.correctCount || 0;
+    const score = testResult.score !== undefined 
+      ? testResult.score 
+      : (testResult.correctAnswers !== undefined ? testResult.correctAnswers : (testResult.correctCount || 0));
     const percentage = totalCount > 0 ? Math.round((score / totalCount) * 100) : 100;
 
     return (

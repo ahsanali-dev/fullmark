@@ -98,29 +98,22 @@ const Courses = () => {
     }
   };
 
-  // Generate dynamic tag filters
+  // Generate tag filters (All, Enrolled, Available)
   const allLabel = isRTL ? 'الكل' : 'All';
   const enrolledLabel = isRTL ? 'المسجلة' : 'Enrolled';
   const availableLabel = isRTL ? 'المتاحة' : 'Available';
 
   const courseTags = [allLabel, enrolledLabel, availableLabel];
-  if (browseSubjects && browseSubjects.length > 0) {
-    const subjectNames = [...new Set(browseSubjects.map(s => s.name))];
-    courseTags.push(...subjectNames);
-  }
 
   // Filtering Logic
   const filteredCourses = (browseSubjects || []).filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (c.description || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     if (!matchesSearch) return false;
 
     if (selectedTag === enrolledLabel || selectedTag === 'Enrolled') return c.isEnrolled;
     if (selectedTag === availableLabel || selectedTag === 'Available') return !c.isEnrolled;
-    if (selectedTag !== allLabel && selectedTag !== 'All') {
-      return c.name.toLowerCase() === selectedTag.toLowerCase();
-    }
     return true;
   });
 

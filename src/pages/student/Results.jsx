@@ -117,9 +117,9 @@ const Results = () => {
                       <h3 className="text-base font-black text-white capitalize leading-tight group-hover:text-emerald-400 transition-colors">
                         {attempt.exam?.title || (isRTL ? 'اختبار تجريبي' : 'Practice Exam')}
                       </h3>
-                      {attempt.subject && (
+                      {attempt.subject && typeof attempt.subject === 'object' && (attempt.subject.name || attempt.subject.nameAr) && (
                         <span className="text-xs text-gray-500 font-extrabold mt-1 inline-block uppercase">
-                          {(isRTL && attempt.subject.nameAr) ? attempt.subject.nameAr : attempt.subject.name}
+                          {(isRTL && attempt.subject.nameAr) ? attempt.subject.nameAr : (attempt.subject.name || '')}
                         </span>
                       )}
                     </div>
