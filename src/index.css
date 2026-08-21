@@ -13,7 +13,8 @@
   }
 }
 
-html[lang="ar"] body, html[dir="rtl"] body {
+html[lang="ar"] body,
+html[dir="rtl"] body {
   font-family: 'Cairo', 'Outfit', system-ui, -apple-system, sans-serif;
 }
 
@@ -339,9 +340,12 @@ input:-webkit-autofill:active {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* ==========================================================================
@@ -367,6 +371,10 @@ input:-webkit-autofill:active {
   background-color: #ffffff !important;
 }
 
+.light .bg-\[\#0d0d21\] {
+  background-color: #f1f5f9 !important;
+}
+
 .light .bg-\[\#0e101a\] {
   background-color: #f8fafc !important;
 }
@@ -387,6 +395,10 @@ input:-webkit-autofill:active {
   background-color: rgba(255, 255, 255, 0.95) !important;
 }
 
+.light .bg-\[\#0c0d19\]\/95 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
 .light .bg-\[\#0e101a\]\/90 {
   background-color: rgba(255, 255, 255, 0.95) !important;
 }
@@ -399,16 +411,66 @@ input:-webkit-autofill:active {
   background-color: #e2e8f0 !important;
 }
 
+.light .bg-gray-900,
+.light .bg-gray-900\/80,
+.light .bg-gray-900\/60,
+.light .bg-gray-900\/90 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.light .bg-gray-900:hover,
+.light .bg-gray-900\/80:hover {
+  background-color: #e2e8f0 !important;
+}
+
 .light .bg-gray-800 {
   background-color: #cbd5e1 !important;
+}
+
+.light .bg-gray-800\/60 {
+  background-color: rgba(203, 213, 225, 0.75) !important;
+}
+
+.light .bg-gray-700\/40 {
+  background-color: rgba(203, 213, 225, 0.75) !important;
+}
+
+.light .bg-slate-300\/80 {
+  background-color: rgba(203, 213, 225, 0.85) !important;
 }
 
 .light .bg-\[\#080911\]\/70 {
   background-color: rgba(241, 245, 249, 0.8) !important;
 }
 
-.light .bg-\[\#0e101a\]\/70 {
-  background-color: rgba(255, 255, 255, 0.75) !important;
+.light .bg-\[\#080911\],
+.light .bg-\[\#090a12\],
+.light .bg-\[\#090b17\],
+.light .bg-\[\#0a0b14\],
+.light .bg-\[\#0a0b14\]\/80,
+.light .bg-\[\#0b0c16\],
+.light .bg-\[\#0c0d19\],
+.light .bg-\[\#0c0d19\]\/40,
+.light .bg-\[\#0c0e1a\],
+.light .bg-\[\#0d0e19\],
+.light .bg-\[\#0e101a\],
+.light .bg-\[\#0e101a\]\/90,
+.light .bg-\[\#0e101a\]\/95,
+.light .bg-\[\#0e101a\]\/70,
+.light .bg-\[\#0e101a\]\/50,
+.light .bg-\[\#0e101a\]\/40,
+.light .bg-\[\#0e101a\]\/30,
+.light .bg-\[\#121324\],
+.light .bg-\[\#121424\] {
+  background-color: #ffffff !important;
+}
+
+.light .bg-\[\#0e101a\]:hover,
+.light .bg-\[\#0e101a\]\/95:hover,
+.light .bg-\[\#0e101a\]\/50:hover,
+.light .bg-\[\#0e101a\]\/40:hover {
+  background-color: #f8fafc !important;
 }
 
 .light .bg-gray-950\/40 {
@@ -444,7 +506,6 @@ input:-webkit-autofill:active {
   border-color: #e2e8f0 !important;
 }
 
-/* Font and text color styles */
 .light h1.text-white,
 .light h2.text-white,
 .light h3.text-white,
@@ -457,6 +518,50 @@ input:-webkit-autofill:active {
 .light textarea.text-white,
 .light textarea {
   color: #0f172a !important;
+}
+
+/* Font and text color styles - preserve white MUST come after generic .text-white overrides */
+.light .preserve-white,
+.light .preserve-white *,
+.light .preserve-white h1,
+.light .preserve-white h2,
+.light .preserve-white h3,
+.light .preserve-white h4,
+.light .preserve-white h5,
+.light .preserve-white h6,
+.light .preserve-white p,
+.light .preserve-white span,
+.light .preserve-white div,
+.light .preserve-white button,
+.light .preserve-white .text-white,
+.light .preserve-white h4.text-white,
+.light .preserve-white span.text-white,
+.light .text-white-force {
+  color: #ffffff !important;
+}
+
+.light .preserve-white-sub,
+.light .preserve-white-sub *,
+.light .preserve-white-sub span,
+.light .preserve-white-sub p {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.light input,
+.light input[type="text"],
+.light input[type="email"],
+.light input[type="password"],
+.light input[type="number"],
+.light select,
+.light textarea {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
 }
 
 .light .text-gray-100 {
@@ -949,65 +1054,74 @@ input:-webkit-autofill:active {
    (Prevents the global .text-white override from breaking colored buttons/icons)
    ========================================================================== */
 
-/* Blue buttons & backgrounds */
-.light .bg-blue-600 .text-white,
-.light .bg-blue-500 .text-white,
-.light .bg-blue-600,
-.light .bg-blue-500 {
-  color: #ffffff !important;
-}
-
-/* Specifically target blue buttons (bg-blue-600 / bg-blue-500) */
+/* Blue, Cyan, Purple, Emerald, Teal, Indigo, Red, Pink buttons & backgrounds */
 .light button.bg-blue-600,
 .light button.bg-blue-500,
+.light button.bg-cyan-600,
+.light button.bg-cyan-500,
+.light button.bg-purple-600,
+.light button.bg-purple-500,
+.light button.bg-emerald-600,
+.light button.bg-emerald-500,
+.light button.bg-teal-600,
+.light button.bg-teal-500,
+.light button.bg-indigo-600,
+.light button.bg-indigo-500,
+.light button.bg-red-600,
+.light button.bg-red-500,
+.light button.bg-rose-600,
+.light button.bg-rose-500,
+.light button.bg-pink-600,
+.light button.bg-pink-500,
+.light button.bg-amber-600,
+.light button.bg-amber-500,
+.light button.bg-sky-600,
+.light button.bg-sky-500,
+.light button.text-white,
+.light button.btn-3d-student,
+.light button.btn-3d-teacher,
+.light button.btn-3d-admin,
+.light button.btn-3d-parent,
+.light button.btn-3d-auth-gradient,
 .light a.bg-blue-600,
-.light a.bg-blue-500 {
+.light a.bg-cyan-600,
+.light a.bg-purple-600,
+.light a.bg-emerald-600 {
   color: #ffffff !important;
 }
 
 .light button.bg-blue-600 *,
 .light button.bg-blue-500 *,
-.light a.bg-blue-600 *,
-.light a.bg-blue-500 * {
-  color: #ffffff !important;
-}
-
-/* btn-3d classes (gradient buttons used in auth/dashboard) */
-.light .btn-3d-teacher,
-.light .btn-3d-student,
-.light .btn-3d-admin,
-.light .btn-3d-parent,
-.light .btn-3d-auth-gradient {
-  color: #ffffff !important;
-}
-
-.light .btn-3d-teacher *,
-.light .btn-3d-student *,
-.light .btn-3d-admin *,
-.light .btn-3d-parent *,
-.light .btn-3d-auth-gradient * {
-  color: #ffffff !important;
-}
-
-/* Blue icon boxes (w-11 h-11 bg-blue-600 etc.) */
-.light .bg-blue-600 {
-  color: #ffffff !important;
-}
-
-/* Emerald / Green buttons */
-.light button.bg-emerald-500,
-.light button.bg-emerald-600 {
-  color: #ffffff !important;
-}
-
+.light button.bg-cyan-600 *,
+.light button.bg-cyan-500 *,
+.light button.bg-purple-600 *,
+.light button.bg-purple-500 *,
+.light button.bg-emerald-600 *,
 .light button.bg-emerald-500 *,
-.light button.bg-emerald-600 * {
-  color: #ffffff !important;
-}
-
-/* Red / danger buttons */
-.light button.bg-red-500,
-.light button.bg-red-600 {
+.light button.bg-teal-600 *,
+.light button.bg-teal-500 *,
+.light button.bg-indigo-600 *,
+.light button.bg-indigo-500 *,
+.light button.bg-red-600 *,
+.light button.bg-red-500 *,
+.light button.bg-rose-600 *,
+.light button.bg-rose-500 *,
+.light button.bg-pink-600 *,
+.light button.bg-pink-500 *,
+.light button.bg-amber-600 *,
+.light button.bg-amber-500 *,
+.light button.bg-sky-600 *,
+.light button.bg-sky-500 *,
+.light button.text-white *,
+.light button.btn-3d-student *,
+.light button.btn-3d-teacher *,
+.light button.btn-3d-admin *,
+.light button.btn-3d-parent *,
+.light button.btn-3d-auth-gradient *,
+.light a.bg-blue-600 *,
+.light a.bg-cyan-600 *,
+.light a.bg-purple-600 *,
+.light a.bg-emerald-600 * {
   color: #ffffff !important;
 }
 
@@ -1158,4 +1272,29 @@ input:-webkit-autofill:active {
 
 .light .bg-gray-950\/65 {
   background-color: rgba(226, 232, 240, 0.8) !important;
+}
+
+/* Floating animation for mascot/3D elements */
+@keyframes floatMascot {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1.5deg);
+  }
+}
+
+.animate-float {
+  animation: floatMascot 3.5s ease-in-out infinite;
+}
+
+/* Skeleton Loading Light Mode Theme Overrides */
+.light .skeleton-pulse {
+  background-color: rgba(203, 213, 225, 0.6) !important;
+}
+
+.light .skeleton-card {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
 }

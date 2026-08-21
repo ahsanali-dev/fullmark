@@ -76,7 +76,7 @@ const TeacherQuestions = () => {
   const handleAddQuestion = (values, { setSubmitting, resetForm }) => {
     const optionMap = { A: 0, B: 1, C: 2, D: 3 };
     const correctIdx = optionMap[values.correctOption] ?? 0;
-    
+
     toast.promise(
       dispatch(createQuestion({
         subjectId: values.subjectId,
@@ -197,7 +197,7 @@ const TeacherQuestions = () => {
               placeholder={t('common.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-655`}
+              className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-500`}
             />
             <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-blue-500`} size={18} />
           </div>
@@ -332,9 +332,9 @@ const TeacherQuestions = () => {
                   {/* Optional Question Image */}
                   {q.image && (
                     <div className="w-full rounded-2xl overflow-hidden border border-gray-800/80 max-h-48 mt-1 flex items-center justify-center bg-black/40">
-                      <img 
-                        src={getImageUrl(q.image)} 
-                        alt="Question Visual" 
+                      <img
+                        src={getImageUrl(q.image)}
+                        alt="Question Visual"
                         className="max-h-48 object-contain"
                       />
                     </div>
@@ -361,9 +361,9 @@ const TeacherQuestions = () => {
                           </div>
                           {opt.img && (
                             <div className="w-full rounded-xl overflow-hidden border border-gray-800/60 max-h-24 bg-black/10 flex items-center justify-center mt-1">
-                              <img 
-                                src={getImageUrl(opt.img)} 
-                                alt={`Option ${opt.key} Visual`} 
+                              <img
+                                src={getImageUrl(opt.img)}
+                                alt={`Option ${opt.key} Visual`}
                                 className="max-h-24 object-contain"
                               />
                             </div>

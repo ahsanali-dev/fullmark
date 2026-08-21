@@ -35,7 +35,7 @@ import { useLanguage } from '../../context/LanguageContext';
 const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', title, subtitle, disableScroll, isModalOpen = false, showBackButton = false, onBackClick, headerActions }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
 
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
@@ -289,9 +289,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
             className="flex items-center gap-3 cursor-pointer group hover:opacity-90 transition-opacity"
             title="Go to Landing Page"
           >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-white text-lg bg-gradient-to-r ${config.gradientClass} group-hover:scale-105 transition-transform duration-200`}>
-              FM
-            </div>
+            <img src="/assets/images/logo.png" alt="FullMark" className="h-10 w-auto object-contain group-hover:scale-105 transition-transform" />
             <div>
               <h2 className="font-extrabold tracking-wide text-white text-lg group-hover:text-white/90 transition-colors">FullMark</h2>
               <span className="text-[10px] text-gray-500 font-bold tracking-wider uppercase">Portal Access</span>
@@ -302,7 +300,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
           <nav className="flex flex-col gap-2">
             {config.menus.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = activeTab === item.id || (activeTab && item.id && (activeTab.startsWith(item.id) || item.id.startsWith(activeTab)));
               return (
                 <button
                   key={item.id}
@@ -368,7 +366,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
       <main className="flex-1 flex flex-col h-full overflow-hidden w-full">
 
         {/* Top Header Section */}
-        <header className={`px-3.5 sm:px-6 md:px-8 py-2.5 sm:py-4 flex items-center justify-between border-b border-gray-800/50 bg-[#080911]/70 backdrop-blur-md shrink-0 z-10 transition-all duration-300 gap-2 ${isModalOpen ? 'blur-sm pointer-events-none' : ''
+        <header className={`px-3.5 sm:px-6 md:px-8 py-2.5 sm:py-4 flex items-center justify-between border-b border-gray-800/50 bg-[#080911]/70 backdrop-blur-md shrink-0 z-40 transition-all duration-300 gap-2 ${isModalOpen ? 'blur-sm pointer-events-none' : ''
           }`}>
           <div className="flex items-center gap-2 sm:gap-4 text-start min-w-0 flex-1">
             {showBackButton && (
@@ -417,7 +415,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
               </button>
 
               {showNotifications && (
-                <div className="absolute ltr:right-0 rtl:left-0 mt-3 w-72 sm:w-80 bg-[#111222] border border-gray-800 rounded-3xl p-4 shadow-[0_10px_45px_rgba(0,0,0,0.6)] backdrop-blur-xl z-50 animate-fade-in">
+                <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} mt-3 w-72 sm:w-80 bg-[#111222] border border-gray-800 rounded-3xl p-4 shadow-[0_10px_45px_rgba(0,0,0,0.6)] backdrop-blur-xl z-50 animate-fade-in`}>
                   <div className="flex items-center justify-between pb-3 border-b border-gray-800/50 mb-2">
                     <h4 className="text-sm font-black text-white">{t('dashboard.notifications')}</h4>
                     {notifications.some(n => !n.isRead) && (
@@ -494,7 +492,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                 {profileAvatar}
               </button>
               {showUserMenu && (
-                <div className="absolute ltr:right-0 rtl:left-0 mt-3 w-48 bg-[#111222] border border-gray-800 rounded-2xl p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl z-50">
+                <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} mt-3 w-48 bg-[#111222] border border-gray-800 rounded-2xl p-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl z-50 animate-fade-in`}>
                   <div className="px-3.5 py-2.5 border-b border-gray-800/50 mb-1 text-start">
                     <p className="text-xs font-bold text-white leading-tight">{profileName}</p>
                     <p className="text-[10px] text-gray-500">{config.roleName}</p>
@@ -538,7 +536,7 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
         <div className="w-full h-full flex items-center gap-1.5 px-2.5 overflow-x-auto no-scrollbar scroll-smooth">
           {config.menus.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = activeTab === item.id || (activeTab && item.id && (activeTab.startsWith(item.id) || item.id.startsWith(activeTab)));
             return (
               <button
                 key={item.id}

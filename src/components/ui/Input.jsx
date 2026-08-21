@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useField, useFormikContext } from 'formik';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
@@ -34,12 +34,22 @@ const Input = ({ label, icon: Icon, showPasswordToggle, roleColor, ...props }) =
     hasValue = props.value !== undefined && props.value !== '';
   }
 
-  const [isLight, setIsLight] = useState(() => localStorage.getItem('theme') === 'light');
+  const [isLight, setIsLight] = useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+  });
 
-  React.useEffect(() => {
-    const handleThemeChange = () => setIsLight(localStorage.getItem('theme') === 'light');
-    window.addEventListener('themeChange', handleThemeChange);
-    return () => window.removeEventListener('themeChange', handleThemeChange);
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    checkTheme();
+    window.addEventListener('themeChange', checkTheme);
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => {
+      window.removeEventListener('themeChange', checkTheme);
+      observer.disconnect();
+    };
   }, []);
 
   const isFloating = isFocused || hasValue;
@@ -122,8 +132,12 @@ const Input = ({ label, icon: Icon, showPasswordToggle, roleColor, ...props }) =
               }
               if (props.onBlur) props.onBlur(e);
             }}
+            style={{
+              color: isLight ? '#0f172a' : '#ffffff',
+              WebkitTextFillColor: isLight ? '#0f172a' : '#ffffff'
+            }}
             className={`w-full h-full bg-transparent border-none text-sm md:text-base font-semibold px-3 outline-none focus:ring-0 focus:outline-none z-0 text-start ${
-              isLight ? 'text-slate-900 placeholder:text-slate-400' : 'text-white placeholder:text-gray-500'
+              isLight ? 'text-slate-900 placeholder:text-slate-500' : 'text-white placeholder:text-gray-400'
             }`}
           />
         </div>
@@ -133,7 +147,9 @@ const Input = ({ label, icon: Icon, showPasswordToggle, roleColor, ...props }) =
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className={`text-gray-500 hover:text-gray-300 transition-colors focus:outline-none z-10 cursor-pointer ${isRTL ? 'mr-2' : 'ml-2'}`}
+            className={`transition-colors focus:outline-none z-10 cursor-pointer ${isRTL ? 'mr-2' : 'ml-2'} ${
+              isLight ? 'text-slate-500 hover:text-slate-800' : 'text-gray-400 hover:text-gray-200'
+            }`}
           >
             {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
           </button>
@@ -148,9 +164,9 @@ const Input = ({ label, icon: Icon, showPasswordToggle, roleColor, ...props }) =
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className={`text-red-400 text-xs font-bold flex items-center absolute ${isRTL ? 'right-2' : 'left-2'}`}
+              className={`text-red-500 text-xs font-bold flex items-center absolute ${isRTL ? 'right-2' : 'left-2'}`}
             >
-              <span className={`inline-block w-1 h-1 rounded-full bg-red-400 ${isRTL ? 'ml-1.5' : 'mr-1.5'} animate-pulse`}></span>
+              <span className={`inline-block w-1 h-1 rounded-full bg-red-500 ${isRTL ? 'ml-1.5' : 'mr-1.5'} animate-pulse`}></span>
               {isFormik ? meta.error : props.error}
             </motion.p>
           )}

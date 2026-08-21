@@ -175,7 +175,7 @@ const ParentDashboard = () => {
             {greeting} {greetingEmoji}
           </p>
           <h2 className={`text-2xl md:text-3xl font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>
-            {profile?.user?.name || t('roles.parent.title')}
+            {profile?.name || profile?.user?.name || t('roles.parent.title')}
           </h2>
           <span className="inline-flex items-center gap-1.5 mt-1 px-3 py-1 rounded-full text-xs font-black bg-purple-500/10 border border-purple-500/20 text-purple-400 w-fit">
             <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
@@ -192,7 +192,9 @@ const ParentDashboard = () => {
               <CardSkeleton />
             </div>
           ) : children.length === 0 ? (
-            <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl">
+            <div className={`p-8 text-center border rounded-3xl ${
+              isLight ? 'bg-white border-gray-200' : 'bg-[#0c0d19]/40 border-gray-800'
+            }`}>
               <p className="text-sm font-bold text-gray-500 mb-3">{t('parent.dashboard.noChildren')}</p>
               <button 
                 onClick={() => setIsLinkModalOpen(true)}
@@ -220,15 +222,19 @@ const ParentDashboard = () => {
                     }`}
                   >
                     {/* Avatar Circle */}
-                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white transition-all ${
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl preserve-white text-white-force transition-all ${
                       isSelected
                         ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_0_20px_rgba(16,185,129,0.4)]'
-                        : 'bg-gradient-to-br from-gray-700 to-gray-800'
+                        : 'bg-gradient-to-br from-slate-700 to-slate-800'
                     }`}>
-                      {initials}
+                      <span className="text-white preserve-white text-white-force">{initials}</span>
                     </div>
                     <span className={`text-sm font-black capitalize ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>{child.name}</span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-black border ${
+                      isLight
+                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700'
+                        : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                    }`}>
                       {isSelected ? avgScore : (child.avgScore || 0)}% {t('parent.dashboard.avg')}
                     </span>
                   </button>

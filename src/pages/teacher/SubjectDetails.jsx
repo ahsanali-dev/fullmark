@@ -14,7 +14,9 @@ import {
   FiImage,
   FiArrowUp,
   FiArrowDown,
-  FiX
+  FiX,
+  FiVideo,
+  FiVideoOff
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -333,7 +335,7 @@ const SubjectDetails = () => {
       <div className="w-full max-w-full p-6 md:p-8 pb-32 text-start flex flex-col gap-6 animate-fade-in relative">
 
         {/* Premium Banner Header */}
-        <div className="relative w-full bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 p-6 md:p-8 text-white overflow-hidden rounded-[2.5rem] shadow-2xl min-h-[220px] flex flex-col justify-between border border-blue-400/20 text-start">
+        <div className="relative w-full bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 p-6 md:p-8 text-white preserve-white overflow-hidden rounded-[2.5rem] shadow-2xl min-h-[220px] flex flex-col justify-between border border-blue-400/20 text-start">
           {/* Banner Image Background if uploaded */}
           {subject.bannerUrl && (
             <div className="absolute inset-0 z-0">
@@ -360,7 +362,7 @@ const SubjectDetails = () => {
             <button
               type="button"
               onClick={() => navigate('/teacher/subjects')}
-              className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 active:scale-95"
+              className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all duration-200 cursor-pointer shadow-lg hover:scale-105 active:scale-95 preserve-white"
               title={isRTL ? "العودة إلى المواد" : "Back to Subjects"}
             >
               <FiChevronLeft size={22} className={isRTL ? 'rotate-180' : ''} />
@@ -371,7 +373,7 @@ const SubjectDetails = () => {
               type="button"
               onClick={() => bannerInputRef.current?.click()}
               disabled={isUploadingBanner}
-              className="px-4.5 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/30 backdrop-blur-md text-xs font-black text-white flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+              className="px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/30 backdrop-blur-md text-xs font-black text-white flex items-center gap-2 transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] preserve-white"
             >
               <FiImage size={17} />
               {isUploadingBanner ? (isRTL ? 'جاري رفع الغلاف...' : 'Uploading Banner...') : (isRTL ? 'تغيير غلاف المادة' : 'Change Course Banner')}
@@ -379,53 +381,53 @@ const SubjectDetails = () => {
           </div>
 
           {/* Subject info row */}
-          <div className="relative z-10 flex items-center gap-4.5 my-4 text-start">
+          <div className="relative z-10 flex items-center gap-4.5 my-4 text-start preserve-white">
             <div className="w-16 h-16 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-white shadow-inner shrink-0 backdrop-blur-md">
               <FiBookOpen size={28} />
             </div>
             <div className="text-start">
-              <h2 className="text-2xl md:text-3xl font-black tracking-tight">{subject.title}</h2>
-              <p className="text-base text-white/80 font-medium mt-1">{subject.description}</p>
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white">{subject.title}</h2>
+              <p className="text-base text-white/90 font-medium mt-1">{subject.description}</p>
             </div>
           </div>
 
           {/* Stats Badge Grid */}
-          <div className="relative z-10 grid grid-cols-5 gap-1 border-t border-white/10 pt-4 mt-2">
+          <div className="relative z-10 grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-1 border-t border-white/15 pt-4 mt-2 preserve-white">
             <div className="flex flex-col items-center text-center">
-              <FiFolder size={16} className="text-white/70" />
-              <span className="text-lg font-black mt-1">{units.length}</span>
-              <span className="text-[10px] font-black tracking-wider uppercase text-white/50 mt-0.5">{t('teacher.subjectDetails.units')}</span>
+              <FiFolder size={16} className="text-white/80" />
+              <span className="text-lg font-black mt-1 text-white">{units.length}</span>
+              <span className="text-[10px] font-black tracking-wider uppercase text-white/70 mt-0.5">{t('teacher.subjectDetails.units')}</span>
             </div>
-            <div className="flex flex-col items-center text-center border-l border-white/10">
-              <FiBookOpen size={16} className="text-white/70" />
-              <span className="text-lg font-black mt-1">{subjectLessons.length}</span>
-              <span className="text-[10px] font-black tracking-wider uppercase text-white/50 mt-0.5">{t('teacher.subjectDetails.lessons')}</span>
+            <div className="flex flex-col items-center text-center sm:border-l border-white/15">
+              <FiBookOpen size={16} className="text-white/80" />
+              <span className="text-lg font-black mt-1 text-white">{subjectLessons.length}</span>
+              <span className="text-[10px] font-black tracking-wider uppercase text-white/70 mt-0.5">{t('teacher.subjectDetails.lessons')}</span>
             </div>
-            <div className="flex flex-col items-center text-center border-l border-white/10">
-              <FiHelpCircle size={16} className="text-white/70" />
-              <span className="text-lg font-black mt-1">{subjectQuestions.length}</span>
-              <span className="text-[10px] font-black tracking-wider uppercase text-white/50 mt-0.5">{t('teacher.subjectDetails.questions')}</span>
+            <div className="flex flex-col items-center text-center sm:border-l border-white/15">
+              <FiHelpCircle size={16} className="text-white/80" />
+              <span className="text-lg font-black mt-1 text-white">{subjectQuestions.length}</span>
+              <span className="text-[10px] font-black tracking-wider uppercase text-white/70 mt-0.5">{t('teacher.subjectDetails.questions')}</span>
             </div>
-            <div className="flex flex-col items-center text-center border-l border-white/10">
-              <FiFileText size={16} className="text-white/70" />
-              <span className="text-lg font-black mt-1">{subjectExams.length}</span>
-              <span className="text-[10px] font-black tracking-wider uppercase text-white/50 mt-0.5">{t('teacher.subjectDetails.exams')}</span>
+            <div className="flex flex-col items-center text-center sm:border-l border-white/15">
+              <FiFileText size={16} className="text-white/80" />
+              <span className="text-lg font-black mt-1 text-white">{subjectExams.length}</span>
+              <span className="text-[10px] font-black tracking-wider uppercase text-white/70 mt-0.5">{t('teacher.subjectDetails.exams')}</span>
             </div>
-            <div className="flex flex-col items-center text-center border-l border-white/10">
-              <span className="text-sm font-black text-amber-400">🎯</span>
-              <span className="text-lg font-black mt-1 text-amber-300">{weaknessTopics.length}</span>
-              <span className="text-[10px] font-black tracking-wider uppercase text-white/50 mt-0.5">{t('teacher.subjectDetails.weaknessTopics')}</span>
+            <div className="flex flex-col items-center text-center sm:border-l border-white/15 col-span-2 sm:col-span-1">
+              <span className="text-sm font-black text-amber-300">🎯</span>
+              <span className="text-lg font-black mt-1 text-amber-200">{weaknessTopics.length}</span>
+              <span className="text-[10px] font-black tracking-wider uppercase text-white/70 mt-0.5">{t('teacher.subjectDetails.weaknessTopics')}</span>
             </div>
           </div>
         </div>
 
         {/* Tab Selection Switch */}
-        <div className="p-1.5 bg-[#0a0b14]/80 backdrop-blur-md border border-gray-800/80 rounded-2xl w-full grid grid-cols-2 sm:grid-cols-5 gap-1.5 shadow-inner">
+        <div className="p-1.5 bg-[#0a0b14]/80 border border-gray-800/80 rounded-2xl w-full grid grid-cols-2 sm:grid-cols-5 gap-1.5 shadow-inner">
           <button
             type="button"
             onClick={() => setActiveTab('units')}
             className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'units'
-              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
+              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white preserve-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
           >
@@ -435,7 +437,7 @@ const SubjectDetails = () => {
             type="button"
             onClick={() => setActiveTab('lessons')}
             className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'lessons'
-              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
+              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white preserve-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
           >
@@ -445,7 +447,7 @@ const SubjectDetails = () => {
             type="button"
             onClick={() => setActiveTab('questions')}
             className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'questions'
-              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
+              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white preserve-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
           >
@@ -455,7 +457,7 @@ const SubjectDetails = () => {
             type="button"
             onClick={() => setActiveTab('exams')}
             className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'exams'
-              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
+              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 text-white preserve-white shadow-[0_4px_20px_rgba(37,99,235,0.4)] border border-blue-400/30 scale-[1.01]'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
           >
@@ -465,7 +467,7 @@ const SubjectDetails = () => {
             type="button"
             onClick={() => setActiveTab('weaknesses')}
             className={`py-3 px-3 text-center font-black text-xs rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${activeTab === 'weaknesses'
-              ? 'bg-gradient-to-r from-amber-500 via-orange-600 to-amber-600 text-white shadow-[0_4px_20px_rgba(245,158,11,0.4)] border border-amber-400/30 scale-[1.01]'
+              ? 'bg-gradient-to-r from-amber-500 via-orange-600 to-amber-600 text-white preserve-white shadow-[0_4px_20px_rgba(245,158,11,0.4)] border border-amber-400/30 scale-[1.01]'
               : 'text-gray-400 hover:text-amber-400 hover:bg-white/5'
               }`}
           >
@@ -486,9 +488,9 @@ const SubjectDetails = () => {
                 <button
                   type="button"
                   onClick={handleOpenAddUnit}
-                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs md:text-sm flex items-center gap-2 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
+                  className="px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white preserve-white font-black text-xs md:text-sm flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
                 >
-                  <FiPlus size={18} className="stroke-[3]" /> {isRTL ? "إضافة وحدة" : "Add Unit"}
+                  <FiPlus size={18} className="stroke-[3] shrink-0" /> <span className="whitespace-nowrap text-white preserve-white">{isRTL ? "إضافة وحدة" : "Add Unit"}</span>
                 </button>
               </div>
 
@@ -519,11 +521,11 @@ const SubjectDetails = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                           <button
                             type="button"
                             onClick={() => handleReorderUnit(unit, 'up')}
-                            className="p-2.5 rounded-xl bg-gray-900/80 hover:bg-blue-600/20 text-gray-400 hover:text-blue-400 transition-all cursor-pointer border border-gray-800 hover:border-blue-500/30"
+                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40"
                             title={isRTL ? "تحريك لأعلى" : "Move Unit Up"}
                           >
                             <FiArrowUp size={16} />
@@ -531,7 +533,7 @@ const SubjectDetails = () => {
                           <button
                             type="button"
                             onClick={() => handleReorderUnit(unit, 'down')}
-                            className="p-2.5 rounded-xl bg-gray-900/80 hover:bg-blue-600/20 text-gray-400 hover:text-blue-400 transition-all cursor-pointer border border-gray-800 hover:border-blue-500/30"
+                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40"
                             title={isRTL ? "تحريك لأسفل" : "Move Unit Down"}
                           >
                             <FiArrowDown size={16} />
@@ -586,9 +588,9 @@ const SubjectDetails = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/teacher/subjects/${subjectId}/add-lesson`)}
-                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs md:text-sm flex items-center gap-2 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
+                  className="px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white preserve-white font-black text-xs md:text-sm flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
                 >
-                  <FiPlus size={18} className="stroke-[3]" /> {isRTL ? "إضافة درس" : "Add Lesson"}
+                  <FiPlus size={18} className="stroke-[3] shrink-0" /> <span className="whitespace-nowrap text-white preserve-white">{isRTL ? "إضافة درس" : "Add Lesson"}</span>
                 </button>
               </div>
 
@@ -663,9 +665,9 @@ const SubjectDetails = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/teacher/subjects/${subjectId}/add-question`)}
-                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs md:text-sm flex items-center gap-2 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
+                  className="px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white preserve-white font-black text-xs md:text-sm flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
                 >
-                  <FiPlus size={18} className="stroke-[3]" /> {isRTL ? "إضافة سؤال" : "Add Question"}
+                  <FiPlus size={18} className="stroke-[3] shrink-0" /> <span className="whitespace-nowrap text-white preserve-white">{isRTL ? "إضافة سؤال" : "Add Question"}</span>
                 </button>
               </div>
 
@@ -758,9 +760,9 @@ const SubjectDetails = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/teacher/subjects/${subjectId}/create-exam`)}
-                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs md:text-sm flex items-center gap-2 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
+                  className="px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white preserve-white font-black text-xs md:text-sm flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
                 >
-                  <FiPlus size={18} className="stroke-[3]" /> {isRTL ? "إنشاء امتحان" : "Create Exam"}
+                  <FiPlus size={18} className="stroke-[3] shrink-0" /> <span className="whitespace-nowrap text-white preserve-white">{isRTL ? "إنشاء امتحان" : "Create Exam"}</span>
                 </button>
               </div>
 
@@ -810,9 +812,9 @@ const SubjectDetails = () => {
                 <button
                   type="button"
                   onClick={handleOpenAddTopic}
-                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black text-xs md:text-sm flex items-center gap-2 shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-amber-400/30"
+                  className="px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white preserve-white font-black text-xs md:text-sm flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-[0_4px_20px_rgba(245,158,11,0.35)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-amber-400/30"
                 >
-                  <FiPlus size={18} className="stroke-[3]" /> {isRTL ? "إضافة موضوع تعثر" : "Add Weakness Topic"}
+                  <FiPlus size={18} className="stroke-[3] shrink-0" /> <span className="whitespace-nowrap text-white preserve-white">{isRTL ? "إضافة موضوع تعثر" : "Add Weakness Topic"}</span>
                 </button>
               </div>
 
@@ -821,32 +823,46 @@ const SubjectDetails = () => {
                   {weaknessTopics.map((topic, index) => (
                     <div
                       key={topic._id || topic.id}
-                      className="p-5 rounded-2xl bg-[#0e101a] border border-gray-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md hover:border-amber-500/30 transition-all text-start"
+                      className="p-5 rounded-2xl bg-[#0e101a] border border-gray-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md hover:border-amber-500/30 transition-all text-start"
                     >
-                      <div className="flex items-center gap-4 text-start">
-                        <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-black shrink-0">
-                          🎯 #{topic.order || index + 1}
+                      <div className="flex items-start sm:items-center gap-3.5 text-start min-w-0 flex-1">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center text-amber-500 font-black shrink-0 shadow-sm">
+                          <span className="text-sm leading-none">🎯</span>
+                          <span className="text-[11px] font-black mt-0.5">#{topic.order || index + 1}</span>
                         </div>
-                        <div className="text-start">
-                          <h4 className="text-base font-extrabold text-white flex items-center gap-2">
-                            {topic.title}
-                            {topic.titleAr && <span className="text-xs font-normal text-gray-400">({topic.titleAr})</span>}
-                          </h4>
+                        <div className="flex flex-col text-start min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-base font-extrabold text-white leading-snug">
+                              {topic.title}
+                            </h4>
+                            {topic.titleAr && (
+                              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 dir-rtl">
+                                {topic.titleAr}
+                              </span>
+                            )}
+                          </div>
                           {topic.generalVideoUrl ? (
-                            <span className="text-xs text-emerald-400 font-semibold mt-0.5 flex items-center gap-1">
-                              🎥 {isRTL ? "فيديو توضيحي مرتبط:" : "General Video Linked:"} <a href={topic.generalVideoUrl} target="_blank" rel="noreferrer" className="underline truncate max-w-xs">{topic.generalVideoUrl}</a>
+                            <span className="text-xs text-emerald-500 dark:text-emerald-400 font-semibold mt-1.5 flex items-center gap-1.5">
+                              <FiVideo size={13} className="shrink-0" />
+                              <span>{isRTL ? "فيديو توضيحي مرتبط:" : "General Video Linked:"}</span>
+                              <a href={topic.generalVideoUrl} target="_blank" rel="noreferrer" className="underline truncate max-w-xs hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors">
+                                {topic.generalVideoUrl}
+                              </a>
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-500 font-semibold mt-0.5">{isRTL ? "لا يوجد فيديو توضيحي مرتبط" : "No general video linked"}</span>
+                            <span className="text-xs text-gray-500 font-semibold mt-1.5 flex items-center gap-1.5">
+                              <FiVideoOff size={13} className="shrink-0 text-gray-400" />
+                              <span>{isRTL ? "لا يوجد فيديو توضيحي مرتبط" : "No general video linked"}</span>
+                            </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800/40 w-full sm:w-auto justify-end">
                         <button
                           type="button"
                           onClick={() => handleOpenEditTopic(topic)}
-                          className="px-3.5 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-amber-500/20"
+                          className="px-3.5 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-amber-500/30"
                           title={isRTL ? "تعديل الموضوع" : "Edit Topic"}
                         >
                           <FiEdit3 size={15} /> {isRTL ? "تعديل" : "Edit"}
@@ -855,7 +871,7 @@ const SubjectDetails = () => {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget({ type: 'topic', id: topic._id || topic.id, title: topic.title, name: isRTL ? 'موضوع التعثر' : 'Weakness Topic' })}
-                          className="px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/20"
+                          className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/30"
                           title={isRTL ? "حذف الموضوع" : "Delete Topic"}
                         >
                           <FiTrash2 size={15} /> {isRTL ? "حذف" : "Delete"}

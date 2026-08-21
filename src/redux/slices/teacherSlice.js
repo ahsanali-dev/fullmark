@@ -732,14 +732,14 @@ const teacherSlice = createSlice({
       })
       // Weakness Topics
       .addCase(fetchWeaknessTopics.fulfilled, (state, action) => {
-        state.weaknessTopics = action.payload?.topics || (Array.isArray(action.payload) ? action.payload : []);
+        state.weaknessTopics = action.payload?.weaknessTopics || action.payload?.topics || (Array.isArray(action.payload) ? action.payload : []);
       })
       .addCase(createWeaknessTopic.fulfilled, (state, action) => {
-        const newTopic = action.payload?.topic || action.payload;
+        const newTopic = action.payload?.weaknessTopic || action.payload?.topic || action.payload;
         if (newTopic) state.weaknessTopics = [...state.weaknessTopics, newTopic];
       })
       .addCase(updateWeaknessTopic.fulfilled, (state, action) => {
-        const updatedTopic = action.payload?.topic || action.payload;
+        const updatedTopic = action.payload?.weaknessTopic || action.payload?.topic || action.payload;
         if (updatedTopic) {
           state.weaknessTopics = state.weaknessTopics.map((t) => ((t._id || t.id) === (updatedTopic._id || updatedTopic.id) ? updatedTopic : t));
         }

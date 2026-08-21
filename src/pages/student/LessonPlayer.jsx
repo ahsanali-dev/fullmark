@@ -28,6 +28,19 @@ const LessonPlayer = () => {
   const simulationInterval = useRef(null);
   const lastReportedTime = useRef(0);
 
+  const [isLight, setIsLight] = useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    handleThemeChange();
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
   // Fetch subject lessons on load if not loaded or if route changes
   useEffect(() => {
     dispatch(fetchSubjectLessons(courseId));
@@ -175,10 +188,10 @@ const LessonPlayer = () => {
       showBackButton={true}
       onBackClick={() => navigate(`/student/courses/${courseId}/lessons`)}
     >
-      <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
+      <div className="flex flex-col gap-6 text-start p-4 sm:p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
         {/* Main Video / Slide Player Display */}
         {lesson.videoUrl ? (
-          <div className="aspect-video w-full rounded-[2.5rem] bg-black border border-gray-800 shadow-2xl overflow-hidden relative flex items-center justify-center">
+          <div className="aspect-video w-full rounded-3xl sm:rounded-[2.5rem] bg-black border border-gray-800 shadow-2xl overflow-hidden relative flex items-center justify-center">
             {isYouTube ? (
               <iframe
                 src={getEmbedYouTube(lesson.videoUrl)}
@@ -200,20 +213,20 @@ const LessonPlayer = () => {
             )}
           </div>
         ) : (
-          <div className="aspect-video w-full rounded-[2.5rem] bg-gradient-to-br from-[#0a0f26] to-[#05081a] border border-gray-800 shadow-2xl p-6 md:p-8 flex flex-col justify-between text-start relative overflow-hidden select-none">
+          <div className={`min-h-[260px] sm:min-h-[300px] sm:aspect-video h-auto w-full rounded-3xl sm:rounded-[2.5rem] border shadow-2xl p-5 sm:p-6 md:p-8 flex flex-col justify-between text-start relative overflow-hidden select-none ${isLight ? 'bg-gradient-to-br from-slate-100 to-white border-slate-200/90 shadow-md' : 'bg-gradient-to-br from-[#0a0f26] to-[#05081a] border-gray-800 shadow-2xl'}`}>
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
             
-            <div className="flex flex-col gap-1 z-10 border-b border-white/5 pb-3">
-              <span className="text-xs font-black text-gray-500 uppercase tracking-widest leading-none">
+            <div className={`flex flex-col gap-1 z-10 border-b pb-3 ${isLight ? 'border-slate-200' : 'border-white/5'}`}>
+              <span className={`text-xs font-black uppercase tracking-widest leading-none ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                 {isRTL ? `الوحدة ${lesson.order || 1}` : `Module ${lesson.order || 1}`}
               </span>
-              <h3 className="text-lg md:text-2xl font-black text-white tracking-tight mt-1.5 capitalize">
-                {lesson.title}
+              <h3 className={`text-lg md:text-2xl font-black tracking-tight mt-1.5 capitalize ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                {(isRTL && lesson.titleAr) ? lesson.titleAr : lesson.title}
               </h3>
             </div>
 
             <div className="my-auto py-4 flex flex-col gap-4 text-start z-10">
-              <p className="text-sm md:text-base font-semibold text-gray-300 max-w-xl leading-relaxed">
+              <p className={`text-sm md:text-base font-semibold max-w-xl leading-relaxed ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>
                 {lesson.description || (isRTL ? 'أهلاً بك في هذا الدرس! اقرأ المواد وتابع تقدمك في الدراسة.' : 'Welcome to this lesson! Read the materials and track your study progress.')}
               </p>
               
@@ -223,7 +236,7 @@ const LessonPlayer = () => {
                     href={getImageUrl(lesson.pdfUrl)}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-4 py-2.5 rounded-xl bg-purple-600/10 border border-purple-500/20 text-xs font-black text-purple-300 shadow-sm flex items-center gap-2 hover:bg-purple-600/20 transition-all"
+                    className="px-4 py-2.5 rounded-xl bg-purple-600/10 border border-purple-500/20 text-xs font-black text-purple-600 dark:text-purple-300 shadow-sm flex items-center gap-2 hover:bg-purple-600/20 transition-all"
                   >
                     <FiFileText className="text-sm" /> {isRTL ? "عرض عرض الشريحة PDF" : "View Slide PDF"}
                   </a>
@@ -231,11 +244,11 @@ const LessonPlayer = () => {
               )}
             </div>
 
-            <div className="flex justify-between items-end border-t border-white/5 pt-3 z-10">
-              <span className="text-xs text-gray-500 font-bold uppercase">
+            <div className={`flex justify-between items-end border-t pt-3 z-10 ${isLight ? 'border-slate-200' : 'border-white/5'}`}>
+              <span className={`text-xs font-bold uppercase ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
                 {isRTL ? "مواد فول مارك" : "Fullmark Courseware"}
               </span>
-              <span className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center font-black text-xs text-gray-400">
+              <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs ${isLight ? 'bg-slate-200 text-slate-600' : 'bg-white/5 text-gray-400'}`}>
                 FM
               </span>
             </div>
@@ -243,27 +256,27 @@ const LessonPlayer = () => {
         )}
 
         {/* Watch Progress Card */}
-        <div className="p-6 rounded-[2rem] bg-gray-900/40 border border-gray-800/80 flex flex-col gap-4 shadow-lg">
+        <div className={`p-6 rounded-[2rem] border flex flex-col gap-4 ${isLight ? 'bg-white border-slate-200/90 shadow-sm' : 'bg-gray-900/40 border-gray-800/80 shadow-lg'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FiTv className="text-blue-400 text-lg animate-pulse" />
-              <h4 className="text-sm font-black text-gray-300 uppercase tracking-widest">
+              <FiTv className="text-blue-500 dark:text-blue-400 text-lg animate-pulse" />
+              <h4 className={`text-sm font-black uppercase tracking-widest ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>
                 {isRTL ? "نسبة المشاهدة" : "Watch Progress"}
               </h4>
             </div>
-            <span className={`text-base font-black ${isCompleted ? 'text-emerald-400' : 'text-blue-400'}`}>
+            <span className={`text-base font-black ${isCompleted ? 'text-emerald-500' : 'text-blue-500 dark:text-blue-400'}`}>
               {progress}%
             </span>
           </div>
 
-          <div className="h-2 w-full bg-gray-950 rounded-full overflow-hidden border border-gray-900">
+          <div className={`h-2 w-full rounded-full overflow-hidden border ${isLight ? 'bg-slate-200 border-slate-300' : 'bg-gray-950 border-gray-900'}`}>
             <div 
-              className={`h-full rounded-full transition-all duration-300 ${isCompleted ? 'bg-emerald-400' : 'bg-blue-500'}`}
+              className={`h-full rounded-full transition-all duration-300 ${isCompleted ? 'bg-emerald-500' : 'bg-blue-500'}`}
               style={{ width: `${progress}%` }}
             />
           </div>
 
-          <div className="flex items-center justify-between text-xs text-gray-400 font-bold border-t border-gray-800/40 pt-3.5">
+          <div className={`flex items-center justify-between text-xs font-bold border-t pt-3.5 ${isLight ? 'text-slate-500 border-slate-200/80' : 'text-gray-400 border-gray-800/40'}`}>
             <span>{isRTL ? `المدة: ${lesson.duration || 0} دقيقة` : `Duration: ${lesson.duration || 0} mins`}</span>
             <span>{isRTL ? "يكتمل تلقائياً عند 90%" : "Completes automatically at 90%"}</span>
           </div>
@@ -278,7 +291,7 @@ const LessonPlayer = () => {
               {isSimulating ? (isRTL ? 'جاري تحديث التقدم... ⏳' : 'Updating Progress... ⏳') : (isRTL ? 'محاكاة مشاهدة الفيديو ⯈' : 'Simulate Video Progress ⯈')}
             </button>
           ) : (
-            <div className="py-3 mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm font-black text-emerald-400 flex items-center justify-center gap-2">
+            <div className="py-3 mt-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm font-black text-emerald-500 dark:text-emerald-400 flex items-center justify-center gap-2">
               <FiCheckCircle />
               {isRTL ? "تم إكمال الدرس بنجاح" : "Lesson Completed Successfully"}
             </div>
@@ -287,8 +300,8 @@ const LessonPlayer = () => {
 
         {/* Lesson Description & Materials */}
         <div className="flex flex-col gap-3 text-start">
-          <h4 className="text-sm font-black text-gray-300 uppercase tracking-widest">{isRTL ? "عن هذا الدرس" : "About this Lesson"}</h4>
-          <p className="text-sm text-gray-400 leading-relaxed font-semibold">
+          <h4 className={`text-sm font-black uppercase tracking-widest ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{isRTL ? "عن هذا الدرس" : "About this Lesson"}</h4>
+          <p className={`text-sm leading-relaxed font-semibold ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
             {lesson.description || (isRTL ? 'لا يوجد وصف لهذا الدرس.' : 'No description provided for this lesson.')}
           </p>
 

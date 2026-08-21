@@ -19,14 +19,14 @@ export const Skeleton = ({ className = '', variant = 'text', width, height }) =>
 
   return (
     <div
-      className={`animate-pulse bg-gray-800/60 dark:bg-gray-700/40 ${getVariantClasses()} ${className}`}
+      className={`animate-pulse bg-gray-800/70 skeleton-pulse ${getVariantClasses()} ${className}`}
       style={style}
     />
   );
 };
 
 export const CardSkeleton = () => (
-  <div className="p-5 rounded-[2rem] bg-[#0c0d19]/40 border border-gray-800/80 flex flex-col gap-4 animate-pulse">
+  <div className="p-5 rounded-[2rem] bg-[#0c0d19]/60 skeleton-card border border-gray-800/80 flex flex-col gap-4 animate-pulse">
     <div className="flex items-center gap-3">
       <Skeleton variant="circle" width="48px" height="48px" />
       <div className="flex-1 flex flex-col gap-2">
@@ -46,7 +46,7 @@ export const CardSkeleton = () => (
 );
 
 export const TableRowSkeleton = () => (
-  <div className="flex items-center justify-between p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800/80 animate-pulse">
+  <div className="flex items-center justify-between p-4 rounded-2xl bg-[#0c0d19]/60 skeleton-card border border-gray-800/80 animate-pulse">
     <div className="flex items-center gap-4 flex-1">
       <Skeleton variant="circle" width="40px" height="40px" />
       <div className="flex-1 flex flex-col gap-1.5">

@@ -55,16 +55,25 @@ const TeacherDashboard = () => {
     dispatch(fetchExams());
   }, [dispatch]);
 
+  const [isLight, setIsLight] = useState(() => localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+
+  useEffect(() => {
+    const handleThemeChange = () => setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
   // Update counts in subjects
   const subjectsWithCounts = subjects.map(sub => {
     const subId = sub._id || sub.id;
     return {
       ...sub,
       id: subId,
-      title: sub.name || sub.title,
-      questionsCount: sub.questionsCount ?? questions.filter(q => (q.subject?._id || q.subject || q.subjectId) === subId).length,
+      title: sub.name || sub.title || 'Untitled Subject',
+      lessonsCount: sub.lessonsCount ?? sub.totalLessons ?? 0,
+      questionsCount: sub.questionsCount ?? sub.totalQuestions ?? questions.filter(q => (q.subject?._id || q.subject || q.subjectId) === subId).length,
       examsCount: sub.examsCount ?? exams.filter(ex => (ex.subject?._id || ex.subject || ex.subjectId) === subId).length,
-      studentsCount: sub.studentsCount ?? 0
+      studentsCount: sub.studentsCount ?? sub.totalStudents ?? 0
     };
   });
 

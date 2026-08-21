@@ -346,7 +346,8 @@ const ar = {
       duration: "المدة (بالدقائق)",
       questionsCount: "عدد الأسئلة",
       examDate: "تاريخ الاختبار",
-      scheduleExam: "جدولة الاختبار"
+      scheduleExam: "جدولة الاختبار",
+      date: "التاريخ"
     },
     pdfUpload: {
       title: "رفع PDF الأسئلة",
@@ -401,7 +402,10 @@ const ar = {
       needsImprovement: "😔 يحتاج تحسين",
       noExamsTakenYet: "لم يتم إجراء أية اختبارات بعد.",
       avg: "متوسط",
-      exam: "اختبار"
+      exam: "اختبار",
+      searchExamsPlaceholder: "ابحث عن الاختبارات أو المواد...",
+      examHistory: "سجل الاختبارات",
+      noSubjectsYet: "لا توجد مواد مسجلة بعد."
     },
     analysis: {
       title: "تحليل أداء الأبناء",
@@ -776,6 +780,9 @@ const ar = {
 
   // Common UI Strings
   common: {
+    goodMorning: "صباح الخير",
+    goodAfternoon: "مساء الخير",
+    goodEvening: "مساء الخير",
     loading: "جاري التحميل...",
     save: "حفظ",
     cancel: "إلغاء",

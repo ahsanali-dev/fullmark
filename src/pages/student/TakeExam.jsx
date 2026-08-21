@@ -39,6 +39,19 @@ const TakeExam = () => {
   const [timeSpent, setTimeSpent] = useState(0);
   const timerRef = useRef(null);
 
+  const [isLight, setIsLight] = useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    handleThemeChange();
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
   useEffect(() => {
     dispatch(fetchExamToTake(examId));
   }, [dispatch, examId]);
@@ -57,10 +70,10 @@ const TakeExam = () => {
 
   if (isLoading && !exam) {
     return (
-      <div className="fixed inset-0 bg-[#080911] text-white z-50 flex items-center justify-center">
+      <div className={`fixed inset-0 z-50 flex items-center justify-center ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-[#080911] text-white'}`}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin" />
-          <span className="text-xs text-gray-500 font-bold">{isRTL ? "جاري تحميل أسئلة الاختبار..." : "Loading exam questions..."}</span>
+          <span className={`text-xs font-bold ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "جاري تحميل أسئلة الاختبار..." : "Loading exam questions..."}</span>
         </div>
       </div>
     );
@@ -68,9 +81,9 @@ const TakeExam = () => {
 
   if (!exam) {
     return (
-      <div className="fixed inset-0 bg-[#080911] text-white z-50 flex items-center justify-center p-6 text-center">
+      <div className={`fixed inset-0 z-50 flex items-center justify-center p-6 text-center ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-[#080911] text-white'}`}>
         <div className="flex flex-col items-center gap-4">
-          <span className="text-sm font-bold text-gray-500">{isRTL ? "الاختبار غير موجود أو ليس لديك صلاحية." : "Exam not found or you are not authorized."}</span>
+          <span className={`text-sm font-bold ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الاختبار غير موجود أو ليس لديك صلاحية." : "Exam not found or you are not authorized."}</span>
           <button 
             onClick={() => navigate('/student/exams')}
             className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-black text-white hover:bg-blue-500 cursor-pointer"
@@ -88,9 +101,9 @@ const TakeExam = () => {
 
   if (totalQuestions === 0) {
     return (
-      <div className="fixed inset-0 bg-[#080911] text-white z-50 flex items-center justify-center p-6 text-center">
+      <div className={`fixed inset-0 z-50 flex items-center justify-center p-6 text-center ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-[#080911] text-white'}`}>
         <div className="flex flex-col items-center gap-4">
-          <span className="text-sm font-bold text-gray-500">{isRTL ? "هذا الاختبار لا يحتوي على أسئلة." : "This exam does not have any questions."}</span>
+          <span className={`text-sm font-bold ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "هذا الاختبار لا يحتوي على أسئلة." : "This exam does not have any questions."}</span>
           <button 
             onClick={() => navigate('/student/exams')}
             className="px-4 py-2 bg-blue-600 rounded-xl text-xs font-black text-white hover:bg-blue-500 cursor-pointer"
@@ -181,15 +194,19 @@ const TakeExam = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#080911] text-white z-50 overflow-y-auto flex flex-col justify-between select-none">
+    <div className={`fixed inset-0 z-50 overflow-y-auto flex flex-col justify-between select-none ${isLight ? 'bg-slate-100 text-slate-900' : 'bg-[#080911] text-white'}`}>
       
       {/* Top Banner Header */}
-      <header className="px-6 py-5 md:px-8 border-b border-gray-900/60 bg-[#080911]/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
+      <header className={`px-6 py-5 md:px-8 border-b backdrop-blur-md flex items-center justify-between sticky top-0 z-20 ${
+        isLight ? 'border-slate-200 bg-white/90' : 'border-gray-900/60 bg-[#080911]/80'
+      }`}>
         <div className="flex items-center gap-4">
           <button 
             disabled={isActionLoading}
             onClick={() => navigate('/student/exams')}
-            className="w-10 h-10 rounded-2xl border border-gray-800 bg-gray-950/40 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer shrink-0 disabled:opacity-50"
+            className={`w-10 h-10 rounded-2xl border flex items-center justify-center transition-all cursor-pointer shrink-0 disabled:opacity-50 ${
+              isLight ? 'border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-600' : 'border-gray-800 bg-gray-950/40 hover:bg-gray-800/30 text-gray-400 hover:text-white'
+            }`}
           >
             <FiX className="text-lg" />
           </button>
@@ -197,8 +214,8 @@ const TakeExam = () => {
         </div>
 
         {/* Question Counter Bullet pill */}
-        <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] sm:text-xs font-black text-emerald-400 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] sm:text-xs font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
           {isRTL ? `تم إجابة ${answeredCount}/${totalQuestions}` : `${answeredCount}/${totalQuestions} answered`}
         </span>
       </header>
@@ -213,10 +230,10 @@ const TakeExam = () => {
             return (
               <div 
                 key={index} 
-                className={`h-1.5 flex-1 rounded-full border border-black/10 transition-all duration-300 ${
+                className={`h-1.5 flex-1 rounded-full border transition-all duration-300 ${
                   isActive 
-                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_10px_rgba(59,130,246,0.15)]' 
-                    : 'bg-gray-950'
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_10px_rgba(59,130,246,0.15)] border-transparent' 
+                    : isLight ? 'bg-slate-200 border-slate-300' : 'bg-gray-950 border-black/10'
                 }`}
               />
             );
@@ -225,28 +242,38 @@ const TakeExam = () => {
 
         {/* Question Header & Card */}
         <div className="flex flex-col gap-1 text-start mt-2">
-          <div className="flex items-center justify-between text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">
+          <div className={`flex items-center justify-between text-[10px] font-extrabold uppercase tracking-widest ${
+            isLight ? 'text-slate-500' : 'text-gray-500'
+          }`}>
             <span>{isRTL ? `السؤال ${currentIdx + 1} من ${totalQuestions}` : `Question ${currentIdx + 1} of ${totalQuestions}`}</span>
             <span>{isRTL ? `الوقت: ${Math.floor(timeSpent / 60)}د ${timeSpent % 60}ث` : `Elapsed: ${Math.floor(timeSpent / 60)}m ${timeSpent % 60}s`}</span>
           </div>
 
-          <div className="p-6 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 shadow-2xl flex flex-col gap-4 text-start mt-2">
+          <div className={`p-6 rounded-[2rem] border shadow-2xl flex flex-col gap-4 text-start mt-2 ${
+            isLight 
+              ? 'bg-white border-slate-200 shadow-sm' 
+              : 'bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border-gray-800/80 shadow-2xl'
+          }`}>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-xl bg-gray-900 border border-gray-800 text-[9px] font-black text-gray-400">
+              <span className={`px-2.5 py-0.5 rounded-xl border text-[9px] font-black ${
+                isLight ? 'bg-slate-100 border-slate-300 text-slate-600' : 'bg-gray-900 border-gray-800 text-gray-400'
+              }`}>
                 Q{currentIdx + 1}
               </span>
-              <span className="px-2.5 py-0.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 capitalize">
+              <span className="px-2.5 py-0.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-600 dark:text-emerald-400 capitalize">
                 {currentQuestion?.difficulty || (isRTL ? 'متوسط' : 'medium')}
               </span>
             </div>
 
-            <h3 className="text-base sm:text-lg font-bold text-white leading-relaxed">
+            <h3 className={`text-base sm:text-lg font-bold leading-relaxed ${isLight ? 'text-slate-900' : 'text-white'}`}>
               {(isRTL && currentQuestion?.textAr) ? currentQuestion.textAr : currentQuestion?.text}
             </h3>
 
             {/* Optional Question Banner Image */}
             {currentQuestion?.image && (
-              <div className="w-full rounded-2xl overflow-hidden border border-gray-800 max-h-56 mt-2 flex items-center justify-center bg-black/40">
+              <div className={`w-full rounded-2xl overflow-hidden border max-h-56 mt-2 flex items-center justify-center ${
+                isLight ? 'bg-slate-100 border-slate-200' : 'bg-black/40 border-gray-800'
+              }`}>
                 <img 
                   src={getImageUrl(currentQuestion.image)} 
                   alt="question-banner" 
@@ -274,8 +301,12 @@ const TakeExam = () => {
                 onClick={() => handleSelectOption(optIdx)}
                 className={`w-full p-4 rounded-[1.5rem] border transition-all text-start flex flex-col gap-3 cursor-pointer ${
                   isSelected 
-                    ? 'bg-purple-600/5 border-purple-500 shadow-md shadow-purple-500/5' 
-                    : 'bg-[#0c0d19]/40 border-gray-800 hover:border-gray-700/80'
+                    ? isLight 
+                      ? 'bg-purple-50 border-purple-500 shadow-md shadow-purple-500/10' 
+                      : 'bg-purple-600/5 border-purple-500 shadow-md shadow-purple-500/5' 
+                    : isLight 
+                      ? 'bg-white border-slate-200 hover:border-slate-300' 
+                      : 'bg-[#0c0d19]/40 border-gray-800 hover:border-gray-700/80'
                 }`}
               >
                 <div className="flex items-center justify-between w-full">
@@ -283,19 +314,21 @@ const TakeExam = () => {
                     {/* Circle letter icon */}
                     <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all ${
                       isSelected 
-                        ? 'bg-purple-500 text-white' 
-                        : 'bg-gray-800 text-gray-400'
+                        ? 'bg-purple-600 text-white' 
+                        : isLight ? 'bg-slate-200 text-slate-600' : 'bg-gray-800 text-gray-400'
                     }`}>
                       {optLetter}
                     </span>
-                    <span className="text-xs sm:text-sm font-bold text-white capitalize leading-tight">
+                    <span className={`text-xs sm:text-sm font-bold capitalize leading-tight ${
+                      isLight ? 'text-slate-900' : 'text-white'
+                    }`}>
                       {optText}
                     </span>
                   </div>
 
                   {/* Right Circle Checkmark icon */}
                   {isSelected && (
-                    <span className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-white shrink-0">
                       <FiCheck size={12} />
                     </span>
                   )}
@@ -303,7 +336,9 @@ const TakeExam = () => {
 
                 {/* Optional Option Banner Image */}
                 {optImage && (
-                  <div className="w-full rounded-xl overflow-hidden border border-gray-800/80 max-h-32 mt-1 bg-black/20 flex items-center justify-center">
+                  <div className={`w-full rounded-xl overflow-hidden border max-h-32 mt-1 flex items-center justify-center ${
+                    isLight ? 'bg-slate-50 border-slate-200' : 'bg-black/20 border-gray-800/80'
+                  }`}>
                     <img 
                       src={getImageUrl(optImage)} 
                       alt={`option-${optLetter}`} 
@@ -318,7 +353,9 @@ const TakeExam = () => {
       </main>
 
       {/* Bottom Sticky Action Footer */}
-      <footer className="border-t border-gray-900/60 bg-[#080911]/80 backdrop-blur-md sticky bottom-0 z-20 w-full">
+      <footer className={`border-t backdrop-blur-md sticky bottom-0 z-20 w-full ${
+        isLight ? 'border-slate-200 bg-white/90' : 'border-gray-900/60 bg-[#080911]/80'
+      }`}>
         <div className="max-w-2xl mx-auto px-6 py-5 flex items-center justify-between">
           {currentIdx === totalQuestions - 1 ? (
             <div className="flex items-center gap-3 w-full">
@@ -326,7 +363,9 @@ const TakeExam = () => {
               <button 
                 onClick={handlePrev}
                 disabled={currentIdx === 0 || isActionLoading}
-                className="w-12 h-12 rounded-2xl border border-gray-800 bg-gray-950/40 hover:bg-gray-800/30 flex items-center justify-center text-gray-400 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer ${
+                  isLight ? 'border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-700' : 'border-gray-800 bg-gray-950/40 hover:bg-gray-800/30 text-gray-400 hover:text-white'
+                }`}
               >
                 {isRTL ? <FiArrowRight className="text-lg" /> : <FiArrowLeft className="text-lg" />}
               </button>

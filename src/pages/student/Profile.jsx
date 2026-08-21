@@ -59,6 +59,19 @@ const Profile = () => {
   const [phone, setPhone] = useState(user?.phone || '');
   const [bio, setBio] = useState(user?.bio || '');
 
+  const [isLight, setIsLight] = useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    handleThemeChange();
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
   useEffect(() => {
     dispatch(fetchStudentProfile());
     dispatch(fetchLinkCode());
@@ -196,7 +209,7 @@ const Profile = () => {
         <div className="flex-1 overflow-y-auto pr-1 pb-36 flex flex-col gap-6">
 
           {/* 1. Hero Profile Banner */}
-          <div className="w-full bg-gradient-to-br from-purple-700/90 to-indigo-600/90 text-white rounded-3xl p-6 text-center relative overflow-hidden shadow-[0_15px_30px_rgba(139,92,246,0.2)] shrink-0">
+          <div className="w-full bg-gradient-to-br from-purple-700/90 to-indigo-600/90 text-white rounded-3xl p-6 text-center relative overflow-hidden shadow-[0_15px_30px_rgba(139,92,246,0.2)] shrink-0 preserve-white">
             {/* Banner Background decorative elements */}
             <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-white/5 border border-white/10" />
             <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5 border border-white/10" />
@@ -209,7 +222,7 @@ const Profile = () => {
               >
                 {isRTL ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}
               </button>
-              <span className="text-sm font-black tracking-wide uppercase text-white/90">{isRTL ? "ملفي الشخصي" : "My Profile"}</span>
+              <span className="text-sm font-black tracking-wide uppercase text-white preserve-white">{isRTL ? "ملفي الشخصي" : "My Profile"}</span>
               <button
                 onClick={() => setIsEditProfileOpen(true)}
                 className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/10"
@@ -221,7 +234,7 @@ const Profile = () => {
             {/* Avatar & User Details */}
             <div className="flex flex-col items-center gap-3 z-10 relative mt-4">
               <div className="relative">
-                <div className="w-24 h-24 rounded-[2rem] bg-white/15 border border-white/25 flex items-center justify-center text-white text-3xl font-black shadow-[0_0_25px_rgba(139,92,246,0.3)]">
+                <div className="w-24 h-24 rounded-[2rem] bg-white/15 border border-white/25 flex items-center justify-center text-white text-3xl font-black shadow-[0_0_25px_rgba(139,92,246,0.3)] preserve-white">
                   {avatarInitials}
                 </div>
                 <button
@@ -232,20 +245,20 @@ const Profile = () => {
                 </button>
               </div>
               <div className="flex flex-col items-center">
-                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight capitalize tracking-wide">{name}</h3>
-                <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1">{email}</span>
+                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight capitalize tracking-wide preserve-white">{name}</h3>
+                <span className="text-xs sm:text-sm font-semibold text-white/90 mt-1 preserve-white-sub">{email}</span>
               </div>
             </div>
 
             {/* Horizontal Badge Tags Row */}
             <div className="flex flex-wrap items-center justify-center gap-2 mt-4 z-10 relative">
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
-                <FiBookOpen size={11} className="text-blue-300" /> {isRTL ? "طالب" : "Student"}
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm preserve-white">
+                <FiBookOpen size={11} className="text-blue-200" /> {isRTL ? "طالب" : "Student"}
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm preserve-white">
                 <FiStar size={11} className="text-yellow-300" /> {averageScore}% {isRTL ? "متوسط" : "avg"}
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm preserve-white">
                 <FaFire size={11} className="text-pink-300" /> {streak}{isRTL ? "يوم متتالي" : "d streak"}
               </span>
             </div>
@@ -254,53 +267,55 @@ const Profile = () => {
           {/* 2. About Me & Learning Summary split */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
             {/* About Me Card */}
-            <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-start">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-800/40">
+            <div className={`p-6 border rounded-[2rem] shadow-lg flex flex-col gap-4 text-start ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
+              }`}>
+              <div className={`flex justify-between items-center pb-2 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/40'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
                     <FiUser size={16} />
                   </div>
-                  <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">{isRTL ? "نبذة عني" : "About Me"}</h4>
+                  <h4 className={`text-sm font-extrabold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "نبذة عني" : "About Me"}</h4>
                 </div>
                 <button
                   onClick={() => setIsEditProfileOpen(true)}
-                  className="text-xs font-extrabold text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
+                  className="text-xs font-extrabold text-purple-600 dark:text-purple-400 hover:text-purple-500 transition-colors cursor-pointer"
                 >
                   {isRTL ? "تعديل" : "Edit"}
                 </button>
               </div>
 
-              <p className="text-xs font-semibold text-gray-400 italic leading-relaxed">
+              <p className={`text-xs font-semibold italic leading-relaxed ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {bio ? `"${bio}"` : (isRTL ? 'لا يوجد نبذة شخصية بعد. اضغط تعديل للإضافة.' : 'No bio yet. Tap Edit to add one.')}
               </p>
 
-              <div className="flex flex-col gap-2.5 mt-2 text-xs font-semibold text-gray-400">
+              <div className={`flex flex-col gap-2.5 mt-2 text-xs font-semibold ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 <div className="flex items-center gap-3">
-                  <FiMail className="text-gray-500 text-sm shrink-0" />
+                  <FiMail className={`${isLight ? 'text-slate-400' : 'text-gray-500'} text-sm shrink-0`} />
                   <span>{email}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <FiPhone className="text-gray-500 text-sm shrink-0" />
+                  <FiPhone className={`${isLight ? 'text-slate-400' : 'text-gray-500'} text-sm shrink-0`} />
                   <span>{phone || (isRTL ? 'غير مدخل' : 'Not provided')}</span>
                 </div>
               </div>
             </div>
 
             {/* Learning summary Card */}
-            <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-start justify-between">
-              <div className="flex items-center gap-3 pb-2 border-b border-gray-800/40">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+            <div className={`p-6 border rounded-[2rem] shadow-lg flex flex-col gap-4 text-start justify-between ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
+              }`}>
+              <div className={`flex items-center gap-3 pb-2 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/40'}`}>
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                   <FiStar size={16} />
                 </div>
-                <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">{isRTL ? "ملخص التقدم" : "Progress Summary"}</h4>
+                <h4 className={`text-sm font-extrabold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "ملخص التقدم" : "Progress Summary"}</h4>
               </div>
 
               <div className="flex flex-col gap-2.5 my-2">
-                <div className="flex items-center justify-between text-xs font-bold text-gray-400">
+                <div className={`flex items-center justify-between text-xs font-bold ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                   <span>{isRTL ? "المواد المسجلة" : "Enrolled Courses"}</span>
-                  <span className="text-emerald-400 font-extrabold">{enrolledCoursesCount}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">{enrolledCoursesCount}</span>
                 </div>
-                <div className="w-full h-2.5 bg-gray-950/60 rounded-full overflow-hidden border border-gray-900">
+                <div className={`w-full h-2.5 rounded-full overflow-hidden border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-gray-950/60 border-gray-900'}`}>
                   <div
                     className="h-full bg-emerald-500 rounded-full transition-all duration-500 shadow-[0_0_10px_#10b981]"
                     style={{ width: `${Math.min(100, Math.max(5, enrolledCoursesCount * 25))}%` }}
@@ -308,34 +323,38 @@ const Profile = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs font-bold text-gray-500 border-t border-gray-800/40 pt-2.5 mt-1">
+              <div className={`flex items-center justify-between text-xs font-bold border-t pt-2.5 mt-1 ${isLight ? 'border-slate-200 text-slate-600' : 'border-gray-800/40 text-gray-500'}`}>
                 <span>{isRTL ? "مجموع النقاط المكتسبة" : "Total Accumulated Points"}</span>
-                <span className="text-yellow-500 font-black">{points} {isRTL ? "نقطة" : "Points"}</span>
+                <span className="text-yellow-600 dark:text-yellow-500 font-black">{points} {isRTL ? "نقطة" : "Points"}</span>
               </div>
             </div>
           </div>
 
           {/* 3. Metrics grid */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
-            <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider pl-1">
+            <h3 className={`text-xs font-black uppercase tracking-wider pl-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
               {isRTL ? "مقاييس الأداء" : "Performance Metrics"}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
-                <span className="text-lg md:text-xl font-black text-emerald-400 leading-none mb-1">{averageScore}%</span>
-                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">{isRTL ? "متوسط الدرجات" : "Avg Score"}</span>
+              <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+                }`}>
+                <span className="text-lg md:text-xl font-black text-emerald-600 dark:text-emerald-400 leading-none mb-1">{averageScore}%</span>
+                <span className={`text-[8px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "متوسط الدرجات" : "Avg Score"}</span>
               </div>
-              <div className="p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
-                <span className="text-lg md:text-xl font-black text-purple-400 leading-none mb-1">{totalExams}</span>
-                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">{isRTL ? "الاختبارات المجتازة" : "Exams taken"}</span>
+              <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+                }`}>
+                <span className="text-lg md:text-xl font-black text-purple-600 dark:text-purple-400 leading-none mb-1">{totalExams}</span>
+                <span className={`text-[8px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الاختبارات المجتازة" : "Exams taken"}</span>
               </div>
-              <div className="p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
-                <span className="text-lg md:text-xl font-black text-blue-400 leading-none mb-1">{enrolledCoursesCount}</span>
-                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">{isRTL ? "المواد النشطة" : "Active Courses"}</span>
+              <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+                }`}>
+                <span className="text-lg md:text-xl font-black text-blue-600 dark:text-blue-400 leading-none mb-1">{enrolledCoursesCount}</span>
+                <span className={`text-[8px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "المواد النشطة" : "Active Courses"}</span>
               </div>
-              <div className="p-4 rounded-2xl bg-[#0c0d19]/40 border border-gray-800 flex flex-col items-center justify-center text-center shadow-md">
-                <span className="text-lg md:text-xl font-black text-yellow-500 leading-none mb-1">{passedExams}</span>
-                <span className="text-[8px] font-bold text-gray-500 uppercase tracking-wider">{isRTL ? "عدد مرات النجاح" : "Passed count"}</span>
+              <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+                }`}>
+                <span className="text-lg md:text-xl font-black text-yellow-600 dark:text-yellow-500 leading-none mb-1">{passedExams}</span>
+                <span className={`text-[8px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "عدد مرات النجاح" : "Passed count"}</span>
               </div>
             </div>
           </div>
@@ -343,25 +362,26 @@ const Profile = () => {
           {/* 4. Account Settings Section (3 Column Grid Desktop) */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                 <FiUser size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "الحساب" : "Account"}</h3>
+              <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الحساب" : "Account"}</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Edit Profile */}
               <div
                 onClick={() => setIsEditProfileOpen(true)}
-                className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-start"
+                className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800/80'
+                  }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-400 shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                     <FiUser size={18} />
                   </div>
                   <div>
-                    <h5 className="text-sm font-bold text-white leading-none">{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h5>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">{isRTL ? "الاسم، النبذة، الهاتف" : "Name, bio, phone"}</span>
+                    <h5 className={`text-sm font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h5>
+                    <span className={`text-[10px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الاسم، النبذة، الهاتف" : "Name, bio, phone"}</span>
                   </div>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-transform" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />}
@@ -370,15 +390,16 @@ const Profile = () => {
               {/* Change Password */}
               <div
                 onClick={() => setIsChangePasswordOpen(true)}
-                className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-start"
+                className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800/80'
+                  }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
                     <FiLock size={18} />
                   </div>
                   <div>
-                    <h5 className="text-sm font-bold text-white leading-none">{isRTL ? "تغيير كلمة المرور" : "Change Password"}</h5>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">{isRTL ? "تحديث كلمة المرور" : "Update security password"}</span>
+                    <h5 className={`text-sm font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تغيير كلمة المرور" : "Change Password"}</h5>
+                    <span className={`text-[10px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تحديث كلمة المرور" : "Update security password"}</span>
                   </div>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-transform" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />}
@@ -387,15 +408,16 @@ const Profile = () => {
               {/* Language Selection */}
               <div
                 onClick={() => { setTempLanguage(selectedLanguage); setIsLanguageOpen(true); }}
-                className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-start"
+                className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800/80'
+                  }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
                     <FiGlobe size={18} />
                   </div>
                   <div>
-                    <h5 className="text-sm font-bold text-white leading-none">{isRTL ? "اللغة" : "Language"}</h5>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">{isRTL ? 'العربية / English' : `${selectedLanguage} / العربية`}</span>
+                    <h5 className={`text-sm font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "اللغة" : "Language"}</h5>
+                    <span className={`text-[10px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? 'العربية / English' : `${selectedLanguage} / العربية`}</span>
                   </div>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-transform" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />}
@@ -406,20 +428,22 @@ const Profile = () => {
           {/* 5. Family & Badges Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0 text-start">
             {/* Link a parent card */}
-            <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-start justify-between">
-              <div className="flex items-center gap-3 pb-2 border-b border-gray-800/40">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+            <div className={`p-6 border rounded-[2rem] shadow-lg flex flex-col gap-4 text-start justify-between ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
+              }`}>
+              <div className={`flex items-center gap-3 pb-2 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/40'}`}>
+                <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
                   <FiUsers size={16} />
                 </div>
-                <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">{isRTL ? "ربط العائلة" : "Family Linking"}</h4>
+                <h4 className={`text-sm font-extrabold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "ربط العائلة" : "Family Linking"}</h4>
               </div>
 
-              <p className="text-xs font-semibold text-gray-500 leading-relaxed">
+              <p className={`text-xs font-semibold leading-relaxed ${isLight ? 'text-slate-600' : 'text-gray-500'}`}>
                 {isRTL ? "قم بربط حساب ولي الأمر لمتابعة تقدمك ودرجات الاختبارات وسجل الدراسة." : "Connect a parent account to follow your progress, exam scores, and study completion history."}
               </p>
 
-              <div className="flex items-center justify-between gap-3 bg-gray-950/65 border border-gray-800 p-3 rounded-2xl mt-1">
-                <span className="text-xs font-black text-white tracking-widest pl-1"># {linkCode || 'FM-8UTT2N'}</span>
+              <div className={`flex items-center justify-between gap-3 p-3 rounded-2xl mt-1 border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-gray-950/65 border-gray-800'
+                }`}>
+                <span className={`text-xs font-black tracking-widest pl-1 ${isLight ? 'text-slate-900' : 'text-white'}`}># {linkCode || 'FM-8UTT2N'}</span>
                 <button
                   onClick={handleCopyCode}
                   className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer transition-all shadow-[0_4px_15px_rgba(139,92,246,0.3)]"
@@ -430,15 +454,16 @@ const Profile = () => {
             </div>
 
             {/* Badges showcase */}
-            <div className="p-6 bg-[#0c0d19]/40 border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-start">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-800/40">
+            <div className={`p-6 border rounded-[2rem] shadow-lg flex flex-col gap-4 text-start ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
+              }`}>
+              <div className={`flex justify-between items-center pb-2 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/40'}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500">
                     <FiAward size={16} />
                   </div>
-                  <h4 className="text-sm font-extrabold text-white uppercase tracking-wider">{isRTL ? "أوسمتي" : "My Badges"}</h4>
+                  <h4 className={`text-sm font-extrabold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "أوسمتي" : "My Badges"}</h4>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-[9px] font-black text-yellow-500">
+                <span className="px-2.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-[9px] font-black text-yellow-600 dark:text-yellow-500">
                   {badgesCount} {isRTL ? "مكتسبة" : "earned"}
                 </span>
               </div>
@@ -446,32 +471,36 @@ const Profile = () => {
               <div className="grid grid-cols-3 gap-3.5 mt-2">
                 {studentProfile?.badges && studentProfile.badges.length > 0 ? (
                   studentProfile.badges.slice(0, 3).map((b, idx) => (
-                    <div key={idx} className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
-                      <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-400">
+                    <div key={idx} className={`flex flex-col items-center gap-2 p-2 rounded-xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
+                      }`}>
+                      <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
                         <FiAward size={13} />
                       </div>
-                      <span className="text-[8.5px] font-black text-gray-400 capitalize truncate w-full">{b.label}</span>
+                      <span className={`text-[8.5px] font-black capitalize truncate w-full ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{b.label}</span>
                     </div>
                   ))
                 ) : (
                   <>
-                    <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
-                      <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-400">
+                    <div className={`flex flex-col items-center gap-2 p-2 rounded-xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
+                      }`}>
+                      <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
                         <FiBookOpen size={13} />
                       </div>
-                      <span className="text-[8.5px] font-black text-gray-400">{isRTL ? "الاختبار الأول" : "First Exam"}</span>
+                      <span className={`text-[8.5px] font-black ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{isRTL ? "الاختبار الأول" : "First Exam"}</span>
                     </div>
-                    <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
-                      <div className="w-8 h-8 rounded-full bg-pink-500/15 border border-pink-500/25 flex items-center justify-center text-pink-400">
+                    <div className={`flex flex-col items-center gap-2 p-2 rounded-xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
+                      }`}>
+                      <div className="w-8 h-8 rounded-full bg-pink-500/15 border border-pink-500/25 flex items-center justify-center text-pink-600 dark:text-pink-400">
                         <FiStar size={13} />
                       </div>
-                      <span className="text-[8.5px] font-black text-gray-400">{isRTL ? "درجة كاملة" : "Perfect Score"}</span>
+                      <span className={`text-[8.5px] font-black ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{isRTL ? "درجة كاملة" : "Perfect Score"}</span>
                     </div>
-                    <div className="flex flex-col items-center gap-2 p-2 rounded-xl bg-gray-950/40 border border-gray-800 text-center">
-                      <div className="w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-400">
+                    <div className={`flex flex-col items-center gap-2 p-2 rounded-xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
+                      }`}>
+                      <div className="w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-600 dark:text-purple-400">
                         <FaFire size={13} />
                       </div>
-                      <span className="text-[8.5px] font-black text-gray-400">{isRTL ? "تتابع 7 أيام" : "7-Day Streak"}</span>
+                      <span className={`text-[8.5px] font-black ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{isRTL ? "تتابع 7 أيام" : "7-Day Streak"}</span>
                     </div>
                   </>
                 )}
@@ -482,64 +511,68 @@ const Profile = () => {
           {/* 6. Notifications & Sound grid (4 Column Grid Desktop) */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                 <FiBell size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "التنبيهات وخيارات الإشعارات" : "Notifications & Alert Toggles"}</h3>
+              <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "التنبيهات وخيارات الإشعارات" : "Notifications & Alert Toggles"}</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Push notifications */}
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl">
+              <div className={`flex items-center justify-between p-4 border rounded-2xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+                }`}>
                 <div className="text-start">
-                  <h5 className="text-xs font-bold text-white leading-none">{isRTL ? "إشعارات التطبيق" : "Push"}</h5>
-                  <span className="text-[9px] text-gray-500 font-semibold mt-1 block">{isRTL ? "تلقي تنبيهات التطبيق" : "Receive app alerts"}</span>
+                  <h5 className={`text-xs font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "إشعارات التطبيق" : "Push"}</h5>
+                  <span className={`text-[9px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تلقي تنبيهات التطبيق" : "Receive app alerts"}</span>
                 </div>
                 <button
                   onClick={() => setPushNotifications(!pushNotifications)}
-                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${pushNotifications ? 'bg-purple-600 justify-end' : 'bg-gray-800 justify-start'}`}
+                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${pushNotifications ? 'bg-purple-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
                 >
                   <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
                 </button>
               </div>
 
               {/* Exam Reminders */}
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl">
+              <div className={`flex items-center justify-between p-4 border rounded-2xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+                }`}>
                 <div className="text-start">
-                  <h5 className="text-xs font-bold text-white leading-none">{isRTL ? "التذكيرات" : "Reminders"}</h5>
-                  <span className="text-[9px] text-gray-500 font-semibold mt-1 block">{isRTL ? "التنبيه قبل الاختبارات" : "Get warned before exams"}</span>
+                  <h5 className={`text-xs font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "التذكيرات" : "Reminders"}</h5>
+                  <span className={`text-[9px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "التنبيه قبل الاختبارات" : "Get warned before exams"}</span>
                 </div>
                 <button
                   onClick={() => setExamReminders(!examReminders)}
-                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${examReminders ? 'bg-blue-600 justify-end' : 'bg-gray-800 justify-start'}`}
+                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${examReminders ? 'bg-blue-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
                 >
                   <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
                 </button>
               </div>
 
               {/* Result alerts */}
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl">
+              <div className={`flex items-center justify-between p-4 border rounded-2xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+                }`}>
                 <div className="text-start">
-                  <h5 className="text-xs font-bold text-white leading-none">{isRTL ? "تنبيهات النتائج" : "Result Alerts"}</h5>
-                  <span className="text-[9px] text-gray-500 font-semibold mt-1 block">{isRTL ? "الإشعار عند صدور النتيجة" : "Notify when scored"}</span>
+                  <h5 className={`text-xs font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تنبيهات النتائج" : "Result Alerts"}</h5>
+                  <span className={`text-[9px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الإشعار عند صدور النتيجة" : "Notify when scored"}</span>
                 </div>
                 <button
                   onClick={() => setResultAlerts(!resultAlerts)}
-                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${resultAlerts ? 'bg-emerald-500 justify-end' : 'bg-gray-800 justify-start'}`}
+                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${resultAlerts ? 'bg-emerald-500 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
                 >
                   <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
                 </button>
               </div>
 
               {/* Sound Effects */}
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl">
+              <div className={`flex items-center justify-between p-4 border rounded-2xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+                }`}>
                 <div className="text-start">
-                  <h5 className="text-xs font-bold text-white leading-none">{isRTL ? "الأصوات" : "Sounds"}</h5>
-                  <span className="text-[9px] text-gray-500 font-semibold mt-1 block">{isRTL ? "تشغيل التنبيهات الصوتية" : "Play audio cues"}</span>
+                  <h5 className={`text-xs font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "الأصوات" : "Sounds"}</h5>
+                  <span className={`text-[9px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تشغيل التنبيهات الصوتية" : "Play audio cues"}</span>
                 </div>
                 <button
                   onClick={() => setSoundEffects(!soundEffects)}
-                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${soundEffects ? 'bg-gray-400 justify-end' : 'bg-gray-800 justify-start'}`}
+                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${soundEffects ? 'bg-gray-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
                 >
                   <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
                 </button>
@@ -553,22 +586,23 @@ const Profile = () => {
               <div className="w-6 h-6 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500">
                 <FiSun size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "المظهر" : "Appearance"}</h3>
+              <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "المظهر" : "Appearance"}</h3>
             </div>
 
-            <div className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between">
+            <div className={`w-full border rounded-2xl p-4 flex items-center justify-between ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
+              }`}>
               <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-sm shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400 shadow-sm shrink-0">
                   {theme === 'dark' ? <FiMoon size={18} /> : <FiSun size={18} />}
                 </div>
                 <div className="text-start">
-                  <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "الوضع الداكن" : "Dark Mode"}</h4>
-                  <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "تغيير ثيم التطبيق" : "Switch app appearance theme"}</p>
+                  <h4 className={`text-sm font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "الوضع الداكن" : "Dark Mode"}</h4>
+                  <p className={`text-xs font-semibold mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تغيير ثيم التطبيق" : "Switch app appearance theme"}</p>
                 </div>
               </div>
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-800 justify-start'}`}
+                className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-300 dark:bg-gray-800 justify-start'}`}
               >
                 <div className="w-5 h-5 rounded-full bg-white shadow-md" />
               </button>
@@ -578,41 +612,45 @@ const Profile = () => {
           {/* 8. Support Row (4 column Grid Desktop) */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                 <FiGlobe size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "الدعم والمساعدة" : "Support"}</h3>
+              <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الدعم والمساعدة" : "Support"}</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all group text-start">
+              <div className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
+                }`}>
                 <div>
-                  <h5 className="text-xs font-bold text-white">{isRTL ? "مركز المساعدة" : "Help Center"}</h5>
-                  <span className="text-[9px] text-gray-500 font-semibold mt-0.5 block">{isRTL ? "الأسئلة الشائعة والإرشادات" : "FAQs & guides"}</span>
+                  <h5 className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "مركز المساعدة" : "Help Center"}</h5>
+                  <span className={`text-[9px] font-semibold mt-0.5 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الأسئلة الشائعة والإرشادات" : "FAQs & guides"}</span>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-all" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />}
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all group text-start">
+              <div className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
+                }`}>
                 <div>
-                  <h5 className="text-xs font-bold text-white">{isRTL ? "تواصل معنا" : "Contact Us"}</h5>
-                  <span className="text-[9px] text-gray-500 font-semibold mt-0.5 block">{isRTL ? "التواصل مع فريق الدعم" : "Reach our support team"}</span>
+                  <h5 className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تواصل معنا" : "Contact Us"}</h5>
+                  <span className={`text-[9px] font-semibold mt-0.5 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "التواصل مع فريق الدعم" : "Reach our support team"}</span>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-all" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />}
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all group text-start">
+              <div className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
+                }`}>
                 <div>
-                  <h5 className="text-xs font-bold text-white">{isRTL ? "الآراء والملاحظات" : "Feedback"}</h5>
-                  <span className="text-[9px] text-gray-500 font-semibold mt-0.5 block">{isRTL ? "تقييم تجربة التطبيق" : "Rate app experience"}</span>
+                  <h5 className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "الآراء والملاحظات" : "Feedback"}</h5>
+                  <span className={`text-[9px] font-semibold mt-0.5 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تقييم تجربة التطبيق" : "Rate app experience"}</span>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-all" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />}
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all group text-start">
+              <div className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
+                }`}>
                 <div>
-                  <h5 className="text-xs font-bold text-white">{isRTL ? "حول التطبيق" : "About"}</h5>
-                  <span className="text-[9px] text-gray-500 font-semibold mt-0.5 block">FullMark v1.0.0</span>
+                  <h5 className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "حول التطبيق" : "About"}</h5>
+                  <span className={`text-[9px] font-semibold mt-0.5 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>FullMark v1.0.0</span>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-all" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />}
               </div>
@@ -643,10 +681,11 @@ const Profile = () => {
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
+              className={`w-full sm:max-w-md border-t sm:border rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start ${isLight ? 'bg-white border-slate-200' : 'bg-[#0c0d19] border-gray-800'
+                }`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
+              <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 sm:hidden ${isLight ? 'bg-slate-300' : 'bg-gray-800'}`} />
 
               <button
                 onClick={() => setIsEditProfileOpen(false)}
@@ -655,7 +694,7 @@ const Profile = () => {
                 <FiX size={20} />
               </button>
 
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-6">
+              <h3 className={`text-xl sm:text-2xl font-black mb-6 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}
               </h3>
 
@@ -690,8 +729,9 @@ const Profile = () => {
                     />
 
                     <div className="w-full flex flex-col mb-2 relative">
-                      <div className="w-full flex flex-col relative rounded-2xl px-4 py-3 bg-gray-950/40 border border-gray-800/80 min-h-[100px] justify-start focus-within:border-purple-500/50 transition-colors">
-                        <span className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1.5 pointer-events-none font-semibold text-[10px] text-purple-400 uppercase tracking-wider`}>
+                      <div className={`w-full flex flex-col relative rounded-2xl px-4 py-3 border min-h-[100px] justify-start focus-within:border-purple-500/50 transition-colors ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800/80'
+                        }`}>
+                        <span className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1.5 pointer-events-none font-semibold text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-wider`}>
                           {isRTL ? "نبذة عني" : "Bio"}
                         </span>
                         <textarea
@@ -701,7 +741,8 @@ const Profile = () => {
                           onBlur={handleBlur}
                           rows={3}
                           placeholder={isRTL ? "اكتب نبذة قصيرة عن نفسك" : "Tell us about yourself"}
-                          className="w-full bg-transparent border-none text-white text-sm md:text-base font-semibold outline-none focus:ring-0 resize-none pt-4 focus:outline-none"
+                          className={`w-full bg-transparent border-none text-sm md:text-base font-semibold outline-none focus:ring-0 resize-none pt-4 focus:outline-none ${isLight ? 'text-slate-900' : 'text-white'
+                            }`}
                         />
                       </div>
                     </div>
@@ -733,10 +774,11 @@ const Profile = () => {
               initial={{ scale: 0.95, y: 100, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 100, opacity: 0 }}
-              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
+              className={`w-full sm:max-w-md border-t sm:border rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start ${isLight ? 'bg-white border-slate-200' : 'bg-[#0c0d19] border-gray-800'
+                }`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
+              <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 sm:hidden ${isLight ? 'bg-slate-300' : 'bg-gray-800'}`} />
 
               <button
                 onClick={() => setIsChangePasswordOpen(false)}
@@ -745,7 +787,7 @@ const Profile = () => {
                 <FiX size={20} />
               </button>
 
-              <h3 className="text-xl sm:text-2xl font-black text-white mb-6">
+              <h3 className={`text-xl sm:text-2xl font-black mb-6 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {isRTL ? "تغيير كلمة المرور" : "Change Password"}
               </h3>
 
@@ -816,10 +858,11 @@ const Profile = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 200, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-              className="w-full sm:max-w-md bg-[#0c0d19] border-t sm:border border-gray-800 rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start"
+              className={`w-full sm:max-w-md border-t sm:border rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 pb-10 sm:pb-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start ${isLight ? 'bg-white border-slate-200' : 'bg-[#0c0d19] border-gray-800'
+                }`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-12 h-1.5 bg-gray-800 rounded-full mx-auto mb-6 sm:hidden" />
+              <div className={`w-12 h-1.5 rounded-full mx-auto mb-6 sm:hidden ${isLight ? 'bg-slate-300' : 'bg-gray-800'}`} />
 
               <button
                 onClick={() => setIsLanguageOpen(false)}
@@ -828,7 +871,7 @@ const Profile = () => {
                 <FiX size={20} />
               </button>
 
-              <h3 className="text-xl font-black text-center text-white mb-6">
+              <h3 className={`text-xl font-black text-center mb-6 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {isRTL ? "اختر اللغة" : "Select Language"}
               </h3>
 
@@ -838,12 +881,12 @@ const Profile = () => {
                   onClick={() => setTempLanguage('English')}
                   className={`w-full p-4 rounded-2xl border transition-all text-start flex items-center justify-between cursor-pointer ${tempLanguage === 'English'
                     ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5'
-                    : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
+                    : isLight ? 'bg-slate-50 border-slate-200 hover:border-slate-300' : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
                     }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">🇬🇧</span>
-                    <span className="text-xs sm:text-sm font-bold text-white">English</span>
+                    <span className={`text-xs sm:text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>English</span>
                   </div>
                   {tempLanguage === 'English' && (
                     <span className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white shrink-0">
@@ -857,12 +900,12 @@ const Profile = () => {
                   onClick={() => setTempLanguage('Arabic')}
                   className={`w-full p-4 rounded-2xl border transition-all text-start flex items-center justify-between cursor-pointer ${tempLanguage === 'Arabic'
                     ? 'bg-purple-500/5 border-purple-500 shadow-md shadow-purple-500/5'
-                    : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
+                    : isLight ? 'bg-slate-50 border-slate-200 hover:border-slate-300' : 'bg-gray-950/40 border-gray-800 hover:border-gray-700/80'
                     }`}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">🇸🇦</span>
-                    <span className="text-xs sm:text-sm font-bold text-white">Arabic — العربية</span>
+                    <span className={`text-xs sm:text-sm font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Arabic — العربية</span>
                   </div>
                   {tempLanguage === 'Arabic' && (
                     <span className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center text-white shrink-0">

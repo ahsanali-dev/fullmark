@@ -150,7 +150,7 @@ const ParentReports = () => {
     ? Math.round(childSubjects.reduce((sum, subj) => sum + ((subj.averageScore || 0) * (subj.totalExamsTaken || 0)), 0) / totalExamsCalculated)
     : Math.round(stats.averageScore || 0);
 
-  const totalExams = stats.totalExamsTaken || 0;
+  const totalExams = stats.totalExamsTaken || childResultsData?.pagination?.total || attempts.length || 0;
   const attempts = childResultsData?.attempts || [];
   const passedExams = attempts.filter(e => e.passed) || [];
 

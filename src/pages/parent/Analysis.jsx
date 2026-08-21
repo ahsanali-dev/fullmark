@@ -63,7 +63,7 @@ const ExamCard = ({ exam, isLight, isRTL, t }) => {
           </div>
           <div className="text-start">
             <p className={`text-sm font-extrabold leading-tight ${isLight ? 'text-[#0f172a]' : 'text-white'}`}>
-              {exam.exam?.title || t('parent.analysis.examAttempt')}
+              {(typeof exam.exam === 'object' && exam.exam?.title) || exam.subject?.name || t('parent.analysis.examAttempt')}
             </p>
             <p className="text-[11px] text-gray-500 font-semibold mt-0.5">
               {exam.subject?.name || t('parent.analysis.subject')} · {formattedDate}
@@ -92,7 +92,7 @@ const ExamCard = ({ exam, isLight, isRTL, t }) => {
             />
           </div>
           <p className="text-[11px] text-gray-500 font-semibold text-start">
-            {exam.score || 0}% {t('parent.analysis.score')} · {t('parent.analysis.duration')} {exam.durationMinutes || 0} {t('parent.analysis.mins')}
+            {exam.score || 0}% {t('parent.analysis.score')} · {t('parent.analysis.duration')} {exam.timeTaken || exam.durationMinutes || 0}s
           </p>
         </div>
         <div className="text-end shrink-0">
@@ -254,7 +254,7 @@ const ParentAnalysis = () => {
 
         {/* ── CHILD HEADER CARD ──────────────────────────────── */}
         {selectedChildId && (
-          <div className="mx-5 rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-600 p-5 shadow-[0_0_30px_rgba(16,185,129,0.25)] relative overflow-hidden">
+          <div className="mx-5 rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-600 p-5 shadow-[0_0_30px_rgba(16,185,129,0.25)] relative overflow-hidden preserve-white">
             <div className={`absolute top-0 ${isRTL ? 'left-0 rounded-br-full' : 'right-0 rounded-bl-full'} w-32 h-32 bg-white/5 pointer-events-none`} />
             <div className="flex items-center gap-4 relative z-10">
               <div className="w-14 h-14 rounded-2xl bg-white/20 border border-white/20 flex items-center justify-center font-black text-xl text-white shrink-0">
@@ -318,7 +318,7 @@ const ParentAnalysis = () => {
               <div className="flex flex-col gap-5 animate-fade-in">
 
                 {/* Overall Performance card */}
-                <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-5 relative overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-5 relative overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.2)] preserve-white">
                   <div className={`absolute bottom-0 ${isRTL ? 'left-0 rounded-tr-full' : 'right-0 rounded-tl-full'} w-24 h-24 bg-white/10 pointer-events-none`} />
                   <p className="text-white/70 text-xs font-semibold text-start">{t('parent.analysis.overallPerf')}</p>
                   <p className="text-4xl font-black text-white mt-1 text-start">{avgScore}%</p>

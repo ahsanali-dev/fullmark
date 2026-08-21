@@ -160,7 +160,7 @@ const CreateExam = () => {
                   navigate(targetId ? `/teacher/subjects/${targetId}` : '/teacher/subjects');
                 }
               }}
-              className={`w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer ${isRTL ? 'ml-3' : 'mr-3'}`}
+              className={`w-10 h-10 rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-white/10 dark:hover:bg-white/20 flex items-center justify-center text-slate-800 dark:text-white transition-all cursor-pointer ${isRTL ? 'ml-3' : 'mr-3'}`}
             >
               <FiChevronLeft size={20} className={isRTL ? 'rotate-180' : ''} />
             </button>
@@ -318,8 +318,9 @@ const CreateExam = () => {
                 </span>
                 <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl max-w-sm">
                   <button
+                    type="button"
                     onClick={() => setQuestionCount(Math.max(5, questionCount - 1))}
-                    className="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-white hover:border-gray-750 active:scale-95 transition-all cursor-pointer font-bold"
+                    className="w-10 h-10 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-gray-900 dark:hover:bg-gray-800 border border-slate-300 dark:border-gray-800 flex items-center justify-center text-slate-900 dark:text-white active:scale-95 transition-all cursor-pointer font-black text-xl shadow-sm"
                   >
                     -
                   </button>
@@ -328,8 +329,9 @@ const CreateExam = () => {
                     <p className="text-xs text-gray-500 font-bold mt-0.5">{isRTL ? "الحد الأدنى: 5 • الحد الأقصى: 100" : "min: 5 • max: 100"}</p>
                   </div>
                   <button
+                    type="button"
                     onClick={() => setQuestionCount(Math.min(100, questionCount + 1))}
-                    className="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-white hover:border-gray-750 active:scale-95 transition-all cursor-pointer font-bold"
+                    className="w-10 h-10 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-gray-900 dark:hover:bg-gray-800 border border-slate-300 dark:border-gray-800 flex items-center justify-center text-slate-900 dark:text-white active:scale-95 transition-all cursor-pointer font-black text-xl shadow-sm"
                   >
                     +
                   </button>
@@ -442,7 +444,7 @@ const CreateExam = () => {
               <div className="flex justify-between items-center mt-6">
                 <button
                   onClick={() => setStep(1)}
-                  className="w-14 h-14 bg-gray-900 hover:bg-gray-855 text-white rounded-2xl flex items-center justify-center border border-gray-800/80 active:scale-95 transition-all cursor-pointer shrink-0"
+                  className="w-14 h-14 bg-slate-200 hover:bg-slate-300 dark:bg-gray-900 dark:hover:bg-gray-800 text-slate-900 dark:text-white rounded-2xl flex items-center justify-center border border-slate-300 dark:border-gray-800/80 active:scale-95 transition-all cursor-pointer shrink-0 shadow-sm"
                 >
                   <FiArrowLeft size={18} className={isRTL ? 'rotate-180' : ''} />
                 </button>
@@ -507,8 +509,9 @@ const CreateExam = () => {
                   </span>
                   <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl max-w-sm">
                     <button
+                      type="button"
                       onClick={() => setDuration(Math.max(10, duration - 5))}
-                      className="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-white hover:border-gray-755 active:scale-95 transition-all cursor-pointer font-bold"
+                      className="w-10 h-10 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-gray-900 dark:hover:bg-gray-800 border border-slate-300 dark:border-gray-800 flex items-center justify-center text-slate-900 dark:text-white active:scale-95 transition-all cursor-pointer font-black text-xl shadow-sm"
                     >
                       -
                     </button>
@@ -517,8 +520,9 @@ const CreateExam = () => {
                       <p className="text-xs text-gray-500 font-bold mt-0.5">{isRTL ? "الحد الأدنى: 10 • الحد الأقصى: 180" : "min: 10 • max: 180"}</p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setDuration(Math.min(180, duration + 5))}
-                      className="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center text-white hover:border-gray-755 active:scale-95 transition-all cursor-pointer font-bold"
+                      className="w-10 h-10 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-gray-900 dark:hover:bg-gray-800 border border-slate-300 dark:border-gray-800 flex items-center justify-center text-slate-900 dark:text-white active:scale-95 transition-all cursor-pointer font-black text-xl shadow-sm"
                     >
                       +
                     </button>
@@ -586,37 +590,37 @@ const CreateExam = () => {
               </div>
 
               {/* Summary Card Preview */}
-              <div className="p-5 bg-gradient-to-br from-[#0c0d19] to-[#121426] border border-gray-850 rounded-[2rem] shadow-xl flex flex-col gap-4 relative overflow-hidden mt-4 text-start">
+              <div className="p-5 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white preserve-white border border-blue-400/30 rounded-[2rem] shadow-xl flex flex-col gap-4 relative overflow-hidden mt-4 text-start">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-inner shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-white preserve-white shadow-inner shrink-0 backdrop-blur-md">
                     <FiFileText size={22} />
                   </div>
                   <div className="text-start">
-                    <h4 className="text-lg font-extrabold text-white leading-tight capitalize">
+                    <h4 className="text-lg font-extrabold text-white preserve-white leading-tight capitalize">
                       {examTitle || (isRTL ? 'اختبار بدون عنوان' : 'Untitled Exam')}
                     </h4>
-                    <span className="text-xs text-blue-400 font-bold uppercase tracking-wider mt-0.5 block">
+                    <span className="text-xs text-blue-100 preserve-white-sub font-bold uppercase tracking-wider mt-0.5 block">
                       {currentSubjectObj.title || currentSubjectObj.name}
                     </span>
                   </div>
                 </div>
 
                 {/* Summary Metadata Pills */}
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-800/40">
-                  <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-xs font-black uppercase">
+                <div className="flex flex-wrap gap-2 pt-3 border-t border-white/20">
+                  <span className="px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white preserve-white text-xs font-black uppercase backdrop-blur-md">
                     {selectedQuestionIds.length} {isRTL ? 'محدد' : 'Selected'}
                   </span>
-                  <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-xs font-black uppercase">
+                  <span className="px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white preserve-white text-xs font-black uppercase backdrop-blur-md">
                     {enableTimer ? `${duration} ${isRTL ? 'دقيقة' : 'minutes'}` : (isRTL ? 'بدون مؤقت' : 'No Timer')}
                   </span>
-                  <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-xs font-black uppercase">
+                  <span className="px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white preserve-white text-xs font-black uppercase backdrop-blur-md">
                     {difficultyMix === 'Mixed' ? (isRTL ? 'مختلط' : 'Mixed') :
                      difficultyMix === 'Easy Only' ? (isRTL ? 'سهل فقط' : 'Easy Only') :
                      difficultyMix === 'Medium Only' ? (isRTL ? 'متوسط فقط' : 'Medium Only') :
                      (isRTL ? 'صعب فقط' : 'Hard Only')}
                   </span>
                   {showExplanations && (
-                    <span className="px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-gray-400 text-xs font-black uppercase">
+                    <span className="px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white preserve-white text-xs font-black uppercase backdrop-blur-md">
                       {isRTL ? 'الشروحات' : 'Explanations'}
                     </span>
                   )}
@@ -627,7 +631,7 @@ const CreateExam = () => {
               <div className="flex justify-between items-center mt-6">
                 <button
                   onClick={() => setStep(2)}
-                  className="w-14 h-14 bg-gray-900 hover:bg-gray-850 text-white rounded-2xl flex items-center justify-center border border-gray-800/80 active:scale-95 transition-all cursor-pointer shrink-0"
+                  className="w-14 h-14 bg-slate-200 hover:bg-slate-300 dark:bg-gray-900 dark:hover:bg-gray-800 text-slate-900 dark:text-white rounded-2xl flex items-center justify-center border border-slate-300 dark:border-gray-800/80 active:scale-95 transition-all cursor-pointer shrink-0 shadow-sm"
                 >
                   <FiArrowLeft size={18} className={isRTL ? 'rotate-180' : ''} />
                 </button>

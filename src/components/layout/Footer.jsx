@@ -33,7 +33,7 @@ export default function Footer() {
         {/* Brand Info (col-span-4) */}
         <div className="lg:col-span-4 flex flex-col gap-5 text-start">
           <div className="flex items-center gap-3 cursor-pointer select-none group w-fit" onClick={scrollToTop}>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-rose-500 flex items-center justify-center font-black text-white text-sm shadow-[0_0_20px_rgba(239,68,68,0.5)] group-hover:scale-105 transition-transform">FM</div>
+            <img src="/assets/images/logo.png" alt="FullMark" className="h-9 w-auto object-contain group-hover:scale-105 transition-transform" />
             <span className="text-lg font-black text-white tracking-wide group-hover:text-red-400 transition-colors">{t('nav.brand')}</span>
           </div>
           <p className="text-xs font-semibold text-gray-500 leading-relaxed max-w-sm">

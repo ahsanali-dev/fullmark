@@ -111,14 +111,11 @@ const Login = () => {
           {/* Brand/Heading Header */}
           <div className="flex flex-col items-start mb-6 text-start">
             <motion.div 
-              whileHover={{ scale: 1.05, rotate: [0, -3, 3, 0] }}
+              whileHover={{ scale: 1.05 }}
               onClick={() => navigate('/')}
-              className={`w-14 h-14 rounded-2xl bg-linear-to-tr from-${themeColor}-600 to-indigo-600 flex items-center justify-center shadow-lg border border-white/10 mb-6 cursor-pointer`}
-              style={{
-                boxShadow: `0 8px 20px rgba(var(--color-${themeColor}-500), 0.3)`
-              }}
+              className="mb-6 cursor-pointer"
             >
-              <span className="text-white font-extrabold text-xl tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">FM</span>
+              <img src="/assets/images/logo.png" alt="FullMark" className="h-14 w-auto object-contain" />
             </motion.div>
 
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 leading-tight">

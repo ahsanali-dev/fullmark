@@ -54,7 +54,7 @@ const ParentSettings = () => {
   const { t, isRTL } = useLanguage();
 
   const user = useSelector((state) => state.auth.user);
-  const { children, isLoading, isActionLoading } = useSelector((state) => state.parent);
+  const { children, childSubjects, childResultsData, isLoading, isActionLoading } = useSelector((state) => state.parent);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [name, setName] = useState('');
@@ -72,7 +72,14 @@ const ParentSettings = () => {
   // Load parent stats and children on mount
   useEffect(() => {
     dispatch(fetchParentProfile());
-    dispatch(fetchChildrenList());
+    dispatch(fetchChildrenList()).unwrap().then((kids) => {
+      if (kids && kids.length > 0) {
+        kids.forEach((k) => {
+          dispatch(fetchChildSubjects(k._id));
+          dispatch(fetchChildResults({ childId: k._id }));
+        });
+      }
+    });
   }, [dispatch]);
 
   // Sync state values when user object changes
@@ -98,7 +105,16 @@ const ParentSettings = () => {
   // Stats derived from children
   const totalExams = children.reduce((acc, c) => acc + (c.totalExams || 0), 0);
   const avgScore = children.length > 0
-    ? Math.round(children.reduce((acc, c) => acc + (c.avgScore || 0), 0) / children.length)
+    ? Math.round(
+        children.reduce((acc, c) => {
+          if (c.avgScore > 0) return acc + c.avgScore;
+          const subjAvg = childSubjects && childSubjects.length > 0
+            ? (childSubjects.reduce((sum, s) => sum + (s.averageScore || 0), 0) / childSubjects.length)
+            : 0;
+          const resultAvg = childResultsData?.stats?.avgScore || 0;
+          return acc + (subjAvg || resultAvg || 0);
+        }, 0) / children.length
+      )
     : 0;
 
   const handleSave = async () => {
@@ -150,7 +166,7 @@ const ParentSettings = () => {
       <div className={`flex flex-col pb-36 lg:pb-16 transition-all duration-300 text-start ${isModalOpen ? 'blur-sm pointer-events-none' : ''}`}>
 
         {/* ── HERO BANNER ── */}
-        <div className="relative bg-gradient-to-br from-purple-700/90 to-indigo-600/90 mx-5 mt-4 rounded-3xl overflow-hidden shadow-[0_15px_30px_rgba(139,92,246,0.2)]">
+        <div className="relative bg-gradient-to-br from-purple-700/90 to-indigo-600/90 mx-5 mt-4 rounded-3xl overflow-hidden shadow-[0_15px_30px_rgba(139,92,246,0.2)] preserve-white">
           {/* Decorative circles */}
           <div className={`absolute -top-8 ${isRTL ? '-left-8' : '-right-8'} w-32 h-32 rounded-full bg-white/5 border border-white/10 pointer-events-none`} />
           <div className={`absolute -bottom-6 ${isRTL ? '-right-6' : '-left-6'} w-24 h-24 rounded-full bg-white/5 border border-white/10 pointer-events-none`} />

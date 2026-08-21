@@ -16,7 +16,9 @@ import {
   FiSliders,
   FiBarChart2,
   FiAlertCircle,
-  FiZap
+  FiZap,
+  FiCheckCircle,
+  FiXCircle
 } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
@@ -42,27 +44,27 @@ const SkeletonCard = () => (
   <div className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] flex flex-col gap-4 animate-pulse">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gray-805 shrink-0" style={{ backgroundColor: '#1d2030' }} />
+        <div className="w-11 h-11 rounded-xl bg-gray-800/80 shrink-0" />
         <div className="flex flex-col gap-2">
-          <div className="h-4 w-32 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
-          <div className="h-3 w-20 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
+          <div className="h-4 w-32 bg-gray-800/80 rounded" />
+          <div className="h-3 w-20 bg-gray-800/80 rounded" />
         </div>
       </div>
-      <div className="h-6 w-16 bg-gray-805 rounded-full" style={{ backgroundColor: '#1d2030' }} />
+      <div className="h-6 w-16 bg-gray-800/80 rounded-full" />
     </div>
     <div className="flex gap-3 mt-2">
-      <div className="h-3 w-12 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
-      <div className="h-3 w-12 bg-gray-805 rounded" style={{ backgroundColor: '#1d2030' }} />
+      <div className="h-3 w-12 bg-gray-800/80 rounded" />
+      <div className="h-3 w-12 bg-gray-800/80 rounded" />
     </div>
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="h-12 bg-gray-850 rounded-xl" style={{ backgroundColor: '#161826' }} />
+        <div key={i} className="h-12 bg-gray-900/60 rounded-xl" />
       ))}
     </div>
-    <div className="h-0.5 bg-gray-850 rounded" style={{ backgroundColor: '#161826' }} />
+    <div className="h-0.5 bg-gray-800/40 rounded" />
     <div className="flex gap-3">
-      <div className="h-10 flex-1 bg-gray-805 rounded-2xl" style={{ backgroundColor: '#1d2030' }} />
-      <div className="h-10 w-10 bg-gray-805 rounded-2xl" style={{ backgroundColor: '#1d2030' }} />
+      <div className="h-10 flex-1 bg-gray-800/80 rounded-2xl" />
+      <div className="h-10 w-10 bg-gray-800/80 rounded-2xl" />
     </div>
   </div>
 );
@@ -262,7 +264,7 @@ const TeacherExams = () => {
               placeholder={isRTL ? "البحث في الاختبارات..." : "Search exams..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-655`}
+              className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold outline-none focus:border-blue-500/50 placeholder:text-gray-500`}
             />
             <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-blue-500`} size={18} />
           </div>
@@ -327,10 +329,16 @@ const TeacherExams = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filteredExams.map((ex) => {
-              const exSubjectId = ex.subject?._id || ex.subject || ex.subjectId;
+              const exSubjectId = typeof ex.subject === 'object' ? ex.subject?._id : (ex.subject || ex.subjectId);
               const subObj = subjects.find(s => (s._id || s.id) === exSubjectId);
-              const isPublished = ex.status === 'published';
-              const isDraft = ex.status === 'draft';
+              const subName = (typeof ex.subject === 'object' && ex.subject?.name)
+                ? ex.subject.name
+                : (subObj ? (subObj.name || subObj.title) : (isRTL ? 'غير مسند' : 'Unassigned'));
+
+              const isPublished = ex.isPublished !== undefined ? ex.isPublished : (ex.status === 'published' || !ex.status);
+              const isDraft = ex.isPublished === false || ex.status === 'draft';
+              const qCount = ex.questionCount || ex.questionsCount || (Array.isArray(ex.questions) ? ex.questions.length : 0);
+              const durationMins = ex.timerMinutes || ex.duration || ex.durationMinutes || ex.durationInMinutes || ex.timeLimit || 30;
               const mockRes = generateMockResults(ex._id || ex.id, ex.title, ex.passingScore);
 
               return (
@@ -349,7 +357,7 @@ const TeacherExams = () => {
                           {ex.title}
                         </h4>
                         <span className="text-sm text-gray-500 font-bold mt-1 block uppercase font-semibold">
-                          {subObj ? (subObj.name || subObj.title) : (isRTL ? 'غير مسند' : 'Unassigned')}
+                          {subName}
                         </span>
                       </div>
                     </div>
@@ -361,7 +369,7 @@ const TeacherExams = () => {
                         ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                         : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
                     }`}>
-                      {ex.status ? (ex.status === 'published' ? (isRTL ? 'منشور' : 'Published') : ex.status === 'draft' ? (isRTL ? 'مسودة' : 'Draft') : (isRTL ? 'قادم' : 'Upcoming')) : (isRTL ? 'منشور' : 'Published')}
+                      {isPublished ? (isRTL ? 'منشور' : 'Published') : isDraft ? (isRTL ? 'مسودة' : 'Draft') : (isRTL ? 'قادم' : 'Upcoming')}
                     </span>
                   </div>
 
@@ -369,20 +377,22 @@ const TeacherExams = () => {
                   <div className="flex items-center gap-3 flex-wrap text-sm font-bold text-gray-500 uppercase tracking-wide">
                     <div className="flex items-center gap-1">
                       <FiHelpCircle size={12} className="text-gray-650" />
-                      <span>{ex.questions?.length || ex.questionsCount || 0} {isRTL ? 'أسئلة' : 'Qs'}</span>
+                      <span>{qCount} {isRTL ? 'أسئلة' : 'Qs'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FiClock size={12} className="text-gray-650" />
-                      <span>{ex.duration || 0} {isRTL ? 'دقيقة' : 'min'}</span>
+                      <span>{durationMins} {isRTL ? 'دقيقة' : 'MIN'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FiCalendar size={12} className="text-gray-650" />
                       <span>{ex.date || (ex.createdAt ? new Date(ex.createdAt).toLocaleDateString() : 'N/A')}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-blue-400">
-                      <FiZap size={12} />
-                      <span>{isRTL ? 'المؤقت' : 'Timer'}</span>
-                    </div>
+                    {ex.hasTimer !== false && (
+                      <div className="flex items-center gap-1 text-blue-400">
+                        <FiZap size={12} />
+                        <span>{isRTL ? 'المؤقت' : 'Timer'}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Score Stats Grid */}
@@ -579,7 +589,7 @@ const TeacherExams = () => {
 
           return (
             <div
-              className="fixed inset-0 bg-[#020205]/70 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all duration-300 animate-fade-in"
+              className="fixed inset-0 bg-[#020205]/75 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto transition-all duration-300 animate-fade-in"
               onClick={() => {
                 setShowResultsModal(false);
                 setResultsExam(null);
@@ -588,17 +598,17 @@ const TeacherExams = () => {
               }}
             >
               <motion.div
-                initial={{ scale: 0.95, y: 100, opacity: 0 }}
+                initial={{ scale: 0.95, y: 30, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
-                exit={{ scale: 0.95, y: 100, opacity: 0 }}
-                className="w-full max-w-3xl bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden text-start flex flex-col max-h-[90vh]"
+                exit={{ scale: 0.95, y: 30, opacity: 0 }}
+                className="w-full max-w-3xl bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] shadow-2xl relative text-start flex flex-col max-h-[85vh] my-auto overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
+                {/* Header (Fixed at top inside rounded modal corners) */}
+                <div className="px-6 py-5 border-b border-gray-800/60 flex items-center justify-between shrink-0 bg-[#0c0d19]">
                   <div>
-                    <h3 className="text-2xl font-black text-white capitalize">{resultsExam.title}</h3>
-                    <p className="text-sm text-gray-500 font-bold uppercase mt-1">{isRTL ? "أداء الطلاب والنتائج" : "Student Performance & Results"}</p>
+                    <h3 className="text-xl sm:text-2xl font-black text-white capitalize">{resultsExam.title}</h3>
+                    <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase mt-0.5">{isRTL ? "أداء الطلاب والنتائج" : "Student Performance & Results"}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -607,124 +617,148 @@ const TeacherExams = () => {
                       setResultsSearchQuery('');
                       setResultsFilter('all');
                     }}
-                    className="p-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-400 hover:text-white transition-all cursor-pointer"
+                    className="p-2.5 rounded-xl bg-gray-900 border border-gray-800 text-gray-400 hover:text-white transition-all cursor-pointer shadow-sm shrink-0"
                   >
                     <FiX size={18} />
                   </button>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="p-4 rounded-2xl bg-amber-500/[0.03] border border-amber-500/10 flex flex-col">
-                    <span className="text-2xl font-black text-amber-400">{stats.avgScore}</span>
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "متوسط الدرجة" : "Average Score"}</span>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-emerald-500/[0.03] border border-emerald-500/10 flex flex-col">
-                    <span className="text-2xl font-black text-emerald-400">{stats.highScore}</span>
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "أعلى درجة" : "High Score"}</span>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-red-500/[0.03] border border-red-500/10 flex flex-col">
-                    <span className="text-2xl font-black text-red-400">{stats.lowScore}</span>
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "أقل درجة" : "Low Score"}</span>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-blue-500/[0.03] border border-blue-500/10 flex flex-col">
-                    <span className="text-2xl font-black text-blue-400">{stats.submitted}</span>
-                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "نسبة التقديم" : "Submission Rate"} ({stats.submissionRate})</span>
-                  </div>
-                </div>
-
-                {/* Search & Filters */}
-                <div className="flex flex-col sm:flex-row gap-3 mb-6 items-center w-full">
-                  {/* Search */}
-                  <div className="relative flex-1 w-full">
-                    <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
-                    <input
-                      type="text"
-                      placeholder={isRTL ? "البحث باسم الطالب..." : "Search student name..."}
-                      value={resultsSearchQuery}
-                      onChange={(e) => setResultsSearchQuery(e.target.value)}
-                      className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3.5 bg-gray-900/50 border border-gray-800/80 rounded-2xl text-white font-bold text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all`}
-                    />
-                  </div>
-
-                  {/* Filter tabs */}
-                  <div className="flex bg-gray-900/50 border border-gray-800/80 p-1.5 rounded-2xl w-full sm:w-auto shrink-0">
-                    <button
-                      onClick={() => setResultsFilter('all')}
-                      className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                        resultsFilter === 'all'
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {isRTL ? "الكل" : "All"}
-                    </button>
-                    <button
-                      onClick={() => setResultsFilter('passed')}
-                      className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                        resultsFilter === 'passed'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {isRTL ? "ناجح" : "Passed"}
-                    </button>
-                    <button
-                      onClick={() => setResultsFilter('failed')}
-                      className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                        resultsFilter === 'failed'
-                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                          : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      {isRTL ? "راسب" : "Failed"}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Submissions List Container */}
-                <div className="flex-1 overflow-y-auto px-1 flex flex-col gap-3 min-h-[250px] max-h-[45vh]">
-                  {filteredAttempts.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-gray-950/20 border border-gray-900 rounded-3xl">
-                      <FiUsers className="text-gray-650 mb-2" size={32} />
-                      <span className="text-base font-extrabold text-gray-500">{isRTL ? "لم يتم العثور على محاولات" : "No attempts found"}</span>
-                      <p className="text-xs text-gray-600 font-bold mt-1">{isRTL ? "جرب إعادة ضبط البحث أو الفلاتر" : "Try resetting search or filters"}</p>
+                {/* Scrollable Content (Stats Grid + Search/Filter + Submissions) */}
+                <div className="flex-1 overflow-y-auto p-5 sm:p-7 flex flex-col gap-5">
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 shrink-0">
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-500/[0.03] border border-amber-500/20 flex flex-col">
+                      <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">{stats.avgScore}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "متوسط الدرجة" : "Average Score"}</span>
                     </div>
-                  ) : (
-                    filteredAttempts.map((att) => (
-                      <div
-                        key={att.id}
-                        className="p-4 bg-[#090a12] border border-gray-900 rounded-3xl flex items-center justify-between gap-4"
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/[0.03] border border-emerald-500/20 flex flex-col">
+                      <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.highScore}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "أعلى درجة" : "High Score"}</span>
+                    </div>
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-red-500/10 dark:bg-red-500/[0.03] border border-red-500/20 flex flex-col">
+                      <span className="text-xl sm:text-2xl font-black text-red-600 dark:text-red-400">{stats.lowScore}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "أقل درجة" : "Low Score"}</span>
+                    </div>
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-blue-500/10 dark:bg-blue-500/[0.03] border border-blue-500/20 flex flex-col">
+                      <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">{stats.submitted}</span>
+                      <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "نسبة التقديم" : "Submission Rate"} ({stats.submissionRate})</span>
+                    </div>
+                  </div>
+
+                  {/* Search & Filters */}
+                  <div className="flex flex-col sm:flex-row gap-3 items-center w-full shrink-0">
+                    {/* Search */}
+                    <div className="relative flex-1 w-full">
+                      <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
+                      <input
+                        type="text"
+                        placeholder={isRTL ? "البحث باسم الطالب..." : "Search student name..."}
+                        value={resultsSearchQuery}
+                        onChange={(e) => setResultsSearchQuery(e.target.value)}
+                        className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3 bg-[#0e101a] border border-gray-800/80 rounded-2xl text-white font-bold text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all`}
+                      />
+                    </div>
+
+                    {/* Filter tabs */}
+                    <div className="flex bg-[#0e101a] border border-gray-800/80 p-1.5 rounded-2xl w-full sm:w-auto shrink-0">
+                      <button
+                        onClick={() => setResultsFilter('all')}
+                        className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          resultsFilter === 'all'
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-extrabold text-sm uppercase">
-                            {att.studentName.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div>
-                            <h5 className="font-extrabold text-white text-base leading-tight">{att.studentName}</h5>
-                            <span className="text-xs text-gray-500 font-semibold mt-0.5 block">{isRTL ? "تم التقديم في" : "Submitted on"} {att.completedAt}</span>
-                          </div>
-                        </div>
+                        {isRTL ? "الكل" : "All"}
+                      </button>
+                      <button
+                        onClick={() => setResultsFilter('passed')}
+                        className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          resultsFilter === 'passed'
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        {isRTL ? "ناجح" : "Passed"}
+                      </button>
+                      <button
+                        onClick={() => setResultsFilter('failed')}
+                        className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
+                          resultsFilter === 'failed'
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        {isRTL ? "راسب" : "Failed"}
+                      </button>
+                    </div>
+                  </div>
 
-                        <div className="flex items-center gap-4">
-                          <div className="text-end">
-                            <span className={`text-base font-black block ${att.passed ? 'text-emerald-400' : 'text-red-400'}`}>
-                              {att.score}%
-                            </span>
-                            <span className="text-xs text-gray-500 font-bold uppercase block mt-0.5">{att.timeTaken} {isRTL ? "دقيقة" : "mins"}</span>
-                          </div>
-
-                          <span className={`text-xs font-black uppercase px-3 py-1.5 rounded-full ${
-                            att.passed
-                              ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                              : 'bg-red-500/10 border border-red-500/20 text-red-400'
-                          }`}>
-                            {att.passed ? (isRTL ? 'ناجح' : 'Passed') : (isRTL ? 'راسب' : 'Failed')}
-                          </span>
+                  {/* Submissions List */}
+                  <div className="flex flex-col gap-3">
+                    {filteredAttempts.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center text-center p-8 sm:p-10 bg-slate-50 dark:bg-gray-900/40 border border-slate-200 dark:border-gray-800/80 rounded-3xl">
+                        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 dark:text-blue-400 mb-3 shadow-sm shrink-0">
+                          <FiUsers size={26} />
                         </div>
+                        <span className="text-base font-extrabold text-slate-800 dark:text-gray-200">{isRTL ? "لم يتم العثور على محاولات" : "No attempts found"}</span>
+                        <p className="text-xs text-slate-500 dark:text-gray-400 font-semibold mt-1">{isRTL ? "جرب إعادة ضبط البحث أو الفلاتر" : "Try resetting search or filters"}</p>
                       </div>
-                    ))
-                  )}
+                    ) : (
+                      filteredAttempts.map((att, idx) => {
+                        const gradients = [
+                          'from-blue-600 to-indigo-600',
+                          'from-purple-600 to-pink-600',
+                          'from-emerald-500 to-teal-600',
+                          'from-amber-500 to-orange-600',
+                          'from-cyan-500 to-blue-600'
+                        ];
+                        const avatarGradient = gradients[idx % gradients.length];
+
+                        return (
+                          <div
+                            key={att.id}
+                            className="p-4 sm:p-4.5 bg-[#0e101a] border border-gray-800/80 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 transition-all duration-200 hover:border-blue-500/40 hover:shadow-lg group"
+                          >
+                            <div className="flex items-center gap-3.5">
+                              <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${avatarGradient} flex items-center justify-center text-white font-black text-sm uppercase shrink-0 shadow-md`}>
+                                {att.studentName.split(' ').map(n => n[0]).join('')}
+                              </div>
+                              <div>
+                                <h5 className="font-extrabold text-white text-base leading-tight group-hover:text-blue-400 transition-colors">{att.studentName}</h5>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-semibold mt-1">
+                                  <FiCalendar size={12} className="text-gray-400 shrink-0" />
+                                  <span>{isRTL ? "تم التقديم:" : "Submitted:"} {att.completedAt}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-gray-800/40">
+                              <div className="flex items-center gap-1.5 text-xs font-extrabold text-gray-300 bg-gray-900/60 px-3 py-1.5 rounded-xl border border-gray-800/80 shrink-0 shadow-sm">
+                                <FiClock size={13} className="text-gray-400 shrink-0" />
+                                <span>{att.timeTaken} {isRTL ? "دقيقة" : "mins"}</span>
+                              </div>
+
+                              <div className="flex items-center gap-3 shrink-0">
+                                <span className={`text-lg font-black tracking-tight ${att.passed ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                                  {att.score}%
+                                </span>
+
+                                <span className={`text-xs font-black uppercase px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm ${
+                                  att.passed
+                                    ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400'
+                                }`}>
+                                  {att.passed ? <FiCheckCircle size={13} /> : <FiXCircle size={13} />}
+                                  <span>{att.passed ? (isRTL ? 'ناجح' : 'PASSED') : (isRTL ? 'راسب' : 'FAILED')}</span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </motion.div>
             </div>

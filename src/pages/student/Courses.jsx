@@ -149,7 +149,7 @@ const Courses = () => {
               setValidatedCouponData(null);
               setIsEnrollModalOpen(true);
             }}
-            className="px-4 py-3.5 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-gray-950 font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(234,179,8,0.25)] transition-all hover:scale-105 cursor-pointer shrink-0"
+            className="px-4 py-3.5 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-white font-black text-xs flex items-center gap-2 shadow-[0_0_20px_rgba(234,179,8,0.25)] transition-all hover:scale-105 cursor-pointer shrink-0"
           >
             <FiGift size={16} />
             {isRTL ? "استخدام الكوبون" : "Redeem Coupon"}
@@ -192,7 +192,7 @@ const Courses = () => {
                   key={course._id}
                   onClick={() => {
                     if (isEnrolled) {
-                      navigate(`/student/courses/${course._id}/lessons`);
+                      navigate(`/student/courses/${course._id}`);
                     } else {
                       handleEnrollClick(course);
                     }
@@ -219,13 +219,21 @@ const Courses = () => {
 
                   {/* Title & icon */}
                   <div className="flex flex-col text-start gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)] shrink-0">
-                      <FiBookOpen size={18} className="group-hover:scale-110 transition-transform" />
+                    <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)] shrink-0 overflow-hidden">
+                      {course.bannerUrl ? (
+                        <img 
+                          src={course.bannerUrl.startsWith('http') ? course.bannerUrl : `https://api-fm.umrahride.co/uploads/${course.bannerUrl}`} 
+                          alt={course.name} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <FiBookOpen size={18} className="group-hover:scale-110 transition-transform" />
+                      )}
                     </div>
 
                     <div className="flex flex-col text-start">
                       <h3 className="text-base font-black text-white capitalize leading-tight group-hover:text-emerald-400 transition-colors">
-                        {course.name}
+                        {(isRTL && course.nameAr) ? course.nameAr : course.name}
                       </h3>
                       <span className="text-xs text-gray-500 font-bold mt-1 leading-snug line-clamp-1">
                         {course.description}
@@ -277,7 +285,7 @@ const Courses = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/student/courses/${course._id}/lessons`);
+                            navigate(`/student/courses/${course._id}`);
                           }}
                           className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_12px_rgba(37,99,235,0.25)] hover:scale-102 cursor-pointer flex items-center justify-center gap-1"
                         >

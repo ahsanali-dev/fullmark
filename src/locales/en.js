@@ -346,7 +346,8 @@ const en = {
       duration: "Duration (mins)",
       questionsCount: "No. of Questions",
       examDate: "Exam Date",
-      scheduleExam: "Schedule Exam"
+      scheduleExam: "Schedule Exam",
+      date: "Date"
     },
     pdfUpload: {
       title: "Upload Question PDF",
@@ -401,7 +402,10 @@ const en = {
       needsImprovement: "😔 Needs improvement",
       noExamsTakenYet: "No exams taken yet.",
       avg: "avg",
-      exam: "Exam"
+      exam: "Exam",
+      searchExamsPlaceholder: "Search exams or subjects...",
+      examHistory: "Exam History",
+      noSubjectsYet: "No subjects enrolled yet."
     },
     analysis: {
       title: "Child Analysis",
@@ -428,6 +432,12 @@ const en = {
       passedLabel: "Passed",
       streakLabel: "Streak",
       strongestSubject: "👍 Strongest Subject",
+      needsAttention: "⚠️ Needs Attention",
+      recentExams: "Recent Exams",
+      noExamsYet: "No exam attempts yet.",
+      noSubjectsYet: "No subjects enrolled yet.",
+      examsTaken: "exams taken",
+      avg: "avg",
       noExamScoresForSubj: "No exam scores available for this subject.",
       examNum: "Exam",
       averageNum: "Average:",
@@ -769,6 +779,9 @@ const en = {
 
   // Common UI Strings
   common: {
+    goodMorning: "Good Morning",
+    goodAfternoon: "Good Afternoon",
+    goodEvening: "Good Evening",
     loading: "Loading...",
     save: "Save",
     cancel: "Cancel",
