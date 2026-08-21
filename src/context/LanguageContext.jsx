@@ -32,8 +32,21 @@ export const LanguageProvider = ({ children }) => {
     }
   };
 
-  const t = (key, fallback = '') => {
+  const t = (key, fallbackOrParams = '', paramsObj = null) => {
     if (!key) return '';
+
+    let fallback = '';
+    let params = null;
+
+    if (typeof fallbackOrParams === 'object' && fallbackOrParams !== null) {
+      params = fallbackOrParams;
+    } else {
+      fallback = typeof fallbackOrParams === 'string' ? fallbackOrParams : '';
+      if (typeof paramsObj === 'object' && paramsObj !== null) {
+        params = paramsObj;
+      }
+    }
+
     const keys = key.split('.');
     
     // Try current selected language first
@@ -49,28 +62,39 @@ export const LanguageProvider = ({ children }) => {
       }
     }
 
+    let template = '';
     if (found && typeof result === 'string') {
-      return result;
-    }
+      template = result;
+    } else {
+      // Fallback to English if translation is missing in Arabic
+      let fallbackResult = translationsMap['en'];
+      let fallbackFound = true;
 
-    // Fallback to English if translation is missing in Arabic
-    let fallbackResult = translationsMap['en'];
-    let fallbackFound = true;
+      for (const fk of keys) {
+        if (fallbackResult && fallbackResult[fk] !== undefined) {
+          fallbackResult = fallbackResult[fk];
+        } else {
+          fallbackFound = false;
+          break;
+        }
+      }
 
-    for (const fk of keys) {
-      if (fallbackResult && fallbackResult[fk] !== undefined) {
-        fallbackResult = fallbackResult[fk];
+      if (fallbackFound && typeof fallbackResult === 'string') {
+        template = fallbackResult;
       } else {
-        fallbackFound = false;
-        break;
+        template = fallback || key;
       }
     }
 
-    if (fallbackFound && typeof fallbackResult === 'string') {
-      return fallbackResult;
+    if (params && typeof template === 'string') {
+      Object.keys(params).forEach((paramKey) => {
+        const val = params[paramKey] !== undefined && params[paramKey] !== null ? params[paramKey] : '';
+        const regex = new RegExp(`\\{\\{\\s*${paramKey}\\s*\\}\\}`, 'gi');
+        template = template.replace(regex, val);
+      });
     }
 
-    return fallback || key;
+    return template;
   };
 
   return (
