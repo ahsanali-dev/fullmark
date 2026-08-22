@@ -246,7 +246,7 @@ const TeacherDashboard = () => {
           <h3 className="text-lg md:text-xl font-bold tracking-wide text-white">{t('teacher.dashboard.quickActions')}</h3>
           <div className="grid grid-cols-3 gap-3 md:gap-4">
             <button 
-              onClick={() => setIsUploadPDFOpen(true)}
+              onClick={() => navigate('/teacher/pdf-upload')}
               className="p-4 bg-[#0e101a] border border-gray-800 rounded-3xl flex flex-col items-center justify-center text-center gap-3 transition-all duration-300 shadow-[0_8px_20px_rgba(0,0,0,0.3)] hover:bg-[#121324] hover:border-blue-500/20 group cursor-pointer"
             >
               <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 transition-transform duration-300 group-hover:scale-110">

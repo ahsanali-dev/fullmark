@@ -14,7 +14,9 @@ import {
   FiSliders,
   FiMoreVertical,
   FiEdit3,
-  FiInfo
+  FiInfo,
+  FiClock,
+  FiCheckCircle
 } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,7 +33,8 @@ import {
   fetchTeacherSubjects,
   fetchQuestions,
   createQuestion,
-  deleteQuestion
+  deleteQuestion,
+  approveQuestion
 } from '../../redux/slices/teacherSlice';
 import { ContentSkeleton } from '../../components/shared/SkeletonLoading';
 
@@ -56,8 +59,10 @@ const TeacherQuestions = () => {
   const { subjects = [], questions = [], isLoading } = useSelector((state) => state.teacher);
 
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('all');
+  const [selectedSourceFilter, setSelectedSourceFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDeletingId, setIsDeletingId] = useState(null);
+  const [approvingId, setApprovingId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingQuestion, setDeletingQuestion] = useState(null);
 
@@ -72,6 +77,20 @@ const TeacherQuestions = () => {
     dispatch(fetchTeacherSubjects());
     dispatch(fetchQuestions());
   }, [dispatch]);
+
+  const handleApproveQuestion = async (questionId) => {
+    setApprovingId(questionId);
+    const loadingToast = toast.loading(isRTL ? 'جاري الموافقة على السؤال...' : 'Approving question...');
+    try {
+      await dispatch(approveQuestion(questionId)).unwrap();
+      toast.success(isRTL ? 'تمت الموافقة على السؤال بنجاح!' : 'Question approved successfully!', { id: loadingToast });
+      dispatch(fetchQuestions());
+    } catch (err) {
+      toast.error(err || (isRTL ? 'فشل الموافقة على السؤال' : 'Failed to approve question'), { id: loadingToast });
+    } finally {
+      setApprovingId(null);
+    }
+  };
 
   const handleAddQuestion = (values, { setSubmitting, resetForm }) => {
     const optionMap = { A: 0, B: 1, C: 2, D: 3 };
@@ -133,8 +152,9 @@ const TeacherQuestions = () => {
     };
   }).filter(q => {
     const matchesSubject = selectedSubjectFilter === 'all' || q.subjectId === selectedSubjectFilter;
+    const matchesSource = selectedSourceFilter === 'all' || (q.source || 'manual') === selectedSourceFilter;
     const matchesQuery = q.text.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSubject && matchesQuery;
+    return matchesSubject && matchesSource && matchesQuery;
   });
 
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -190,8 +210,8 @@ const TeacherQuestions = () => {
         </div>
 
         {/* Filters & Search Row */}
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 w-full min-w-0">
+          <div className="relative w-full min-w-0">
             <input
               type="text"
               placeholder={t('common.search')}
@@ -201,17 +221,35 @@ const TeacherQuestions = () => {
             />
             <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-blue-500`} size={18} />
           </div>
-          <div className="relative w-full md:w-56">
+
+          {/* Subject Filter */}
+          <div className="relative w-full min-w-0">
             <FiBookOpen className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
             <select
               value={selectedSubjectFilter}
               onChange={(e) => setSelectedSubjectFilter(e.target.value)}
-              className={`w-full ${isRTL ? 'pr-11 pl-10' : 'pl-11 pr-10'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0`}
+              className={`w-full ${isRTL ? 'pr-11 pl-10' : 'pl-11 pr-10'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0 truncate`}
             >
-              <option value="all">{t('admin.users.filterRoleAll')}</option>
+              <option value="all" className="bg-[#0e101a] text-white">{isRTL ? "جميع المواد" : "All Subjects"}</option>
               {subjects.map(s => (
-                <option key={s._id || s.id} value={s._id || s.id}>{s.title || s.name}</option>
+                <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0e101a] text-white">{s.title || s.name}</option>
               ))}
+            </select>
+            <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none`} />
+          </div>
+
+          {/* Source Filter */}
+          <div className="relative w-full min-w-0">
+            <FiFileText className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
+            <select
+              value={selectedSourceFilter}
+              onChange={(e) => setSelectedSourceFilter(e.target.value)}
+              className={`w-full ${isRTL ? 'pr-11 pl-10' : 'pl-11 pr-10'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0 truncate`}
+            >
+              <option value="all" className="bg-[#0e101a] text-white">{isRTL ? "جميع المصادر" : "All Sources"}</option>
+              <option value="manual" className="bg-[#0e101a] text-white">{isRTL ? "يدوي (Manual)" : "Manual"}</option>
+              <option value="pdf_extract" className="bg-[#0e101a] text-white">{isRTL ? "مستخرج من PDF" : "PDF Extract"}</option>
+              <option value="ai_variant" className="bg-[#0e101a] text-white">{isRTL ? "متغير AI" : "AI Variant"}</option>
             </select>
             <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none`} />
           </div>
@@ -271,8 +309,72 @@ const TeacherQuestions = () => {
               return (
                 <div
                   key={q.id}
-                  className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 relative text-start transition-all duration-300 hover:border-gray-700 animate-fade-in"
+                  className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-3.5 relative text-start transition-all duration-300 hover:border-gray-700 animate-fade-in"
                 >
+                  {/* Top Badges: Approval Status & Source */}
+                  <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider pb-2 border-b border-gray-800/40">
+                    <div className="flex items-center gap-2">
+                      {/* Approval Status Badge / Interactive Button */}
+                      {q.isApproved ? (
+                        <span className="px-2.5 py-1 rounded-xl border font-black flex items-center gap-1.5 shadow-sm bg-emerald-500/15 border-emerald-500/30 text-emerald-400">
+                          <FiCheckCircle size={13} />
+                          <span>{isRTL ? 'موافق عليه' : 'Approved'}</span>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={approvingId === q.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApproveQuestion(q.id);
+                          }}
+                          title={isRTL ? "انقر للموافقة على السؤال" : "Click to approve question"}
+                          className="px-2.5 py-1 rounded-xl border font-black flex items-center gap-1.5 shadow-sm bg-amber-500/15 border-amber-500/30 text-amber-400 hover:bg-emerald-500/25 hover:border-emerald-500/50 hover:text-emerald-300 transition-all duration-200 cursor-pointer disabled:opacity-50"
+                        >
+                          <FiClock size={13} />
+                          <span>{approvingId === q.id ? (isRTL ? 'جاري الموافقة...' : 'Approving...') : (isRTL ? 'موافقة؟ (قيد المراجعة)' : 'Approve? (Pending)')}</span>
+                        </button>
+                      )}
+
+                      {/* Source Badge */}
+                      <span className={`px-2.5 py-1 rounded-xl border font-black flex items-center gap-1 shadow-sm ${
+                        q.source === 'pdf_extract' ? 'bg-purple-500/15 border-purple-500/30 text-purple-400' :
+                        q.source === 'ai_variant' ? 'bg-pink-500/15 border-pink-500/30 text-pink-400' :
+                        'bg-cyan-500/15 border-cyan-500/30 text-cyan-400'
+                      }`}>
+                        {q.source === 'pdf_extract' ? (isRTL ? 'مستخرج من PDF' : 'PDF Extract') :
+                         q.source === 'ai_variant' ? (isRTL ? 'متغير AI' : 'AI Variant') :
+                         q.source === 'manual' ? (isRTL ? 'يدوي' : 'Manual') :
+                         (q.source || 'Manual')}
+                      </span>
+                    </div>
+
+                    {/* Subject Title */}
+                    <span className="text-xs font-extrabold text-gray-400 uppercase tracking-wide">
+                      {subObj ? subObj.title || subObj.name : (isRTL ? "غير مسند" : "Unassigned")}
+                    </span>
+                  </div>
+
+                  {/* Parent Question Indicator (if AI Variant) */}
+                  {q.parentQuestion && (() => {
+                    const parentId = typeof q.parentQuestion === 'string' ? q.parentQuestion : q.parentQuestion?._id;
+                    const parentObj = parentId ? questions.find(item => (item._id || item.id) === parentId) : null;
+                    const parentText = parentObj ? (parentObj.textAr || parentObj.text) : null;
+                    const displayText = parentText || (subObj ? subObj.title || subObj.name : null);
+                    if (!displayText) return null;
+                    const shortText = displayText.length > 35 ? `${displayText.slice(0, 35)}...` : displayText;
+                    return (
+                      <div className="px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 text-purple-300 text-xs font-semibold flex items-center gap-1.5 min-w-0">
+                        <span className="font-extrabold text-purple-400 shrink-0">
+                          {isRTL ? "السؤال الأصلي:" : "Original Question:"}
+                        </span>
+                        <span className="truncate flex-1 min-w-0 italic text-purple-200" title={displayText}>
+                          "{shortText}"
+                        </span>
+                      </div>
+                    );
+                  })()}
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {/* Icon Box with blue glow */}
@@ -283,9 +385,6 @@ const TeacherQuestions = () => {
                         <h4 className="text-lg font-extrabold text-white leading-tight capitalize max-w-[140px] md:max-w-[280px] truncate">
                           {q.text}
                         </h4>
-                        <span className="text-sm text-gray-500 font-bold mt-1 block uppercase font-semibold">
-                          {subObj ? subObj.title || subObj.name : (isRTL ? "غير مسند" : "Unassigned")}
-                        </span>
                       </div>
                     </div>
 
@@ -302,7 +401,20 @@ const TeacherQuestions = () => {
 
                       {/* Dropdown Menu */}
                       {activeMenuId === q.id && (
-                        <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-10 bg-[#0c0d19] border border-gray-800 rounded-2xl shadow-xl p-1.5 z-20 flex flex-col gap-0.5 w-28 text-sm font-bold`}>
+                        <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-10 bg-[#0c0d19] border border-gray-800 rounded-2xl shadow-xl p-1.5 z-20 flex flex-col gap-0.5 w-32 text-sm font-bold`}>
+                          {!q.isApproved && (
+                            <button
+                              onClick={() => {
+                                handleApproveQuestion(q.id);
+                                setActiveMenuId(null);
+                              }}
+                              disabled={approvingId === q.id}
+                              className="flex items-center gap-2 px-3 py-2 text-emerald-400 hover:bg-emerald-500/10 rounded-xl cursor-pointer w-full text-start disabled:opacity-50"
+                            >
+                              <FiCheckCircle size={13} />
+                              <span>{isRTL ? "موافقة" : "Approve"}</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               navigate(`/teacher/subjects/${q.subjectId}/edit-question/${q.id}`);
@@ -344,6 +456,8 @@ const TeacherQuestions = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                     {optionsList.map((opt) => {
                       const isCorrect = correctKey === opt.key;
+                      const arLabelMap = { A: 'أ', B: 'ب', C: 'ج', D: 'د' };
+                      const labelText = isRTL ? (arLabelMap[opt.key] || opt.key) : opt.key;
                       return (
                         <div
                           key={opt.key}
@@ -355,7 +469,7 @@ const TeacherQuestions = () => {
                           <div className="flex items-center gap-2.5">
                             <span className={`text-base font-black ${isRTL ? 'ml-0.5' : 'mr-0.5'} ${isCorrect ? 'text-emerald-400' : 'text-gray-500'
                               }`}>
-                              {opt.key}.
+                              {labelText}.
                             </span>
                             <span>{opt.val}</span>
                           </div>

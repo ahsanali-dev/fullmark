@@ -75,10 +75,23 @@ const Users = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [deleteConfirmUser, setDeleteConfirmUser] = useState(null);
 
+  const [isLight, setIsLight] = useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+  });
+
   useEffect(() => {
     dispatch(fetchAllSubjects());
     dispatch(fetchDashboardStats());
   }, [dispatch]);
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    handleThemeChange();
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
 
   // Sync state with URL search params when navigating from Dashboard
   useEffect(() => {
@@ -153,7 +166,7 @@ const Users = () => {
     }
   };
 
-  const totalCount = users.length;
+  const totalCount = pagination?.total || users.length;
 
   const getRoleColors = (isSubscribed) => {
     if (isSubscribed) {
@@ -327,19 +340,19 @@ const Users = () => {
               }}
               className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between text-start ${
                 subscriptionFilter === 'all' && !isActiveOnly
-                  ? 'bg-[#0e101a] border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.2)]'
-                  : 'bg-[#0e101a]/70 border-gray-800 hover:border-gray-700'
+                  ? (isLight ? 'bg-white border-red-500 shadow-md text-slate-900' : 'bg-[#0e101a] border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.2)]')
+                  : (isLight ? 'bg-white/90 border-slate-200 text-slate-900 hover:border-slate-300 shadow-sm' : 'bg-[#0e101a]/70 border-gray-800 hover:border-gray-700')
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-gray-400">
+                <span className={`text-xs font-extrabold ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                   {isRTL ? "إجمالي المسجلين" : "Total Registered"}
                 </span>
-                <div className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                <div className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
                   <FiUsers size={16} />
                 </div>
               </div>
-              <span className="text-2xl font-black text-white mt-2">
+              <span className={`text-2xl font-black mt-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {usersMetrics?.totalUsers ?? (selectedRoleFilter === 'all' && subscriptionFilter === 'all' ? totalCount : stats?.subscription?.totalRegistered ?? totalCount)}
               </span>
             </div>
@@ -352,19 +365,19 @@ const Users = () => {
               }}
               className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between text-start ${
                 subscriptionFilter === 'subscribed'
-                  ? 'bg-[#0e101a] border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
-                  : 'bg-[#0e101a]/70 border-gray-800 hover:border-gray-700'
+                  ? (isLight ? 'bg-white border-emerald-500 shadow-md' : 'bg-[#0e101a] border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.2)]')
+                  : (isLight ? 'bg-white/90 border-slate-200 hover:border-slate-300 shadow-sm' : 'bg-[#0e101a]/70 border-gray-800 hover:border-gray-700')
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-emerald-400">
+                <span className={`text-xs font-extrabold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
                   {isRTL ? "المشتركون" : "Subscribed"}
                 </span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
                   <FiAward size={16} />
                 </div>
               </div>
-              <span className="text-2xl font-black text-emerald-400 mt-2">
+              <span className={`text-2xl font-black mt-2 ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
                 {usersMetrics?.subscribedUsers ?? stats?.subscription?.totalSubscribed ?? 0}
               </span>
             </div>
@@ -377,19 +390,19 @@ const Users = () => {
               }}
               className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between text-start ${
                 subscriptionFilter === 'non_subscribed'
-                  ? 'bg-[#0e101a] border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
-                  : 'bg-[#0e101a]/70 border-gray-800 hover:border-gray-700'
+                  ? (isLight ? 'bg-white border-amber-500 shadow-md' : 'bg-[#0e101a] border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.2)]')
+                  : (isLight ? 'bg-white/90 border-slate-200 hover:border-slate-300 shadow-sm' : 'bg-[#0e101a]/70 border-gray-800 hover:border-gray-700')
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-amber-400">
+                <span className={`text-xs font-extrabold ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
                   {isRTL ? "غير المشتركين" : "Non-Subscribed"}
                 </span>
-                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
                   <FiUser size={16} />
                 </div>
               </div>
-              <span className="text-2xl font-black text-amber-400 mt-2">
+              <span className={`text-2xl font-black mt-2 ${isLight ? 'text-amber-700' : 'text-amber-400'}`}>
                 {usersMetrics?.nonSubscribedUsers ?? stats?.subscription?.totalNonSubscribed ?? 0}
               </span>
             </div>
@@ -402,19 +415,19 @@ const Users = () => {
               }}
               className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between text-start ${
                 isActiveOnly
-                  ? 'bg-[#0e101a] border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.2)]'
-                  : 'bg-[#0e101a]/70 border-gray-800 hover:border-gray-700'
+                  ? (isLight ? 'bg-white border-blue-500 shadow-md' : 'bg-[#0e101a] border-blue-500/60 shadow-[0_0_20px_rgba(59,130,246,0.2)]')
+                  : (isLight ? 'bg-white/90 border-slate-200 hover:border-slate-300 shadow-sm' : 'bg-[#0e101a]/70 border-gray-800 hover:border-gray-700')
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-blue-400">
+                <span className={`text-xs font-extrabold ${isLight ? 'text-blue-700' : 'text-blue-400'}`}>
                   {isRTL ? "نشط الآن" : "Active Now"}
                 </span>
-                <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
                   <FiActivity size={16} />
                 </div>
               </div>
-              <span className="text-2xl font-black text-blue-400 mt-2">
+              <span className={`text-2xl font-black mt-2 ${isLight ? 'text-blue-700' : 'text-blue-400'}`}>
                 {usersMetrics?.activeUsers ?? stats?.subscription?.totalActive ?? 0}
               </span>
             </div>
@@ -423,7 +436,9 @@ const Users = () => {
           {/* Dual Filters Row: Role Filter + Subscription Filter */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Role Filter Tabs */}
-            <div className="grid grid-cols-4 p-1 sm:p-1.5 bg-[#0c0d19]/90 border border-gray-800 rounded-2xl gap-1">
+            <div className={`grid grid-cols-4 p-1 sm:p-1.5 rounded-2xl gap-1 border ${
+              isLight ? 'bg-slate-100 border-slate-200/90' : 'bg-[#0c0d19]/90 border-gray-800'
+            }`}>
               {[
                 { id: 'all', label: isRTL ? 'جميع الأدوار' : 'All Roles' },
                 { id: 'student', label: isRTL ? 'الطلاب' : 'Students' },
@@ -436,7 +451,7 @@ const Users = () => {
                   className={`py-2 px-0.5 sm:px-1 rounded-xl text-[10px] sm:text-xs font-extrabold transition-all duration-300 cursor-pointer text-center truncate ${
                     selectedRoleFilter === tab.id
                       ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-gray-400 hover:text-white'
+                      : (isLight ? 'text-slate-600 hover:text-slate-900 font-bold' : 'text-gray-400 hover:text-white')
                   }`}
                 >
                   {tab.label}
@@ -445,7 +460,9 @@ const Users = () => {
             </div>
 
             {/* Subscription Filter Tabs */}
-            <div className="grid grid-cols-3 p-1 sm:p-1.5 bg-[#0c0d19]/90 border border-gray-800 rounded-2xl gap-1">
+            <div className={`grid grid-cols-3 p-1 sm:p-1.5 rounded-2xl gap-1 border ${
+              isLight ? 'bg-slate-100 border-slate-200/90' : 'bg-[#0c0d19]/90 border-gray-800'
+            }`}>
               {[
                 { id: 'all', label: isRTL ? 'جميع المستخدمين' : 'All Users' },
                 { id: 'subscribed', label: isRTL ? 'المشتركون' : 'Subscribed' },
@@ -457,7 +474,7 @@ const Users = () => {
                   className={`py-2 px-0.5 sm:px-1 rounded-xl text-[10px] sm:text-xs font-extrabold transition-all duration-300 cursor-pointer text-center truncate ${
                     subscriptionFilter === tab.id
                       ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white shadow-md'
-                      : 'text-gray-400 hover:text-white'
+                      : (isLight ? 'text-slate-600 hover:text-slate-900 font-bold' : 'text-gray-400 hover:text-white')
                   }`}
                 >
                   {tab.label}
@@ -467,18 +484,20 @@ const Users = () => {
           </div>
 
           {/* Total Count Banner + Excel Export Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl gap-3 sm:gap-4">
+          <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 sm:p-4 rounded-2xl gap-3 sm:gap-4 border ${
+            isLight ? 'bg-white border-slate-200/90 shadow-sm' : 'bg-[#0e101a] border-gray-800/80'
+          }`}>
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 font-black shrink-0 text-sm">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 font-black shrink-0 text-sm">
                 {totalCount}
               </div>
               <div className="flex flex-col text-start min-w-0">
-                <span className="text-xs sm:text-sm font-black text-white leading-tight">
+                <span className={`text-xs sm:text-sm font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {isRTL 
                     ? `إجمالي الفئة: ${totalCount} مستخدم` 
                     : `Category Total: ${totalCount} ${selectedRoleFilter !== 'all' ? selectedRoleFilter.toUpperCase() + 'S' : 'Users'}`}
                 </span>
-                <span className="text-[11px] sm:text-xs text-gray-400 font-semibold mt-0.5 leading-snug">
+                <span className={`text-[11px] sm:text-xs font-semibold mt-0.5 leading-snug ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                   {isRTL ? "عرض السجلات الفردية أدناه. انقر على أي بطاقة للتفاصيل." : "Showing individual detailed records below. Click any card for full details."}
                 </span>
               </div>
@@ -499,13 +518,17 @@ const Users = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {/* Search Box */}
             <div className="relative md:col-span-2">
-              <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-4 text-gray-500 text-base`} />
+              <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-4 ${isLight ? 'text-slate-400' : 'text-gray-500'} text-base`} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={isRTL ? "البحث بالاسم، الهاتف، البريد الإلكتروني..." : "Search by name, phone number, email address..."}
-                className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'} bg-[#0e101a]/70 border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50 transition-colors`}
+                className={`w-full py-3.5 ${isRTL ? 'pr-12 pl-4 text-right' : 'pl-12 pr-4 text-left'} rounded-2xl text-sm font-semibold focus:outline-none focus:border-red-500/50 transition-colors ${
+                  isLight 
+                    ? 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 shadow-sm' 
+                    : 'bg-[#0e101a]/70 border border-gray-800 text-white'
+                }`}
               />
             </div>
 
@@ -514,22 +537,26 @@ const Users = () => {
               <select
                 value={selectedCourse}
                 onChange={(e) => setSelectedCourse(e.target.value)}
-                className={`w-full py-3.5 px-4 bg-[#0e101a]/70 border border-gray-800 rounded-2xl text-sm font-semibold text-white focus:outline-none focus:border-red-500/50 appearance-none cursor-pointer ${isRTL ? 'text-right' : 'text-left'}`}
+                className={`w-full py-3.5 px-4 rounded-2xl text-sm font-semibold focus:outline-none focus:border-red-500/50 appearance-none cursor-pointer ${isRTL ? 'text-right' : 'text-left'} ${
+                  isLight 
+                    ? 'bg-white border border-slate-200 text-slate-900 shadow-sm' 
+                    : 'bg-[#0e101a]/70 border border-gray-800 text-white'
+                }`}
               >
-                <option value="">{isRTL ? "جميع المواد" : "All Courses"}</option>
+                <option value="" className={isLight ? 'bg-white text-slate-900' : 'bg-[#0e101a] text-white'}>{isRTL ? "جميع المواد" : "All Courses"}</option>
                 {subjects?.map((s) => (
-                  <option key={s._id} value={s._id} className="bg-[#0e101a]">
+                  <option key={s._id} value={s._id} className={isLight ? 'bg-white text-slate-900' : 'bg-[#0e101a] text-white'}>
                     {s.name}
                   </option>
                 ))}
               </select>
-              <FiChevronDown className={`absolute ${isRTL ? 'left-4' : 'right-4'} top-4 text-gray-400 pointer-events-none`} size={16} />
+              <FiChevronDown className={`absolute ${isRTL ? 'left-4' : 'right-4'} top-4 ${isLight ? 'text-slate-500' : 'text-gray-400'} pointer-events-none`} size={16} />
             </div>
           </div>
 
           {/* Header Bar */}
-          <div className="flex items-center justify-between border-b border-gray-800/40 pb-2">
-            <span className="text-xs font-bold text-gray-400">
+          <div className={`flex items-center justify-between border-b pb-2 ${isLight ? 'border-slate-200' : 'border-gray-800/40'}`}>
+            <span className={`text-xs font-bold ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
               {isRTL ? `عرض ${users.length} مستخدم` : `Displaying ${users.length} users`}
             </span>
 
@@ -538,18 +565,24 @@ const Users = () => {
               <button
                 onClick={() => setIsActiveOnly(!isActiveOnly)}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  isActiveOnly ? 'bg-green-500/20 border border-green-500/40 text-green-400' : 'bg-gray-800/40 border border-gray-700 text-gray-400'
+                  isActiveOnly 
+                    ? (isLight ? 'bg-emerald-100 border border-emerald-300 text-emerald-800 font-extrabold' : 'bg-green-500/20 border border-green-500/40 text-green-400')
+                    : (isLight ? 'bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 font-bold' : 'bg-gray-800/40 border border-gray-700 text-gray-400')
                 }`}
               >
                 {isActiveOnly ? (isRTL ? '✓ النشطين فقط' : '✓ Active Only') : (isRTL ? 'عرض كل الحالات' : 'Show All Statuses')}
               </button>
 
               {/* View Mode Toggle Buttons */}
-              <div className="flex items-center bg-[#07080e] p-1 border border-gray-800 rounded-xl gap-1">
+              <div className={`flex items-center p-1 rounded-xl gap-1 border ${
+                isLight ? 'bg-slate-100 border-slate-200' : 'bg-[#07080e] border border-gray-800'
+              }`}>
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'grid' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500 hover:text-gray-300'
+                    viewMode === 'grid' 
+                      ? (isLight ? 'bg-red-500 text-white shadow-sm' : 'bg-red-500/20 text-red-400 border border-red-500/30')
+                      : (isLight ? 'text-slate-500 hover:text-slate-900' : 'text-gray-500 hover:text-gray-300')
                   }`}
                   title={isRTL ? "عرض الشبكة" : "Grid View"}
                 >
@@ -558,7 +591,9 @@ const Users = () => {
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'list' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-gray-500 hover:text-gray-300'
+                    viewMode === 'list' 
+                      ? (isLight ? 'bg-red-500 text-white shadow-sm' : 'bg-red-500/20 text-red-400 border border-red-500/30')
+                      : (isLight ? 'text-slate-500 hover:text-slate-900' : 'text-gray-500 hover:text-gray-300')
                   }`}
                   title={isRTL ? "عرض القائمة" : "List View"}
                 >
@@ -584,7 +619,11 @@ const Users = () => {
                   return (
                     <div
                       key={user._id || idx}
-                      className="p-5 bg-[#0c0d19]/90 border border-gray-800/80 rounded-[2rem] shadow-xl hover:border-red-500/50 hover:shadow-[0_8px_30px_rgba(239,68,68,0.15)] transition-all duration-300 flex flex-col justify-between text-start relative overflow-hidden group"
+                      className={`p-5 rounded-[2rem] shadow-xl transition-all duration-300 flex flex-col justify-between text-start relative overflow-hidden group ${
+                        isLight 
+                          ? 'bg-white border border-slate-200/90 hover:border-red-400 hover:shadow-[0_8px_30px_rgba(239,68,68,0.12)]' 
+                          : 'bg-[#0c0d19]/90 border border-gray-800/80 hover:border-red-500/50 hover:shadow-[0_8px_30px_rgba(239,68,68,0.15)]'
+                      }`}
                     >
                       {/* Top Accent Glow Line */}
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -596,11 +635,20 @@ const Users = () => {
                             <div className={`w-13 h-13 rounded-2xl flex items-center justify-center font-black text-base ${avatarGradient}`}>
                               {initials}
                             </div>
-                            <span className={`absolute -bottom-1 ${isRTL ? '-left-1' : '-right-1'} w-3.5 h-3.5 rounded-full border-2 border-[#0c0d19] ${user.isActive !== false ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-gray-500'}`} />
+                            <span className={`absolute -bottom-1 ${isRTL ? '-left-1' : '-right-1'} w-3.5 h-3.5 rounded-full border-2 ${isLight ? 'border-white' : 'border-[#0c0d19]'} ${user.isActive !== false ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-gray-500'}`} />
                           </div>
 
                           <div className="flex flex-col items-end gap-1.5">
                             {getRoleBadge(user.role)}
+                            {user.isVerified !== undefined && (
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                                user.isVerified
+                                  ? (isLight ? 'bg-blue-50 border border-blue-200 text-blue-700' : 'bg-blue-500/10 border border-blue-500/20 text-blue-400')
+                                  : (isLight ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-amber-500/10 border border-amber-500/20 text-amber-400')
+                              }`}>
+                                {user.isVerified ? (isRTL ? 'مفعل' : 'Verified') : (isRTL ? 'غير مفعل' : 'Unverified')}
+                              </span>
+                            )}
                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.badge}`}>
                               {isSubscribed ? (isRTL ? 'مشترك' : 'Subscribed') : (isRTL ? 'غير مشترك' : 'Non-Subscribed')}
                             </span>
@@ -611,18 +659,24 @@ const Users = () => {
                         <div className="mb-4 text-start">
                           <h4
                             onClick={() => setSelectedUserDetail(user)}
-                            className="text-base font-black text-white leading-tight hover:text-red-400 transition-colors cursor-pointer mb-2"
+                            className={`text-base font-black leading-tight hover:text-red-500 transition-colors cursor-pointer mb-2 ${
+                              isLight ? 'text-slate-900' : 'text-white'
+                            }`}
                           >
                             {user.name}
                           </h4>
 
-                          <div className="flex flex-col gap-1.5 text-xs text-gray-400 font-semibold">
-                            <span className="flex items-center gap-2 truncate bg-[#07080e] px-3 py-1.5 rounded-xl border border-gray-800/60">
-                              <FiMail size={13} className="text-red-400 shrink-0" />
+                          <div className="flex flex-col gap-1.5 text-xs font-semibold">
+                            <span className={`flex items-center gap-2 truncate px-3 py-1.5 rounded-xl border ${
+                              isLight ? 'bg-slate-100/90 border-slate-200 text-slate-700 font-bold' : 'bg-[#07080e] border-gray-800/60 text-gray-400'
+                            }`}>
+                              <FiMail size={13} className="text-red-500 shrink-0" />
                               <span className="truncate">{user.email}</span>
                             </span>
-                            <span className="flex items-center gap-2 bg-[#07080e] px-3 py-1.5 rounded-xl border border-gray-800/60">
-                              <FiPhone size={13} className="text-emerald-400 shrink-0" />
+                            <span className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${
+                              isLight ? 'bg-slate-100/90 border-slate-200 text-slate-700 font-bold' : 'bg-[#07080e] border-gray-800/60 text-gray-400'
+                            }`}>
+                              <FiPhone size={13} className="text-emerald-500 shrink-0" />
                               <span>{user.phone || (isRTL ? 'لا يوجد رقم هاتف' : 'No Phone Number')}</span>
                             </span>
                           </div>
@@ -630,33 +684,41 @@ const Users = () => {
 
                         {/* Subscription Info Box */}
                         {isSubscribed ? (
-                          <div className="p-3 bg-[#07080e]/90 border border-emerald-500/20 rounded-2xl flex flex-col gap-2 text-xs mb-4 text-start">
+                          <div className={`p-3 rounded-2xl flex flex-col gap-2 text-xs mb-4 text-start border ${
+                            isLight ? 'bg-emerald-50/70 border-emerald-200/80' : 'bg-[#07080e]/90 border-emerald-500/20'
+                          }`}>
                             <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-extrabold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                                <FiBookOpen size={12} className="text-emerald-400" /> {isRTL ? 'المواد' : 'Courses'} ({user.enrolledCourses?.length || 0})
+                              <span className={`text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 ${
+                                isLight ? 'text-emerald-800' : 'text-gray-500'
+                              }`}>
+                                <FiBookOpen size={12} className="text-emerald-500" /> {isRTL ? 'المواد' : 'Courses'} ({user.enrolledCourses?.length || 0})
                               </span>
                               {user.couponCode && (
-                                <span className="font-mono font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-[10px]">
+                                <span className="font-mono font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-[10px]">
                                   {user.couponCode}
                                 </span>
                               )}
                             </div>
                             <div className="flex flex-wrap gap-1">
                               {user.enrolledCourses && user.enrolledCourses.length > 0 ? (
-                                user.enrolledCourses.map((c) => (
-                                  <span key={c._id || c} className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-lg text-[10px] font-bold">
-                                    {c.name || (isRTL ? 'مادة' : 'Course')}
+                                user.enrolledCourses.map((c, i) => (
+                                  <span key={typeof c === 'object' ? c._id : i} className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border ${
+                                    isLight ? 'bg-emerald-100/90 border-emerald-300 text-emerald-900' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                                  }`}>
+                                    {typeof c === 'string' ? c : (c?.name || (isRTL ? 'مادة' : 'Course'))}
                                   </span>
                                 ))
                               ) : (
-                                <span className="text-gray-400 text-[11px]">{isRTL ? 'اشتراك كامل' : 'Subscribed Access'}</span>
+                                <span className={`text-[11px] ${isLight ? 'text-slate-600 font-semibold' : 'text-gray-400'}`}>{isRTL ? 'اشتراك كامل' : 'Subscribed Access'}</span>
                               )}
                             </div>
                           </div>
                         ) : (
-                          <div className="p-3 bg-[#07080e]/60 border border-gray-800/60 rounded-2xl flex items-center justify-between text-xs font-semibold text-gray-400 mb-4">
+                          <div className={`p-3 rounded-2xl flex items-center justify-between text-xs font-semibold mb-4 border ${
+                            isLight ? 'bg-slate-100/80 border-slate-200 text-slate-600' : 'bg-[#07080e]/60 border-gray-800/60 text-gray-400'
+                          }`}>
                             <span className="text-[11px]">{isRTL ? `انضم ${createdDate}` : `Joined ${createdDate}`}</span>
-                            <span className="text-amber-400 font-bold text-[10px] uppercase">{isRTL ? 'حساب مجاني' : 'Free Account'}</span>
+                            <span className="text-amber-500 font-bold text-[10px] uppercase">{isRTL ? 'حساب مجاني' : 'Free Account'}</span>
                           </div>
                         )}
                       </div>
@@ -711,7 +773,11 @@ const Users = () => {
                 return (
                   <div
                     key={user._id || idx}
-                    className="p-5 bg-[#0c0d19]/90 border border-gray-800/80 rounded-[1.75rem] shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-red-500/40 transition-all duration-300 text-start group"
+                    className={`p-5 rounded-[1.75rem] shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 text-start group ${
+                      isLight 
+                        ? 'bg-white border border-slate-200/90 hover:border-red-400 hover:shadow-md' 
+                        : 'bg-[#0c0d19]/90 border border-gray-800/80 hover:border-red-500/40'
+                    }`}
                   >
                     {/* User Profile Header */}
                     <div className="flex items-center gap-4 cursor-pointer min-w-0" onClick={() => setSelectedUserDetail(user)}>
@@ -721,23 +787,36 @@ const Users = () => {
 
                       <div className="flex flex-col min-w-0 text-start">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-base font-black text-white leading-tight hover:text-red-400 transition-colors truncate">{user.name}</span>
+                          <span className={`text-base font-black leading-tight hover:text-red-500 transition-colors truncate ${
+                            isLight ? 'text-slate-900' : 'text-white'
+                          }`}>{user.name}</span>
                           {getRoleBadge(user.role)}
+                          {user.isVerified !== undefined && (
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                              user.isVerified
+                                ? (isLight ? 'bg-blue-50 border border-blue-200 text-blue-700' : 'bg-blue-500/10 border border-blue-500/20 text-blue-400')
+                                : (isLight ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-amber-500/10 border border-amber-500/20 text-amber-400')
+                            }`}>
+                              {user.isVerified ? (isRTL ? 'مفعل' : 'Verified') : (isRTL ? 'غير مفعل' : 'Unverified')}
+                            </span>
+                          )}
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.badge}`}>
                             {isSubscribed ? (isRTL ? 'مشترك' : 'Subscribed') : (isRTL ? 'غير مشترك' : 'Non-Subscribed')}
                           </span>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-gray-400 mt-1.5">
+                        <div className={`flex flex-wrap items-center gap-3 text-xs font-semibold mt-1.5 ${
+                          isLight ? 'text-slate-600' : 'text-gray-400'
+                        }`}>
                           <span className="flex items-center gap-1.5">
-                            <FiMail size={13} className="text-red-400 shrink-0" />
+                            <FiMail size={13} className="text-red-500 shrink-0" />
                             <span className="truncate">{user.email}</span>
                           </span>
                           <span className="flex items-center gap-1.5">
-                            <FiPhone size={13} className="text-emerald-400 shrink-0" />
+                            <FiPhone size={13} className="text-emerald-500 shrink-0" />
                             <span>{user.phone || (isRTL ? 'لا يوجد هاتف' : 'No Phone')}</span>
                           </span>
-                          <span className="text-gray-500">• {isRTL ? `تاريخ التسجيل ${createdDate}` : `Registered ${createdDate}`}</span>
+                          <span className={isLight ? 'text-slate-500' : 'text-gray-500'}>• {isRTL ? `تاريخ التسجيل ${createdDate}` : `Registered ${createdDate}`}</span>
                         </div>
                       </div>
                     </div>
@@ -904,73 +983,140 @@ const Users = () => {
       {/* 2. View User Details Modal */}
       {selectedUserDetail && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0b0c16] border border-gray-800 rounded-3xl p-6 w-full max-w-lg shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-fade-in flex flex-col gap-4 text-start relative overflow-hidden">
+          <div className={`border rounded-3xl p-6 w-full max-w-lg shadow-2xl animate-fade-in flex flex-col gap-4 text-start relative overflow-hidden ${
+            isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#0b0c16] border-gray-800 text-white'
+          }`}>
             <button
               onClick={() => setSelectedUserDetail(null)}
-              className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} text-gray-500 hover:text-white transition-colors cursor-pointer z-10`}
+              className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} transition-colors cursor-pointer z-10 ${
+                isLight ? 'text-slate-400 hover:text-slate-900' : 'text-gray-500 hover:text-white'
+              }`}
             >
               <FiX size={20} />
             </button>
 
             {/* Profile Header */}
-            <div className="flex items-center gap-4 border-b border-gray-800/80 pb-4">
-              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black text-lg">
+            <div className={`flex items-center gap-4 border-b pb-4 ${isLight ? 'border-slate-200' : 'border-gray-800/80'}`}>
+              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 font-black text-lg">
                 {selectedUserDetail.name ? selectedUserDetail.name.substring(0, 2).toUpperCase() : 'US'}
               </div>
               <div className="flex flex-col text-start">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-black text-white">{selectedUserDetail.name}</h3>
+                  <h3 className={`text-xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{selectedUserDetail.name}</h3>
                   {getRoleBadge(selectedUserDetail.role)}
                 </div>
-                <span className="text-xs text-gray-400 font-semibold">{selectedUserDetail.email}</span>
+                <span className={`text-xs font-semibold ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{selectedUserDetail.email}</span>
               </div>
             </div>
 
             {/* Key Information Fields */}
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 bg-[#0e101a] border border-gray-800 rounded-2xl flex flex-col gap-1 text-start">
-                <span className="text-gray-500 font-bold uppercase text-[10px]">
+              <div className={`p-3 rounded-2xl flex flex-col gap-1 text-start border ${
+                isLight ? 'bg-slate-50 border-slate-200/90' : 'bg-[#0e101a] border-gray-800'
+              }`}>
+                <span className={`font-bold uppercase text-[10px] ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                   {isRTL ? "رقم الهاتف" : "Phone Number"}
                 </span>
-                <span className="text-white font-black">{selectedUserDetail.phone || (isRTL ? 'غير متوفر' : 'N/A')}</span>
+                <span className={`font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{selectedUserDetail.phone || (isRTL ? 'غير متوفر' : 'N/A')}</span>
               </div>
 
-              <div className="p-3 bg-[#0e101a] border border-gray-800 rounded-2xl flex flex-col gap-1 text-start">
-                <span className="text-gray-500 font-bold uppercase text-[10px]">
+              <div className={`p-3 rounded-2xl flex flex-col gap-1 text-start border ${
+                isLight ? 'bg-slate-50 border-slate-200/90' : 'bg-[#0e101a] border-gray-800'
+              }`}>
+                <span className={`font-bold uppercase text-[10px] ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                  {isRTL ? "حالة البريد" : "Email Verification"}
+                </span>
+                <span className={`font-black ${selectedUserDetail.isVerified ? (isLight ? 'text-blue-700' : 'text-blue-400') : (isLight ? 'text-amber-700' : 'text-amber-400')}`}>
+                  {selectedUserDetail.isVerified !== undefined
+                    ? (selectedUserDetail.isVerified ? (isRTL ? 'مفعل' : 'Verified') : (isRTL ? 'غير مفعل' : 'Unverified'))
+                    : (isRTL ? 'غير متوفر' : 'N/A')}
+                </span>
+              </div>
+
+              <div className={`p-3 rounded-2xl flex flex-col gap-1 text-start border ${
+                isLight ? 'bg-slate-50 border-slate-200/90' : 'bg-[#0e101a] border-gray-800'
+              }`}>
+                <span className={`font-bold uppercase text-[10px] ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                   {isRTL ? "حالة الحساب" : "Account Status"}
                 </span>
-                <span className={`font-black ${selectedUserDetail.isActive ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {selectedUserDetail.isActive ? (isRTL ? 'نشط' : 'Active') : (isRTL ? 'معطل' : 'Deactivated')}
+                <span className={`font-black ${selectedUserDetail.isActive !== false ? (isLight ? 'text-emerald-700' : 'text-emerald-400') : (isLight ? 'text-red-700' : 'text-red-400')}`}>
+                  {selectedUserDetail.isActive !== false ? (isRTL ? 'نشط' : 'Active') : (isRTL ? 'معطل' : 'Deactivated')}
                 </span>
               </div>
 
-              <div className="p-3 bg-[#0e101a] border border-gray-800 rounded-2xl flex flex-col gap-1 text-start">
-                <span className="text-gray-500 font-bold uppercase text-[10px]">
+              <div className={`p-3 rounded-2xl flex flex-col gap-1 text-start border ${
+                isLight ? 'bg-slate-50 border-slate-200/90' : 'bg-[#0e101a] border-gray-800'
+              }`}>
+                <span className={`font-bold uppercase text-[10px] ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                   {isRTL ? "تاريخ التسجيل" : "Registration Date"}
                 </span>
-                <span className="text-gray-300 font-bold">
+                <span className={`font-bold ${isLight ? 'text-slate-800' : 'text-gray-300'}`}>
                   {selectedUserDetail.createdAt ? new Date(selectedUserDetail.createdAt).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US') : (isRTL ? 'غير متوفر' : 'N/A')}
                 </span>
               </div>
 
-              <div className="p-3 bg-[#0e101a] border border-gray-800 rounded-2xl flex flex-col gap-1 text-start">
-                <span className="text-gray-500 font-bold uppercase text-[10px]">
-                  {isRTL ? "حالة الاشتراك" : "Subscription Status"}
-                </span>
-                <span className={`font-black ${selectedUserDetail.isSubscribed ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {selectedUserDetail.isSubscribed ? (isRTL ? 'طالب مشترك' : 'Subscribed Student') : (isRTL ? 'مستخدم عادي' : 'Standard User')}
-                </span>
-              </div>
+              {selectedUserDetail.linkCode && (
+                <div className={`p-3 rounded-2xl flex flex-col gap-1 text-start border ${
+                  isLight ? 'bg-slate-50 border-slate-200/90' : 'bg-[#0e101a] border-gray-800'
+                }`}>
+                  <span className={`font-bold uppercase text-[10px] ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                    {isRTL ? "رمز الربط (Link Code)" : "Link Code"}
+                  </span>
+                  <span className="font-mono font-black text-cyan-600">{selectedUserDetail.linkCode}</span>
+                </div>
+              )}
+
+              {selectedUserDetail.lastLogin && (
+                <div className={`p-3 rounded-2xl flex flex-col gap-1 text-start border ${
+                  isLight ? 'bg-slate-50 border-slate-200/90' : 'bg-[#0e101a] border-gray-800'
+                }`}>
+                  <span className={`font-bold uppercase text-[10px] ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                    {isRTL ? "آخر تسجيل دخول" : "Last Login"}
+                  </span>
+                  <span className={`font-bold ${isLight ? 'text-slate-800' : 'text-gray-300'}`}>
+                    {new Date(selectedUserDetail.lastLogin).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              )}
             </div>
 
+            {/* Enrolled Courses & Coupon Info in Modal */}
+            {selectedUserDetail.enrolledCourses && selectedUserDetail.enrolledCourses.length > 0 && (
+              <div className={`p-3 rounded-2xl flex flex-col gap-2 text-xs text-start border ${
+                isLight ? 'bg-emerald-50/80 border-emerald-200' : 'bg-[#0e101a] border-emerald-500/20'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 ${
+                    isLight ? 'text-emerald-800' : 'text-gray-400'
+                  }`}>
+                    <FiBookOpen size={12} className="text-emerald-500" /> {isRTL ? 'المواد المسجلة' : 'Enrolled Courses'} ({selectedUserDetail.enrolledCourses.length})
+                  </span>
+                  {selectedUserDetail.couponCode && (
+                    <span className="font-mono font-black text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 text-[10px]">
+                      {isRTL ? `كوبون: ${selectedUserDetail.couponCode}` : `Coupon: ${selectedUserDetail.couponCode}`} {selectedUserDetail.couponPrice !== undefined ? `(${selectedUserDetail.couponPrice} JOD)` : ''}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedUserDetail.enrolledCourses.map((c, i) => (
+                    <span key={typeof c === 'object' ? c._id : i} className={`px-2.5 py-1 rounded-xl text-xs font-extrabold border ${
+                      isLight ? 'bg-emerald-100 border-emerald-300 text-emerald-900' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                    }`}>
+                      {typeof c === 'string' ? c : (c?.name || (isRTL ? 'مادة' : 'Course'))}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Actions Footer */}
-            <div className="flex gap-2 pt-2 border-t border-gray-800/80">
+            <div className={`flex gap-2 pt-2 border-t ${isLight ? 'border-slate-200' : 'border-gray-800/80'}`}>
               <button
                 onClick={() => {
                   setEditingUser(selectedUserDetail);
                   setSelectedUserDetail(null);
                 }}
-                className="flex-1 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-500 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <FiEdit3 size={14} /> {isRTL ? "تعديل الملف" : "Edit Profile"}
               </button>

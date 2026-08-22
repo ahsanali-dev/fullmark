@@ -7,6 +7,7 @@ import { FiMail, FiShield, FiArrowLeft, FiCheck } from 'react-icons/fi';
 import { useDispatch } from 'react-redux';
 import { verifyOtp, resendOtp } from '../../redux/slices/authSlice';
 import toast from 'react-hot-toast';
+import { registerFCMToken, getFCMToken } from '../../utils/fcmToken';
 
 import Background3D from '../../components/shared/Background3D';
 import Input from '../../components/ui/Input';
@@ -42,14 +43,19 @@ const VerifyOtp = () => {
   const initialEmail = location.state?.email || '';
 
   const handleSubmit = async (values, { setSubmitting }) => {
+    const fcmToken = await getFCMToken();
     const payload = {
       email: values.email,
       code: values.code,
+      ...(fcmToken ? { fcmToken } : {}),
     };
 
     const loadToast = toast.loading(t('auth.verifyingCode'));
     try {
       const data = await dispatch(verifyOtp(payload)).unwrap();
+      if (data?.token) {
+        registerFCMToken(data.token);
+      }
       toast.dismiss(loadToast);
       toast.success(t('auth.emailVerifiedSuccess'));
       setSubmitting(false);

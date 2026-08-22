@@ -11,7 +11,10 @@ import {
   FiInfo,
   FiBookOpen,
   FiSettings,
-  FiCalendar
+  FiCalendar,
+  FiSearch,
+  FiX,
+  FiFilter
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -49,20 +52,51 @@ const CreateExam = () => {
 
   // Step 1 states
   const [examTitle, setExamTitle] = useState('');
-  const [selectedSubjectId, setSelectedSubjectId] = useState(subjectId === 'select' ? '' : subjectId);
+  const [selectedSubjectId, setSelectedSubjectId] = useState(subjectId === 'select' ? '' : (subjectId || ''));
   const [difficultyMix, setDifficultyMix] = useState('Mixed');
   const [questionCount, setQuestionCount] = useState(20);
 
-  // Set default subject if select
-  useEffect(() => {
-    if (!selectedSubjectId && subjects.length > 0 && subjectId === 'select') {
-      setSelectedSubjectId(subjects[0]?._id || subjects[0]?.id || '');
-    }
-  }, [subjects, selectedSubjectId, subjectId]);
+  // Question counts by difficulty level for the selected subject
+  const subjectQuestions = selectedSubjectId
+    ? allQuestions.filter(q => q.subjectId === selectedSubjectId)
+    : [];
+  const easyCount = subjectQuestions.filter(q => (q.difficulty || '').toLowerCase() === 'easy').length;
+  const mediumCount = subjectQuestions.filter(q => (q.difficulty || '').toLowerCase() === 'medium').length;
+  const hardCount = subjectQuestions.filter(q => (q.difficulty || '').toLowerCase() === 'hard').length;
+  const totalSubjectCount = subjectQuestions.length;
 
   // Step 2 states
-  const filteredQuestions = allQuestions.filter(q => q.subjectId === selectedSubjectId);
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
+
+  // Filter questions by selected subject, difficulty mix, and search query (English & Arabic text)
+  const filteredQuestions = allQuestions.filter(q => {
+    if (selectedSubjectId && q.subjectId !== selectedSubjectId) {
+      return false;
+    }
+
+    const qDiff = (q.difficulty || '').toLowerCase();
+    if (difficultyMix === 'Easy Only' && qDiff !== 'easy') {
+      return false;
+    }
+    if (difficultyMix === 'Medium Only' && qDiff !== 'medium') {
+      return false;
+    }
+    if (difficultyMix === 'Hard Only' && qDiff !== 'hard') {
+      return false;
+    }
+
+    if (searchQuery.trim()) {
+      const textEn = (q.text || q.questionText || '').toLowerCase();
+      const textAr = (q.textAr || '').toLowerCase();
+      const query = searchQuery.toLowerCase().trim();
+      if (!textEn.includes(query) && !textAr.includes(query)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   // Step 3 states
   const [enableTimer, setEnableTimer] = useState(true);
@@ -75,12 +109,29 @@ const CreateExam = () => {
     if (selectedQuestionIds.includes(id)) {
       setSelectedQuestionIds(selectedQuestionIds.filter(qid => qid !== id));
     } else {
+      if (selectedQuestionIds.length >= questionCount) {
+        toast.error(
+          isRTL
+            ? `عذراً، الحد الأقصى للأسئلة المحددة في هذا الاختبار هو ${questionCount} أسئلة`
+            : `Sorry, maximum allowed questions for this exam is ${questionCount}`
+        );
+        return;
+      }
       setSelectedQuestionIds([...selectedQuestionIds, id]);
     }
   };
 
   const handleSelectAll = () => {
-    setSelectedQuestionIds(filteredQuestions.map(q => q.id));
+    const toSelect = filteredQuestions.slice(0, questionCount).map(q => q.id);
+    setSelectedQuestionIds(toSelect);
+    if (filteredQuestions.length > questionCount) {
+      toast(
+        isRTL
+          ? `تم تحديد أول ${questionCount} أسئلة فقط بناءً على العدد المحدد`
+          : `Selected top ${questionCount} questions based on your limit`,
+        { icon: 'ℹ️' }
+      );
+    }
   };
 
   const handleDeselectAll = () => {
@@ -90,6 +141,11 @@ const CreateExam = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePublishExam = async () => {
+    if (!selectedSubjectId) {
+      toast.error(isRTL ? 'يرجى تحديد مادة أولاً' : 'Please select a subject first');
+      setStep(1);
+      return;
+    }
     if (!examTitle.trim()) {
       toast.error(isRTL ? 'يرجى إدخال عنوان الاختبار' : 'Please enter an exam title');
       setStep(1);
@@ -257,9 +313,16 @@ const CreateExam = () => {
 
               {/* Subject Selectors */}
               <div className="flex flex-col gap-3">
-                <span className="text-sm font-black tracking-widest text-gray-500 uppercase px-1">
-                  {isRTL ? "المادة" : "Subject"}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-black tracking-widest text-gray-500 uppercase px-1">
+                    {isRTL ? "المادة" : "Subject"}
+                  </span>
+                  {!selectedSubjectId && (
+                    <span className="text-xs text-amber-400 font-bold px-1 animate-pulse">
+                      {isRTL ? "⚠️ يرجى تحديد مادة للاختبار" : "⚠️ Please select a subject"}
+                    </span>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-2.5">
                   {subjects.map((sub) => {
                     const subId = sub._id || sub.id;
@@ -267,6 +330,7 @@ const CreateExam = () => {
                     return (
                       <button
                         key={subId}
+                        type="button"
                         onClick={() => setSelectedSubjectId(subId)}
                         className={`px-5 py-3 rounded-2xl font-bold text-base border transition-all cursor-pointer ${
                           isSelected
@@ -288,23 +352,31 @@ const CreateExam = () => {
                 </span>
                 <div className="flex flex-wrap gap-2.5">
                   {[
-                    { key: 'Mixed', label: isRTL ? 'مختلط' : 'Mixed' },
-                    { key: 'Easy Only', label: isRTL ? 'سهل فقط' : 'Easy Only' },
-                    { key: 'Medium Only', label: isRTL ? 'متوسط فقط' : 'Medium Only' },
-                    { key: 'Hard Only', label: isRTL ? 'صعب فقط' : 'Hard Only' }
+                    { key: 'Mixed', label: isRTL ? 'مختلط' : 'Mixed', count: totalSubjectCount },
+                    { key: 'Easy Only', label: isRTL ? 'سهل فقط' : 'Easy Only', count: easyCount },
+                    { key: 'Medium Only', label: isRTL ? 'متوسط فقط' : 'Medium Only', count: mediumCount },
+                    { key: 'Hard Only', label: isRTL ? 'صعب فقط' : 'Hard Only', count: hardCount }
                   ].map((mixObj) => {
                     const isSelected = difficultyMix === mixObj.key;
                     return (
                       <button
                         key={mixObj.key}
+                        type="button"
                         onClick={() => setDifficultyMix(mixObj.key)}
-                        className={`px-5 py-3 rounded-2xl font-bold text-base border transition-all cursor-pointer ${
+                        className={`px-5 py-3 rounded-2xl font-bold text-base border transition-all cursor-pointer flex items-center gap-2.5 ${
                           isSelected
                             ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/10'
                             : 'bg-[#0e101a] border-gray-800 text-gray-400 hover:border-gray-700'
                         }`}
                       >
-                        {mixObj.label}
+                        <span>{mixObj.label}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-black transition-all ${
+                          isSelected
+                            ? 'bg-white/20 text-white'
+                            : 'bg-gray-800 text-gray-400'
+                        }`}>
+                          {mixObj.count}
+                        </span>
                       </button>
                     );
                   })}
@@ -341,14 +413,23 @@ const CreateExam = () => {
               {/* Continue button */}
               <div className="flex justify-end mt-6">
                 <button
+                  type="button"
                   onClick={() => {
+                    if (!selectedSubjectId) {
+                      toast.error(isRTL ? 'يرجى تحديد مادة أولاً للمتابعة' : 'Please select a subject first to continue');
+                      return;
+                    }
                     if (!examTitle.trim()) {
                       toast.error(isRTL ? 'يرجى إدخال عنوان الاختبار' : 'Please enter an exam title');
                       return;
                     }
                     setStep(2);
                   }}
-                  className="px-8 py-3.5 bg-[#2563eb] hover:bg-blue-500 text-white rounded-2xl font-black shadow-[0_4px_20px_rgba(37,99,235,0.25)] flex items-center justify-center gap-2 active:scale-95 transition-all duration-300 cursor-pointer text-base"
+                  className={`px-8 py-3.5 rounded-2xl font-black flex items-center justify-center gap-2 transition-all duration-300 text-base ${
+                    !selectedSubjectId || !examTitle.trim()
+                      ? 'bg-gray-800 text-gray-500 cursor-not-allowed opacity-60'
+                      : 'bg-[#2563eb] hover:bg-blue-500 text-white shadow-[0_4px_20px_rgba(37,99,235,0.25)] active:scale-95 cursor-pointer'
+                  }`}
                 >
                   <span>{isRTL ? "متابعة" : "Continue"}</span>
                   <FiArrowRight size={16} className={isRTL ? 'rotate-180' : ''} />
@@ -362,25 +443,80 @@ const CreateExam = () => {
           {step === 2 && (
             <div className="flex flex-col gap-6 animate-fade-in text-start">
               
-              {/* Information Banner */}
-              <div className="flex items-center gap-3 p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-400 text-sm font-semibold">
-                <FiInfo size={18} className="shrink-0" />
-                <span>{isRTL ? "حدد أسئلة محددة لتضمينها في هذا الاختبار" : "Select specific questions to include in this exam"}</span>
+              {/* Information & Active Filters Banner */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-2xl">
+                <div className="flex items-center gap-3 text-blue-400 text-sm font-semibold">
+                  <FiInfo size={18} className="shrink-0" />
+                  <span>{isRTL ? "اختر الأسئلة المناسبة للاختبار بناءً على الفلاتر المحددة" : "Select questions based on your configured filters"}</span>
+                </div>
+                
+                {/* Active filter badges */}
+                <div className="flex flex-wrap items-center gap-2 text-xs font-black uppercase">
+                  <span className="px-2.5 py-1 rounded-lg bg-blue-600/10 border border-blue-500/20 text-blue-400">
+                    {currentSubjectObj.title || currentSubjectObj.name || (isRTL ? 'المادة' : 'Subject')}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                    {difficultyMix === 'Mixed' ? (isRTL ? 'مختلط' : 'Mixed') :
+                     difficultyMix === 'Easy Only' ? (isRTL ? 'سهل فقط' : 'Easy Only') :
+                     difficultyMix === 'Medium Only' ? (isRTL ? 'متوسط فقط' : 'Medium Only') :
+                     (isRTL ? 'صعب فقط' : 'Hard Only')}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                    {isRTL ? `الحد الأقصى: ${questionCount} أسئلة` : `Limit: ${questionCount} Qs Max`}
+                  </span>
+                </div>
               </div>
 
-              {/* Question list controls */}
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-bold text-gray-400">
-                  {selectedQuestionIds.length} {isRTL ? 'من' : 'of'} {filteredQuestions.length} {isRTL ? 'محدد' : 'selected'}
-                </span>
-                <div className="flex gap-3 text-sm font-black">
+              {/* Search Bar for Questions (Arabic & English) */}
+              <div className="relative w-full">
+                <div className={`absolute inset-y-0 flex items-center px-4 pointer-events-none text-gray-400 ${isRTL ? 'right-0' : 'left-0'}`}>
+                  <FiSearch size={18} />
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('teacher.exams.searchQuestions') || (isRTL ? "البحث في الأسئلة بالنص..." : "Search questions by text...")}
+                  className={`w-full py-3.5 ${isRTL ? 'pr-11 pl-10' : 'pl-11 pr-10'} bg-[#0e101a] border border-gray-800 focus:border-blue-500 rounded-2xl text-white font-semibold placeholder:text-gray-500 outline-none transition-all`}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className={`absolute inset-y-0 flex items-center px-3 text-gray-400 hover:text-white cursor-pointer ${isRTL ? 'left-0' : 'right-0'}`}
+                  >
+                    <FiX size={18} />
+                  </button>
+                )}
+              </div>
+
+              {/* Question list controls & Progress limit indicator */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#0e101a] p-3.5 border border-gray-800 rounded-2xl">
+                <div className="flex items-center gap-2.5">
+                  <span className={`px-3 py-1 rounded-xl font-extrabold text-sm border ${
+                    selectedQuestionIds.length >= questionCount 
+                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
+                      : 'bg-blue-600/20 text-blue-400 border-blue-600/30'
+                  }`}>
+                    {selectedQuestionIds.length} / {questionCount}
+                  </span>
+                  <span className="text-sm font-bold text-gray-400">
+                    {isRTL ? 'أسئلة محدودة محددة' : 'Questions selected'}
+                    {selectedQuestionIds.length >= questionCount && (
+                      <span className="text-amber-400 font-extrabold text-xs mx-2">
+                        ({isRTL ? 'وصلت للحد الأقصى' : 'Max Limit Reached'})
+                      </span>
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-sm font-black">
                   <button 
                     onClick={handleSelectAll}
                     className="text-blue-500 hover:text-blue-400 cursor-pointer"
                   >
                     {isRTL ? "تحديد الكل" : "Select All"}
                   </button>
-                  <span className="text-gray-800">•</span>
+                  <span className="text-gray-700">•</span>
                   <button 
                     onClick={handleDeselectAll}
                     className="text-red-500 hover:text-red-400 cursor-pointer"
@@ -420,17 +556,19 @@ const CreateExam = () => {
 
                         {/* Question title & badges */}
                         <div className="flex-1 min-w-0 text-start">
-                          <p className="text-base font-bold text-white truncate capitalize">{q.text}</p>
+                          <p className="text-base font-bold text-white truncate">
+                            {(isRTL && q.textAr) ? q.textAr : (q.text || q.textAr || q.questionText)}
+                          </p>
                           <div className="flex items-center gap-1.5 mt-1.5">
                             <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase">
                               {isRTL ? "اختيار من متعدد" : "MCQ"}
                             </span>
                             <span className={`px-1.5 py-0.5 rounded text-xs font-black uppercase border ${
-                              q.difficulty === 'Easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                              q.difficulty === 'Medium' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                              (q.difficulty || '').toLowerCase() === 'easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                              (q.difficulty || '').toLowerCase() === 'medium' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
                               'bg-red-500/10 border-red-500/20 text-red-400'
                             }`}>
-                              {q.difficulty === 'Easy' ? (isRTL ? 'سهل' : 'Easy') : q.difficulty === 'Medium' ? (isRTL ? 'متوسط' : 'Medium') : (isRTL ? 'صعب' : 'Hard')}
+                              {(q.difficulty || '').toLowerCase() === 'easy' ? (isRTL ? 'سهل' : 'Easy') : (q.difficulty || '').toLowerCase() === 'medium' ? (isRTL ? 'متوسط' : 'Medium') : (isRTL ? 'صعب' : 'Hard')}
                             </span>
                           </div>
                         </div>

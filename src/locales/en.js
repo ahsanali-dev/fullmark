@@ -347,7 +347,8 @@ const en = {
       questionsCount: "No. of Questions",
       examDate: "Exam Date",
       scheduleExam: "Schedule Exam",
-      date: "Date"
+      date: "Date",
+      searchQuestions: "Search questions by text..."
     },
     pdfUpload: {
       title: "Upload Question PDF",

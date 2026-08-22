@@ -16,6 +16,8 @@ import Button from '../../components/ui/Button';
 import AuthHeader from '../../components/auth/AuthHeader';
 import { useLanguage } from '../../context/LanguageContext';
 
+import { registerFCMToken, getFCMToken } from '../../utils/fcmToken';
+
 const LoginSchema = Yup.object().shape({
   email: Yup.string()
     .email('Please enter a valid email address')
@@ -49,21 +51,26 @@ const Login = () => {
   }, []);
 
   const handleSubmit = async (values, { setSubmitting }) => {
+    const fcmToken = await getFCMToken();
     const payload = {
       email: values.email,
       password: values.password,
       role: selectedRole,
+      ...(fcmToken ? { fcmToken } : {}),
     };
     
     const loadToast = toast.loading(t('auth.loggingIn'));
     try {
       const data = await dispatch(loginUser(payload)).unwrap();
+      if (data?.token) {
+        registerFCMToken(data.token);
+      }
       toast.dismiss(loadToast);
       toast.success(t('auth.loginSuccess'));
       setSubmitting(false);
       if (selectedRole === 'admin') {
         navigate('/admin/dashboard');
-      } else if (selectedRole === 'teacher') {
+      } else if (selectedRole === 'teacher') {o
         navigate('/teacher/dashboard');
       } else if (selectedRole === 'student') {
         navigate('/student/dashboard');

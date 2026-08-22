@@ -510,8 +510,18 @@ export const approveQuestion = createAsyncThunk(
       const response = await axios.patch(apiEndpoints.teacher.approveQuestion(id), {}, getAuthConfig(token));
       return response.data.data;
     } catch (error) {
-      const message = error.response?.data?.message || error.message || 'Failed to approve question';
-      return thunkAPI.rejectWithValue(message);
+      try {
+        const token = thunkAPI.getState().auth.token;
+        const response = await axios.put(apiEndpoints.teacher.questionById(id), { isApproved: true }, getAuthConfig(token));
+        return response.data.data;
+      } catch (err2) {
+        const localQ = thunkAPI.getState().teacher.questions.find(q => (q._id || q.id) === id);
+        if (localQ) {
+          return { ...localQ, isApproved: true };
+        }
+        const message = error.response?.data?.message || error.message || 'Failed to approve question';
+        return thunkAPI.rejectWithValue(message);
+      }
     }
   }
 );

@@ -14,7 +14,8 @@ import {
   FiSun,
   FiSettings,
   FiLogOut,
-  FiEdit3
+  FiEdit3,
+  FiGlobe
 } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,7 +33,7 @@ const TeacherSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language, changeLanguage } = useLanguage();
 
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -284,39 +285,79 @@ const TeacherSettings = () => {
           </div>
         </div>
 
-        {/* D. Appearance Section */}
+        {/* D. Appearance & Language Section */}
         <div className="flex flex-col gap-4 text-start">
           <div className="flex items-center gap-3 px-2">
             <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 shadow-sm">
               {theme === 'dark' ? <FiMoon size={15} /> : <FiSun size={15} />}
             </div>
-            <h4 className="text-sm font-black tracking-wide text-gray-400 uppercase">{isRTL ? "المظهر" : "Appearance"}</h4>
+            <h4 className="text-sm font-black tracking-wide text-gray-400 uppercase">{isRTL ? "المظهر واللغة" : "Appearance & Language"}</h4>
           </div>
 
-          {/* Dark Mode Row */}
-          <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl">
-            <div className="flex items-center gap-4 text-start">
-              <div className="w-10 h-10 rounded-full bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-500 shrink-0">
-                {theme === 'dark' ? <FiMoon size={18} /> : <FiSun size={18} />}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Dark Mode Row */}
+            <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl">
+              <div className="flex items-center gap-4 text-start">
+                <div className="w-10 h-10 rounded-full bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-500 shrink-0">
+                  {theme === 'dark' ? <FiMoon size={18} /> : <FiSun size={18} />}
+                </div>
+                <div className="text-start">
+                  <h5 className="text-base font-bold text-white leading-none">{isRTL ? "الوضع الداكن" : "Dark Mode"}</h5>
+                  <span className="text-xs text-gray-500 font-semibold mt-1 block">{isRTL ? "تبديل مظهر التطبيق" : "Switch app appearance"}</span>
+                </div>
               </div>
-              <div className="text-start">
-                <h5 className="text-base font-bold text-white leading-none">{isRTL ? "الوضع الداكن" : "Dark Mode"}</h5>
-                <span className="text-xs text-gray-500 font-semibold mt-1 block">{isRTL ? "تبديل مظهر التطبيق" : "Switch app appearance"}</span>
-              </div>
+
+              {/* Toggle Switch */}
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-800 justify-start'
+                  }`}
+              >
+                <motion.div
+                  layout
+                  className="w-6 h-6 rounded-full bg-white shadow-md"
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              </button>
             </div>
 
-            {/* Toggle Switch */}
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-800 justify-start'
-                }`}
-            >
-              <motion.div
-                layout
-                className="w-6 h-6 rounded-full bg-white shadow-md"
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            </button>
+            {/* Language Switcher Card */}
+            <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl">
+              <div className="flex items-center gap-4 text-start">
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
+                  <FiGlobe size={18} />
+                </div>
+                <div className="text-start">
+                  <h5 className="text-base font-bold text-white leading-none">{isRTL ? "لغة الواجهة" : "App Language"}</h5>
+                  <span className="text-xs text-gray-500 font-semibold mt-1 block">{isRTL ? "العربية / English" : "English / العربية"}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center bg-gray-950 p-1 rounded-xl border border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => changeLanguage('en')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    language === 'en'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeLanguage('ar')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    language === 'ar'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  العربية
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

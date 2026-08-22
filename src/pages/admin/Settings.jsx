@@ -18,7 +18,8 @@ import {
   FiBarChart2,
   FiLogOut,
   FiChevronRight,
-  FiCheck
+  FiCheck,
+  FiGlobe
 } from 'react-icons/fi';
 import { MdPalette } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -34,7 +35,7 @@ import { useLanguage } from '../../context/LanguageContext';
 const Settings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language, changeLanguage } = useLanguage();
   const user = useSelector((state) => state.auth.user);
 
   // App Theme State
@@ -144,61 +145,61 @@ const Settings = () => {
         <div className="w-full pb-32 flex flex-col gap-6">
 
           {/* 1. Profile Banner Hero */}
-          <div className="w-full bg-gradient-to-br from-red-700/90 to-rose-600/90 text-white rounded-3xl p-6 relative overflow-hidden flex flex-col gap-6 shadow-[0_15px_30px_rgba(239,68,68,0.2)] shrink-0">
+          <div className="w-full bg-gradient-to-br from-red-600 via-rose-600 to-red-700 !text-white rounded-3xl p-6 relative overflow-hidden flex flex-col gap-6 shadow-xl shrink-0">
             {/* Banner Background decorative elements */}
-            <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-white/5 border border-white/10" />
-            <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5 border border-white/10" />
+            <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-white/10 border border-white/20" />
+            <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/10 border border-white/20" />
 
             {/* Header controls inside banner */}
             <div className="flex items-center justify-between z-10">
               <button
                 onClick={() => navigate(-1)}
-                className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/10"
+                className="w-10 h-10 rounded-2xl bg-white/15 hover:bg-white/25 flex items-center justify-center !text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/20"
               >
-                {isRTL ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}
+                {isRTL ? <FiChevronRight size={20} className="!text-white" /> : <FiChevronLeft size={20} className="!text-white" />}
               </button>
-              <span className="text-sm font-black tracking-wide uppercase text-white/90">{isRTL ? "ملفي الشخصي" : "My Profile"}</span>
+              <span className="text-sm font-black tracking-wide uppercase !text-white">{isRTL ? "ملفي الشخصي" : "My Profile"}</span>
               <button
                 onClick={() => {
                   setIsEditProfileOpen(true);
                 }}
-                className="w-10 h-10 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/10"
+                className="w-10 h-10 rounded-2xl bg-white/15 hover:bg-white/25 flex items-center justify-center !text-white transition-all duration-300 cursor-pointer active:scale-95 border border-white/20"
               >
-                <FiEdit2 size={16} />
+                <FiEdit2 size={16} className="!text-white" />
               </button>
             </div>
 
             {/* Avatar & User Details */}
             <div className="flex flex-col items-center gap-3 z-10">
               <div className="relative">
-                <div className="w-24 h-24 rounded-[2rem] bg-white/15 border border-white/25 flex items-center justify-center text-white text-3xl font-black shadow-[inset_0_2px_10px_rgba(0,0,0,0.1)]">
+                <div className="w-24 h-24 rounded-[2rem] bg-white/20 border-2 border-white/30 flex items-center justify-center !text-white text-3xl font-black shadow-lg">
                   {profileData.name.substring(0, 2).toUpperCase()}
                 </div>
                 <button
                   onClick={() => setIsEditProfileOpen(true)}
-                  className={`absolute bottom-0 ${isRTL ? 'left-0' : 'right-0'} w-8 h-8 rounded-full bg-yellow-500 text-gray-900 border-2 border-red-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg`}
+                  className={`absolute bottom-0 ${isRTL ? 'left-0' : 'right-0'} w-8 h-8 rounded-full bg-yellow-400 text-slate-950 border-2 border-red-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-lg`}
                 >
-                  <FiCamera size={14} className="stroke-[2.5]" />
+                  <FiCamera size={14} className="stroke-[2.5] text-slate-950" />
                 </button>
               </div>
               <div className="flex flex-col items-center">
-                <h3 className="text-xl sm:text-2xl font-black text-white leading-tight capitalize tracking-wide">{profileData.name}</h3>
-                <span className="text-xs sm:text-sm font-semibold text-white/70 mt-1">{profileData.email}</span>
+                <h3 className="text-xl sm:text-2xl font-black !text-white leading-tight capitalize tracking-wide">{profileData.name}</h3>
+                <span className="text-xs sm:text-sm font-bold !text-white/90 mt-1">{profileData.email}</span>
               </div>
             </div>
 
             {/* Horizontal Badge Tags Row */}
             <div className="flex flex-wrap items-center justify-center gap-2 mt-1 z-10">
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+              <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/20 border border-white/25 text-[10px] sm:text-xs font-black tracking-wide uppercase !text-white shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-red-300 animate-pulse" />
                 {isRTL ? "مسؤول مميز" : "Super Admin"}
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/20 border border-white/25 text-[10px] sm:text-xs font-black tracking-wide uppercase !text-white shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-300" />
                 {isRTL ? "منذ مايو 2026" : "Since May 2026"}
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold tracking-wide uppercase text-white shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+              <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/20 border border-white/25 text-[10px] sm:text-xs font-black tracking-wide uppercase !text-white shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-blue-300" />
                 {isRTL ? "منذ 23 ساعة" : "23h ago"}
               </span>
             </div>
@@ -311,41 +312,83 @@ const Settings = () => {
             </div>
           </div>
 
-          {/* 4. Appearance Row */}
+          {/* 4. Appearance & Language */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
               <div className="w-6 h-6 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
                 <MdPalette size={13} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "المظهر" : "Appearance"}</h3>
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "المظهر واللغة" : "Appearance & Language"}</h3>
             </div>
 
-            {/* Theme Toggle Card */}
-            <div className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between transition-all duration-300">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-sm">
-                  {isDarkMode ? <FiMoon size={18} /> : <FiSun size={18} />}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Theme Toggle Card */}
+              <div className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between transition-all duration-300">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-sm">
+                    {isDarkMode ? <FiMoon size={18} /> : <FiSun size={18} />}
+                  </div>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white leading-tight">
+                      {isDarkMode ? (isRTL ? 'الوضع الداكن' : 'Dark Mode') : (isRTL ? 'الوضع الفاتح' : 'Light Mode')}
+                    </h4>
+                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "تغيير مظهر التطبيق" : "Switch app appearance"}</p>
+                  </div>
                 </div>
-                <div className="text-start">
-                  <h4 className="text-sm font-black text-white leading-tight">
-                    {isDarkMode ? (isRTL ? 'الوضع الداكن' : 'Dark Mode') : (isRTL ? 'الوضع الفاتح' : 'Light Mode')}
-                  </h4>
-                  <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "تغيير مظهر التطبيق" : "Switch app appearance"}</p>
-                </div>
+
+                {/* Slider Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-300 ease-in-out focus:outline-none shadow-md ${isDarkMode ? 'bg-[#ca8a04]' : 'bg-black border border-gray-400'
+                    }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-lg transition duration-300 ease-in-out ${
+                      isDarkMode ? (isRTL ? '-translate-x-5.5' : 'translate-x-5.5') : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
 
-              {/* Slider Toggle */}
-              <button
-                onClick={toggleTheme}
-                className={`relative inline-flex h-6.5 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-300 ease-in-out focus:outline-none shadow-md ${isDarkMode ? 'bg-[#ca8a04]' : 'bg-black border border-gray-400'
-                  }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow-lg transition duration-300 ease-in-out ${
-                    isDarkMode ? (isRTL ? '-translate-x-5.5' : 'translate-x-5.5') : 'translate-x-0'
-                  }`}
-                />
-              </button>
+              {/* Language Switcher Card */}
+              <div className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between transition-all duration-300">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-sm">
+                    <FiGlobe size={18} />
+                  </div>
+                  <div className="text-start">
+                    <h4 className="text-sm font-black text-white leading-tight">
+                      {isRTL ? "لغة الواجهة" : "App Language"}
+                    </h4>
+                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "العربية / English" : "English / العربية"}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center bg-gray-950 p-1 rounded-xl border border-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => changeLanguage('en')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      language === 'en'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => changeLanguage('ar')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      language === 'ar'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    العربية
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

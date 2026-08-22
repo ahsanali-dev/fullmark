@@ -25,6 +25,7 @@ import {
   FiUsers,
   FiCalendar,
   FiEye,
+  FiGlobe
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -51,7 +52,7 @@ const Toggle = ({ value, onChange, activeColor = 'bg-purple-500', isRTL = false 
 const ParentSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { t, isRTL } = useLanguage();
+  const { t, isRTL, language, changeLanguage } = useLanguage();
 
   const user = useSelector((state) => state.auth.user);
   const { children, childSubjects, childResultsData, isLoading, isActionLoading } = useSelector((state) => state.parent);
@@ -303,7 +304,7 @@ const ParentSettings = () => {
               </div>
               <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider text-start">{isRTL ? "التفضيلات" : "Preferences"}</h3>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {/* Push Notifications */}
               <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl">
                 <div className="flex items-center gap-3.5 text-start">
@@ -330,6 +331,43 @@ const ParentSettings = () => {
                   </div>
                 </div>
                 <Toggle value={isDark} onChange={(val) => setTheme(val ? 'dark' : 'light')} activeColor="bg-yellow-500" isRTL={isRTL} />
+              </div>
+
+              {/* Language Switcher Card */}
+              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl">
+                <div className="flex items-center gap-3.5 text-start">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                    <FiGlobe size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "لغة الواجهة" : "App Language"}</h4>
+                    <p className="text-[10px] text-gray-500 font-semibold mt-1">{isRTL ? "العربية / English" : "English / العربية"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center bg-gray-950 p-1 rounded-xl border border-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => changeLanguage('en')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      language === 'en'
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    EN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => changeLanguage('ar')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                      language === 'ar'
+                        ? 'bg-purple-600 text-white shadow-md'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    AR
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -347,7 +347,8 @@ const ar = {
       questionsCount: "عدد الأسئلة",
       examDate: "تاريخ الاختبار",
       scheduleExam: "جدولة الاختبار",
-      date: "التاريخ"
+      date: "التاريخ",
+      searchQuestions: "البحث في الأسئلة بالنص..."
     },
     pdfUpload: {
       title: "رفع PDF الأسئلة",

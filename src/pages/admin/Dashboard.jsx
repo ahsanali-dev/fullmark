@@ -49,37 +49,47 @@ const getRoleAvatarGradient = (role) => {
   }
 };
 
-const getRoleBadge = (role, t) => {
+const getRoleBadge = (role, t, isLight = false) => {
   switch (role?.toLowerCase()) {
     case 'student':
       return {
         label: t('common.student'),
         Icon: FiUser,
-        badgeClass: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'
+        badgeClass: isLight 
+          ? 'bg-cyan-50 border-cyan-200 text-cyan-700 font-extrabold' 
+          : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'
       };
     case 'teacher':
       return {
         label: t('common.teacher'),
         Icon: FiAward,
-        badgeClass: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+        badgeClass: isLight 
+          ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold' 
+          : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
       };
     case 'parent':
       return {
         label: t('common.parent'),
         Icon: FiHeart,
-        badgeClass: 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+        badgeClass: isLight 
+          ? 'bg-amber-50 border-amber-200 text-amber-700 font-extrabold' 
+          : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
       };
     case 'admin':
       return {
         label: t('common.admin'),
         Icon: FiShield,
-        badgeClass: 'bg-red-500/10 border-red-500/20 text-red-400'
+        badgeClass: isLight 
+          ? 'bg-red-50 border-red-200 text-red-700 font-extrabold' 
+          : 'bg-red-500/10 border-red-500/20 text-red-400'
       };
     default:
       return {
         label: role || t('common.user'),
         Icon: FiUser,
-        badgeClass: 'bg-gray-500/10 border-gray-500/20 text-gray-400'
+        badgeClass: isLight 
+          ? 'bg-slate-100 border-slate-200 text-slate-700 font-extrabold' 
+          : 'bg-gray-500/10 border-gray-500/20 text-gray-400'
       };
   }
 };
@@ -90,9 +100,22 @@ const Dashboard = () => {
   const { t, isRTL } = useLanguage();
   const { stats, recentUsers, isLoading } = useSelector((state) => state.admin);
 
+  const [isLight, setIsLight] = useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+  });
+
   useEffect(() => {
     dispatch(fetchDashboardStats());
   }, [dispatch]);
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    handleThemeChange();
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
 
   // Modals state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -366,6 +389,16 @@ const Dashboard = () => {
                 <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.12)]">
                   <FiCalendar className="text-lg" />
                 </div>
+                {(stats?.passedExams !== undefined || stats?.failedExams !== undefined) && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border border-emerald-500/30 text-emerald-400 bg-emerald-500/10" title={isRTL ? "الاختبارات الناجحة" : "Passed Exams"}>
+                      ✓ {stats?.passedExams ?? 0}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border border-red-500/30 text-red-400 bg-red-500/10" title={isRTL ? "الاختبارات الراسبة" : "Failed Exams"}>
+                      ✕ {stats?.failedExams ?? 0}
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <h4 className="text-xl md:text-2xl font-black text-white leading-none">{stats?.totalExams || 0}</h4>
@@ -464,14 +497,21 @@ const Dashboard = () => {
                 ? u.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
                 : 'US';
               const avatarGradient = getRoleAvatarGradient(u.role);
-              const { label: roleLabel, Icon: RoleIcon, badgeClass: roleBadgeClass } = getRoleBadge(u.role, t);
+              const { label: roleLabel, Icon: RoleIcon, badgeClass: roleBadgeClass } = getRoleBadge(u.role, t, isLight);
               const isSubscribed = u.isSubscribed || (u.enrolledCourses && u.enrolledCourses.length > 0);
+              const createdDate = u.createdAt 
+                ? new Date(u.createdAt).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : null;
 
               return (
                 <div 
                   key={u._id || idx}
                   onClick={() => navigate('/admin/users')}
-                  className="p-5 bg-[#0c0d19]/90 border border-gray-800/80 rounded-[1.75rem] shadow-xl hover:border-red-500/40 hover:shadow-[0_8px_30px_rgba(239,68,68,0.15)] transition-all duration-300 flex flex-col justify-between text-start relative overflow-hidden group cursor-pointer"
+                  className={`p-5 rounded-[1.75rem] shadow-xl transition-all duration-300 flex flex-col justify-between text-start relative overflow-hidden group cursor-pointer ${
+                    isLight 
+                      ? 'bg-white border border-slate-200/90 hover:border-red-400 hover:shadow-[0_8px_30px_rgba(239,68,68,0.12)]' 
+                      : 'bg-[#0c0d19]/90 border border-gray-800/80 hover:border-red-500/40 hover:shadow-[0_8px_30px_rgba(239,68,68,0.15)]'
+                  }`}
                 >
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
@@ -481,7 +521,7 @@ const Dashboard = () => {
                         {avatarInitials}
                       </div>
                       <span 
-                        className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#0c0d19] ${
+                        className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 ${isLight ? 'border-white' : 'border-[#0c0d19]'} ${
                           u.isActive !== false ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
                         }`} 
                       />
@@ -492,41 +532,68 @@ const Dashboard = () => {
                         <RoleIcon size={11} />
                         {roleLabel}
                       </span>
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border flex items-center gap-1 uppercase tracking-wider ${
-                        isSubscribed 
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                          : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                      }`}>
-                        {isSubscribed ? (isRTL ? 'مشترك' : 'Subscribed') : (isRTL ? 'غير مشترك' : 'Non-Subscribed')}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <h4 className="text-base font-black text-white leading-tight group-hover:text-red-400 transition-colors">
-                      {u.name}
-                    </h4>
-                    <div className="flex flex-col gap-1.5 text-xs text-gray-400 font-semibold mt-2">
-                      <span className="flex items-center gap-2 truncate bg-[#07080e] px-3 py-1.5 rounded-xl border border-gray-800/60">
-                        <FiMail size={13} className="text-red-400 shrink-0" />
-                        <span className="truncate">{u.email}</span>
-                      </span>
-                      {u.phone && (
-                        <span className="flex items-center gap-2 truncate bg-[#07080e] px-3 py-1.5 rounded-xl border border-gray-800/60">
-                          <FiPhone size={13} className="text-emerald-400 shrink-0" />
-                          <span>{u.phone}</span>
+                      {u.isVerified !== undefined && (
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border flex items-center gap-1 uppercase tracking-wider ${
+                          u.isVerified
+                            ? (isLight ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-blue-500/10 border-blue-500/20 text-blue-400')
+                            : (isLight ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-amber-500/10 border-amber-500/20 text-amber-400')
+                        }`}>
+                          {u.isVerified ? (isRTL ? 'مفعل' : 'Verified') : (isRTL ? 'غير مفعل' : 'Unverified')}
+                        </span>
+                      )}
+                      {u.isSubscribed !== undefined && (
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border flex items-center gap-1 uppercase tracking-wider ${
+                          isSubscribed 
+                            ? (isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400')
+                            : (isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-gray-500/10 border-gray-500/20 text-gray-400')
+                        }`}>
+                          {isSubscribed ? (isRTL ? 'مشترك' : 'Subscribed') : (isRTL ? 'غير مشترك' : 'Non-Subscribed')}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-800/50 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-gray-500">
+                  <div className="mb-3">
+                    <h4 className={`text-base font-black leading-tight group-hover:text-red-500 transition-colors ${
+                      isLight ? 'text-slate-900' : 'text-white'
+                    }`}>
+                      {u.name}
+                    </h4>
+                    <div className="flex flex-col gap-1.5 text-xs font-semibold mt-2">
+                      <span className={`flex items-center gap-2 truncate px-3 py-1.5 rounded-xl border ${
+                        isLight ? 'bg-slate-100/90 border-slate-200 text-slate-700 font-bold' : 'bg-[#07080e] border-gray-800/60 text-gray-400'
+                      }`}>
+                        <FiMail size={13} className="text-red-500 shrink-0" />
+                        <span className="truncate">{u.email}</span>
+                      </span>
+                      {u.phone && (
+                        <span className={`flex items-center gap-2 truncate px-3 py-1.5 rounded-xl border ${
+                          isLight ? 'bg-slate-100/90 border-slate-200 text-slate-700 font-bold' : 'bg-[#07080e] border-gray-800/60 text-gray-400'
+                        }`}>
+                          <FiPhone size={13} className="text-emerald-500 shrink-0" />
+                          <span>{u.phone}</span>
+                        </span>
+                      )}
+                      {createdDate && (
+                        <span className={`flex items-center gap-2 truncate px-3 py-1.5 rounded-xl border ${
+                          isLight ? 'bg-slate-100/90 border-slate-200 text-slate-700 font-bold' : 'bg-[#07080e] border-gray-800/60 text-gray-400'
+                        }`}>
+                          <FiCalendar size={13} className="text-blue-500 shrink-0" />
+                          <span>{isRTL ? `تاريخ التسجيل: ${createdDate}` : `Joined: ${createdDate}`}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={`pt-3 border-t flex items-center justify-between ${
+                    isLight ? 'border-slate-200 text-slate-600' : 'border-gray-800/50 text-gray-500'
+                  }`}>
+                    <span className="text-[11px] font-bold">
                       {u.isActive !== false 
                         ? (isRTL ? '✓ الحساب نشط' : '✓ Account Active') 
                         : (isRTL ? '✕ الحساب معطل' : '✕ Account Suspended')}
                     </span>
-                    <span className="text-xs font-black text-red-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                    <span className="text-xs font-black text-red-500 group-hover:translate-x-1 transition-transform flex items-center gap-1">
                       {isRTL ? "إدارة المستخدم" : "Manage User"} <FiArrowRight size={13} className={isRTL ? 'rotate-180' : ''} />
                     </span>
                   </div>

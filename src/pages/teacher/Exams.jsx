@@ -40,34 +40,40 @@ const ExamSchema = Yup.object().shape({
   questionsCount: Yup.number().min(1, 'Select at least 1 question').required('Number of questions is required')
 });
 
-const SkeletonCard = () => (
-  <div className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] flex flex-col gap-4 animate-pulse">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-gray-800/80 shrink-0" />
-        <div className="flex flex-col gap-2">
-          <div className="h-4 w-32 bg-gray-800/80 rounded" />
-          <div className="h-3 w-20 bg-gray-800/80 rounded" />
+const SkeletonCard = () => {
+  const isLight = typeof window !== 'undefined' && (localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+  
+  return (
+    <div className={`p-5 rounded-[2rem] flex flex-col gap-4 animate-pulse shadow-sm border ${
+      isLight ? 'bg-white border-gray-200' : 'bg-[#0e101a] border-gray-800/80'
+    }`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-11 h-11 rounded-xl shrink-0 ${isLight ? 'bg-gray-200' : 'bg-gray-800/80'}`} />
+          <div className="flex flex-col gap-2">
+            <div className={`h-4 w-32 rounded ${isLight ? 'bg-gray-200' : 'bg-gray-800/80'}`} />
+            <div className={`h-3 w-20 rounded ${isLight ? 'bg-gray-200' : 'bg-gray-800/80'}`} />
+          </div>
         </div>
+        <div className={`h-6 w-16 rounded-full ${isLight ? 'bg-gray-200' : 'bg-gray-800/80'}`} />
       </div>
-      <div className="h-6 w-16 bg-gray-800/80 rounded-full" />
+      <div className="flex gap-3 mt-2">
+        <div className={`h-3 w-12 rounded ${isLight ? 'bg-gray-200' : 'bg-gray-800/80'}`} />
+        <div className={`h-3 w-12 rounded ${isLight ? 'bg-gray-200' : 'bg-gray-800/80'}`} />
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className={`h-12 rounded-xl ${isLight ? 'bg-gray-100' : 'bg-gray-900/60'}`} />
+        ))}
+      </div>
+      <div className={`h-0.5 rounded ${isLight ? 'bg-gray-200' : 'bg-gray-800/40'}`} />
+      <div className="flex gap-3">
+        <div className={`h-10 flex-1 rounded-2xl ${isLight ? 'bg-gray-200' : 'bg-gray-800/80'}`} />
+        <div className={`h-10 w-10 rounded-2xl ${isLight ? 'bg-gray-200' : 'bg-gray-800/80'}`} />
+      </div>
     </div>
-    <div className="flex gap-3 mt-2">
-      <div className="h-3 w-12 bg-gray-800/80 rounded" />
-      <div className="h-3 w-12 bg-gray-800/80 rounded" />
-    </div>
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-      {[1, 2, 3, 4].map(i => (
-        <div key={i} className="h-12 bg-gray-900/60 rounded-xl" />
-      ))}
-    </div>
-    <div className="h-0.5 bg-gray-800/40 rounded" />
-    <div className="flex gap-3">
-      <div className="h-10 flex-1 bg-gray-800/80 rounded-2xl" />
-      <div className="h-10 w-10 bg-gray-800/80 rounded-2xl" />
-    </div>
-  </div>
-);
+  );
+};
 
 const generateMockResults = (examId, examTitle, passingScore = 60) => {
   let seed = 0;
@@ -158,6 +164,24 @@ const TeacherExams = () => {
   const [resultsExam, setResultsExam] = useState(null);
   const [resultsSearchQuery, setResultsSearchQuery] = useState('');
   const [resultsFilter, setResultsFilter] = useState('all');
+
+  // App Theme Sync
+  const [theme, setTheme] = useState(localStorage.getItem('teacher_theme') || localStorage.getItem('admin_theme') || localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const currentTheme = localStorage.getItem('teacher_theme') || localStorage.getItem('admin_theme') || localStorage.getItem('theme') || 'dark';
+      setTheme(currentTheme);
+    };
+    window.addEventListener('storage', handleThemeChange);
+    const interval = setInterval(handleThemeChange, 500);
+    return () => {
+      window.removeEventListener('storage', handleThemeChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const isLight = theme === 'light';
 
   // Sync state from Redux on mount
   useEffect(() => {
@@ -257,8 +281,8 @@ const TeacherExams = () => {
         </div>
 
         {/* Search & Filter Row */}
-        <div className="flex flex-col md:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col md:flex-row gap-3 w-full min-w-0">
+          <div className="relative flex-1 min-w-0">
             <input
               type="text"
               placeholder={isRTL ? "البحث في الاختبارات..." : "Search exams..."}
@@ -268,16 +292,16 @@ const TeacherExams = () => {
             />
             <FiSearch className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-blue-500`} size={18} />
           </div>
-          <div className="relative w-full md:w-56">
+          <div className="relative w-full md:w-64 shrink-0">
             <FiBookOpen className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
             <select
               value={selectedSubjectFilter}
               onChange={(e) => setSelectedSubjectFilter(e.target.value)}
-              className={`w-full ${isRTL ? 'pr-11 pl-10' : 'pl-11 pr-10'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0`}
+              className={`w-full ${isRTL ? 'pr-11 pl-10' : 'pl-11 pr-10'} py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base font-semibold focus:outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0 truncate`}
             >
-              <option value="all">{isRTL ? "جميع المواد" : "All Subjects"}</option>
+              <option value="all" className="bg-[#0e101a] text-white">{isRTL ? "جميع المواد" : "All Subjects"}</option>
               {subjects.map(s => (
-                <option key={s._id || s.id} value={s._id || s.id}>{s.name || s.title}</option>
+                <option key={s._id || s.id} value={s._id || s.id} className="bg-[#0e101a] text-white">{s.name || s.title}</option>
               ))}
             </select>
             <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none`} />
@@ -422,24 +446,24 @@ const TeacherExams = () => {
                   <div className="border-t border-gray-800/40" />
 
                   {/* Bottom Row: View Results + Delete */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-stretch gap-3">
                     <button
                       onClick={() => {
                         setResultsExam(ex);
                         setShowResultsModal(true);
                       }}
-                      className="flex-1 py-3 rounded-2xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/20 text-blue-400 font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      className="flex-1 h-12 px-4 rounded-2xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/20 text-blue-400 font-black text-base flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
-                      <FiBarChart2 size={14} />
+                      <FiBarChart2 size={16} />
                       <span>{isRTL ? "عرض النتائج" : "View Results"}</span>
                     </button>
                     <button
                       onClick={() => handleDeleteClick(ex)}
                       disabled={isDeletingId === (ex._id || ex.id)}
-                      className="p-3 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-12 h-12 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 flex items-center justify-center transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       title={isRTL ? "إلغاء الاختبار" : "Cancel Exam"}
                     >
-                      <FiTrash2 size={14} />
+                      <FiTrash2 size={18} />
                     </button>
                   </div>
                 </div>
@@ -601,14 +625,18 @@ const TeacherExams = () => {
                 initial={{ scale: 0.95, y: 30, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 exit={{ scale: 0.95, y: 30, opacity: 0 }}
-                className="w-full max-w-3xl bg-[#0c0d19] border border-gray-800 rounded-[2.5rem] shadow-2xl relative text-start flex flex-col max-h-[85vh] my-auto overflow-hidden"
+                className={`w-full max-w-3xl border rounded-[2.5rem] shadow-2xl relative text-start flex flex-col max-h-[85vh] my-auto overflow-hidden ${
+                  isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#0c0d19] border-gray-800 text-white'
+                }`}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header (Fixed at top inside rounded modal corners) */}
-                <div className="px-6 py-5 border-b border-gray-800/60 flex items-center justify-between shrink-0 bg-[#0c0d19]">
+                <div className={`px-6 py-5 border-b flex items-center justify-between shrink-0 ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-[#0c0d19] border-gray-800/60'
+                }`}>
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-black text-white capitalize">{resultsExam.title}</h3>
-                    <p className="text-xs sm:text-sm text-gray-500 font-bold uppercase mt-0.5">{isRTL ? "أداء الطلاب والنتائج" : "Student Performance & Results"}</p>
+                    <h3 className={`text-xl sm:text-2xl font-black capitalize ${isLight ? 'text-slate-900' : 'text-white'}`}>{resultsExam.title}</h3>
+                    <p className={`text-xs sm:text-sm font-bold uppercase mt-0.5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{isRTL ? "أداء الطلاب والنتائج" : "Student Performance & Results"}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -617,7 +645,9 @@ const TeacherExams = () => {
                       setResultsSearchQuery('');
                       setResultsFilter('all');
                     }}
-                    className="p-2.5 rounded-xl bg-gray-900 border border-gray-800 text-gray-400 hover:text-white transition-all cursor-pointer shadow-sm shrink-0"
+                    className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-sm shrink-0 ${
+                      isLight ? 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900' : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white'
+                    }`}
                   >
                     <FiX size={18} />
                   </button>
@@ -627,21 +657,21 @@ const TeacherExams = () => {
                 <div className="flex-1 overflow-y-auto p-5 sm:p-7 flex flex-col gap-5">
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 shrink-0">
-                    <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-500/[0.03] border border-amber-500/20 flex flex-col">
-                      <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">{stats.avgScore}</span>
-                      <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "متوسط الدرجة" : "Average Score"}</span>
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col">
+                      <span className="text-xl sm:text-2xl font-black text-amber-500">{stats.avgScore}</span>
+                      <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{isRTL ? "متوسط الدرجة" : "Average Score"}</span>
                     </div>
-                    <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/[0.03] border border-emerald-500/20 flex flex-col">
-                      <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.highScore}</span>
-                      <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "أعلى درجة" : "High Score"}</span>
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col">
+                      <span className="text-xl sm:text-2xl font-black text-emerald-500">{stats.highScore}</span>
+                      <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{isRTL ? "أعلى درجة" : "High Score"}</span>
                     </div>
-                    <div className="p-3.5 sm:p-4 rounded-2xl bg-red-500/10 dark:bg-red-500/[0.03] border border-red-500/20 flex flex-col">
-                      <span className="text-xl sm:text-2xl font-black text-red-600 dark:text-red-400">{stats.lowScore}</span>
-                      <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "أقل درجة" : "Low Score"}</span>
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex flex-col">
+                      <span className="text-xl sm:text-2xl font-black text-red-500">{stats.lowScore}</span>
+                      <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{isRTL ? "أقل درجة" : "Low Score"}</span>
                     </div>
-                    <div className="p-3.5 sm:p-4 rounded-2xl bg-blue-500/10 dark:bg-blue-500/[0.03] border border-blue-500/20 flex flex-col">
-                      <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">{stats.submitted}</span>
-                      <span className="text-[10px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">{isRTL ? "نسبة التقديم" : "Submission Rate"} ({stats.submissionRate})</span>
+                    <div className="p-3.5 sm:p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex flex-col">
+                      <span className="text-xl sm:text-2xl font-black text-blue-500">{stats.submitted}</span>
+                      <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{isRTL ? "نسبة التقديم" : "Submission Rate"} ({stats.submissionRate})</span>
                     </div>
                   </div>
 
@@ -655,18 +685,22 @@ const TeacherExams = () => {
                         placeholder={isRTL ? "البحث باسم الطالب..." : "Search student name..."}
                         value={resultsSearchQuery}
                         onChange={(e) => setResultsSearchQuery(e.target.value)}
-                        className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3 bg-[#0e101a] border border-gray-800/80 rounded-2xl text-white font-bold text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500/50 transition-all`}
+                        className={`w-full ${isRTL ? 'pr-12 pl-4' : 'pl-12 pr-4'} py-3 border rounded-2xl font-bold text-sm focus:outline-none transition-all ${
+                          isLight ? 'bg-slate-100 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500' : 'bg-[#0e101a] border-gray-800/80 text-white placeholder:text-gray-500 focus:border-blue-500/50'
+                        }`}
                       />
                     </div>
 
                     {/* Filter tabs */}
-                    <div className="flex bg-[#0e101a] border border-gray-800/80 p-1.5 rounded-2xl w-full sm:w-auto shrink-0">
+                    <div className={`flex border p-1.5 rounded-2xl w-full sm:w-auto shrink-0 ${
+                      isLight ? 'bg-slate-100 border-slate-200' : 'bg-[#0e101a] border-gray-800/80'
+                    }`}>
                       <button
                         onClick={() => setResultsFilter('all')}
                         className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                           resultsFilter === 'all'
                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                            : 'text-gray-400 hover:text-white'
+                            : (isLight ? 'text-slate-600 hover:text-slate-900' : 'text-gray-400 hover:text-white')
                         }`}
                       >
                         {isRTL ? "الكل" : "All"}
@@ -675,8 +709,8 @@ const TeacherExams = () => {
                         onClick={() => setResultsFilter('passed')}
                         className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                           resultsFilter === 'passed'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                            : 'text-gray-400 hover:text-white'
+                            ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30'
+                            : (isLight ? 'text-slate-600 hover:text-slate-900' : 'text-gray-400 hover:text-white')
                         }`}
                       >
                         {isRTL ? "ناجح" : "Passed"}
@@ -685,8 +719,8 @@ const TeacherExams = () => {
                         onClick={() => setResultsFilter('failed')}
                         className={`flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
                           resultsFilter === 'failed'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            : 'text-gray-400 hover:text-white'
+                            ? 'bg-red-500/20 text-red-500 border border-red-500/30'
+                            : (isLight ? 'text-slate-600 hover:text-slate-900' : 'text-gray-400 hover:text-white')
                         }`}
                       >
                         {isRTL ? "راسب" : "Failed"}
@@ -697,12 +731,14 @@ const TeacherExams = () => {
                   {/* Submissions List */}
                   <div className="flex flex-col gap-3">
                     {filteredAttempts.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center text-center p-8 sm:p-10 bg-slate-50 dark:bg-gray-900/40 border border-slate-200 dark:border-gray-800/80 rounded-3xl">
-                        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 dark:text-blue-400 mb-3 shadow-sm shrink-0">
+                      <div className={`flex flex-col items-center justify-center text-center p-8 sm:p-10 border rounded-3xl ${
+                        isLight ? 'bg-slate-50 border-slate-200' : 'bg-[#0e101a] border-gray-800/80'
+                      }`}>
+                        <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 mb-3 shadow-sm shrink-0">
                           <FiUsers size={26} />
                         </div>
-                        <span className="text-base font-extrabold text-slate-800 dark:text-gray-200">{isRTL ? "لم يتم العثور على محاولات" : "No attempts found"}</span>
-                        <p className="text-xs text-slate-500 dark:text-gray-400 font-semibold mt-1">{isRTL ? "جرب إعادة ضبط البحث أو الفلاتر" : "Try resetting search or filters"}</p>
+                        <span className={`text-base font-extrabold ${isLight ? 'text-slate-800' : 'text-gray-200'}`}>{isRTL ? "لم يتم العثور على محاولات" : "No attempts found"}</span>
+                        <p className={`text-xs font-semibold mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{isRTL ? "جرب إعادة ضبط البحث أو الفلاتر" : "Try resetting search or filters"}</p>
                       </div>
                     ) : (
                       filteredAttempts.map((att, idx) => {
@@ -718,36 +754,42 @@ const TeacherExams = () => {
                         return (
                           <div
                             key={att.id}
-                            className="p-4 sm:p-4.5 bg-[#0e101a] border border-gray-800/80 rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 transition-all duration-200 hover:border-blue-500/40 hover:shadow-lg group"
+                            className={`p-4 sm:p-4.5 border rounded-2xl sm:rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 transition-all duration-200 hover:border-blue-500/40 hover:shadow-lg group ${
+                              isLight ? 'bg-white border-slate-200 text-slate-900 shadow-sm' : 'bg-[#0e101a] border-gray-800/80 text-white'
+                            }`}
                           >
                             <div className="flex items-center gap-3.5">
                               <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${avatarGradient} flex items-center justify-center text-white font-black text-sm uppercase shrink-0 shadow-md`}>
                                 {att.studentName.split(' ').map(n => n[0]).join('')}
                               </div>
                               <div>
-                                <h5 className="font-extrabold text-white text-base leading-tight group-hover:text-blue-400 transition-colors">{att.studentName}</h5>
-                                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-semibold mt-1">
-                                  <FiCalendar size={12} className="text-gray-400 shrink-0" />
+                                <h5 className={`font-extrabold text-base leading-tight group-hover:text-blue-400 transition-colors ${isLight ? 'text-slate-900' : 'text-white'}`}>{att.studentName}</h5>
+                                <div className={`flex items-center gap-1.5 text-xs font-semibold mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+                                  <FiCalendar size={12} className="shrink-0" />
                                   <span>{isRTL ? "تم التقديم:" : "Submitted:"} {att.completedAt}</span>
                                 </div>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-gray-800/40">
-                              <div className="flex items-center gap-1.5 text-xs font-extrabold text-gray-300 bg-gray-900/60 px-3 py-1.5 rounded-xl border border-gray-800/80 shrink-0 shadow-sm">
+                            <div className={`flex items-center justify-between sm:justify-end gap-3 sm:gap-4 border-t sm:border-t-0 pt-2.5 sm:pt-0 ${
+                              isLight ? 'border-slate-100' : 'border-gray-800/40'
+                            }`}>
+                              <div className={`flex items-center gap-1.5 text-xs font-extrabold px-3 py-1.5 rounded-xl border shrink-0 shadow-sm ${
+                                isLight ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-gray-900/60 border-gray-800/80 text-gray-300'
+                              }`}>
                                 <FiClock size={13} className="text-gray-400 shrink-0" />
                                 <span>{att.timeTaken} {isRTL ? "دقيقة" : "mins"}</span>
                               </div>
 
                               <div className="flex items-center gap-3 shrink-0">
-                                <span className={`text-lg font-black tracking-tight ${att.passed ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                                <span className={`text-lg font-black tracking-tight ${att.passed ? 'text-emerald-500' : 'text-red-500'}`}>
                                   {att.score}%
                                 </span>
 
                                 <span className={`text-xs font-black uppercase px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm ${
                                   att.passed
-                                    ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                                    : 'bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400'
+                                    ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-500'
+                                    : 'bg-red-500/15 border border-red-500/30 text-red-500'
                                 }`}>
                                   {att.passed ? <FiCheckCircle size={13} /> : <FiXCircle size={13} />}
                                   <span>{att.passed ? (isRTL ? 'ناجح' : 'PASSED') : (isRTL ? 'راسب' : 'FAILED')}</span>

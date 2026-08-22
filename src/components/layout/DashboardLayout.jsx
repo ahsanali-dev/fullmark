@@ -430,56 +430,62 @@ const DashboardLayout = ({ role = 'admin', children, activeTab = 'dashboard', ti
                       </button>
                     )}
                   </div>
-                  <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                  <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
                     {notifications.length > 0 ? (
-                      <>
-                        {notifications.map((n) => {
-                          const isStudent = n.type === 'student' || n.type === 'enrollment';
-                          const isSystem = n.type === 'system';
-                          const isExam = n.type === 'exam_result';
-                          return (
-                            <div
-                              key={n._id}
-                              onClick={() => {
-                                if (!n.isRead) {
-                                  dispatch(markNotificationRead(n._id));
-                                }
-                              }}
-                              className={`p-3 rounded-2xl border flex gap-3 text-start transition-all cursor-pointer ${n.isRead
-                                  ? 'bg-transparent border-gray-800/40 opacity-60'
-                                  : 'bg-[#16172b]/60 border-gray-800'
-                                }`}
-                            >
-                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isStudent
+                      notifications.map((n) => {
+                        const isCoupon = n.type === 'coupon_activated';
+                        const isStudent = n.type === 'student' || n.type === 'enrollment';
+                        const isSystem = n.type === 'system';
+                        const isExam = n.type === 'exam_result';
+                        return (
+                          <div
+                            key={n._id}
+                            onClick={() => {
+                              if (!n.isRead && !n.read) {
+                                dispatch(markNotificationRead(n._id));
+                              }
+                            }}
+                            className={`p-3 rounded-2xl border flex gap-3 text-start transition-all cursor-pointer ${ (n.isRead || n.read)
+                                ? 'bg-transparent border-gray-800/40 opacity-60'
+                                : 'bg-[#16172b]/60 border-gray-800'
+                              }`}
+                          >
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                              isCoupon
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                : isStudent
                                   ? 'bg-emerald-500/10 text-emerald-400'
                                   : isSystem
                                     ? 'bg-blue-500/10 text-blue-400'
                                     : 'bg-purple-500/10 text-purple-400'
-                                }`}>
-                                {isStudent ? <FiUser size={14} /> : isSystem ? <FiShield size={14} /> : isExam ? <FiClipboard size={14} /> : <FiBookOpen size={14} />}
-                              </div>
-                              <div className="flex flex-col min-w-0 flex-1">
-                                <p className="text-xs font-bold text-white leading-snug truncate">{n.title}</p>
-                                <p className="text-[10px] font-semibold text-gray-400 truncate mt-0.5">{n.body}</p>
-                                <span className="text-[8px] font-semibold text-gray-500 mt-1">{formatTime(n.createdAt)}</span>
-                              </div>
+                              }`}>
+                              {isCoupon ? <FiTag size={14} /> : isStudent ? <FiUser size={14} /> : isSystem ? <FiShield size={14} /> : isExam ? <FiClipboard size={14} /> : <FiBookOpen size={14} />}
                             </div>
-                          );
-                        })}
-                        <button
-                          onClick={() => {
-                            setShowNotifications(false);
-                            navigate(`/${role}/notifications`);
-                          }}
-                          className="w-full text-center py-2 mt-1 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors border-t border-gray-800/40 cursor-pointer"
-                        >
-                          {t('dashboard.viewAllNotifications')}
-                        </button>
-                      </>
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <p className="text-xs font-bold text-white leading-snug truncate">{n.title}</p>
+                              <p className="text-[10px] font-semibold text-gray-400 truncate mt-0.5">{n.body}</p>
+                              <span className="text-[8px] font-semibold text-gray-500 mt-1">{formatTime(n.createdAt)}</span>
+                            </div>
+                          </div>
+                        );
+                      })
                     ) : (
                       <p className="text-xs text-gray-500 text-center py-4 font-bold">{t('dashboard.noNotifications')}</p>
                     )}
                   </div>
+                  {notifications.length > 0 && (
+                    <div className="pt-2.5 mt-2 border-t border-gray-800/60 shrink-0">
+                      <button
+                        onClick={() => {
+                          setShowNotifications(false);
+                          navigate(`/${role}/notifications`);
+                        }}
+                        className="w-full text-center py-1.5 text-xs font-extrabold text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+                      >
+                        {t('dashboard.viewAllNotifications')}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -155,15 +155,27 @@ const EditQuestion = () => {
     try {
       const res = await dispatch(generateVariants(questionId)).unwrap();
       toast.success(res.message || (isRTL ? 'بدأ توليد النماذج!' : 'Variant generation started!'), { id: loadingToast });
-      setTimeout(() => {
-        dispatch(fetchVariantsStatus(questionId));
-        setIsGeneratingVariants(false);
-      }, 3000);
+      dispatch(fetchVariantsStatus(questionId));
     } catch (err) {
       setIsGeneratingVariants(false);
       toast.error(err || (isRTL ? 'فشل توليد النماذج' : 'Failed to trigger variant generation'), { id: loadingToast });
     }
   };
+
+  // Auto-poll variant generation status while status is pending
+  const currentVariantStatus = variantsStatus?.variantGeneration?.status || variantsStatus?.status;
+  useEffect(() => {
+    if (currentVariantStatus === 'pending') {
+      setIsGeneratingVariants(true);
+      const interval = setInterval(() => {
+        dispatch(fetchVariantsStatus(questionId));
+        dispatch(fetchQuestions());
+      }, 4000);
+      return () => clearInterval(interval);
+    } else {
+      setIsGeneratingVariants(false);
+    }
+  }, [currentVariantStatus, dispatch, questionId]);
 
   // Handle errors or missing questions after loading
   useEffect(() => {
@@ -332,41 +344,43 @@ const EditQuestion = () => {
         />
 
         {/* Header Block */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-800/40">
-          <div className="flex items-center">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-gray-800/40">
+          <div className="flex items-start sm:items-center gap-3">
             <button 
               onClick={() => navigate(`/teacher/subjects/${subjectId}`)}
-              className={`w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer ${isRTL ? 'ml-3' : 'mr-3'}`}
+              className={`w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer shrink-0 ${isRTL ? 'ml-1' : 'mr-1'}`}
             >
               <FiChevronLeft size={20} className={isRTL ? 'rotate-180' : ''} />
             </button>
-            <div className="text-start">
-              <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
-                {isRTL ? "تعديل السؤال" : "Edit Question"}
+            <div className="text-start flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white">
+                  {isRTL ? "تعديل السؤال" : "Edit Question"}
+                </h2>
                 {isApproved ? (
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black flex items-center gap-1">
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black flex items-center gap-1 shrink-0 whitespace-nowrap">
                     <FiCheck size={14} /> {isRTL ? "تمت الموافقة" : "Approved"}
                   </span>
                 ) : (
-                  <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black">
+                  <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black shrink-0 whitespace-nowrap">
                     {isRTL ? "قيد الانتظار" : "Pending Approval"}
                   </span>
                 )}
-              </h2>
+              </div>
               <p className="text-sm text-gray-500 font-semibold mt-1">
                 {isRTL ? `تعديل تفاصيل السؤال للمادة ${subject.name || subject.title}` : `Modify question details for ${subject.name || subject.title}`}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
             {!isApproved && (
               <button
                 type="button"
                 onClick={handleApprove}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-600/20"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-emerald-600/20 whitespace-nowrap shrink-0"
               >
-                <FiCheck size={16} /> {isRTL ? "الموافقة على السؤال" : "Approve Question"}
+                <FiCheck size={16} /> <span>{isRTL ? "الموافقة على السؤال" : "Approve Question"}</span>
               </button>
             )}
 
@@ -374,13 +388,13 @@ const EditQuestion = () => {
               type="button"
               onClick={handleGenerateVariantsAction}
               disabled={isGeneratingVariants}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white text-xs font-black flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-purple-600/20 disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-purple-600/20 disabled:opacity-50 whitespace-nowrap shrink-0"
             >
-              <FiPlus size={16} /> {isGeneratingVariants ? (isRTL ? "جاري التوليد..." : "Generating...") : (isRTL ? "توليد نماذج تدريبية" : "Generate Practice Variants")}
+              <FiPlus size={16} /> <span>{isGeneratingVariants ? (isRTL ? "جاري التوليد..." : "Generating...") : (isRTL ? "توليد نماذج تدريبية" : "Generate Practice Variants")}</span>
             </button>
 
             {/* Difficulty Level Indicator */}
-            <div className={`px-4.5 py-2 rounded-full text-xs font-black border flex items-center gap-1.5 ${
+            <div className={`px-4 py-2.5 rounded-full text-xs font-black border flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
               difficulty === 'Easy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
               difficulty === 'Medium' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
               'bg-red-500/10 border-red-500/20 text-red-400'
@@ -396,17 +410,38 @@ const EditQuestion = () => {
         </div>
 
         {/* AI Variants Status Card (if status returned) */}
-        {variantsStatus && (
-          <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between text-start">
-            <div className="text-start">
-              <span className="text-xs font-black text-purple-400 uppercase tracking-wider block">{isRTL ? "حالة مولد النماذج" : "AI Variant Generator Status"}</span>
-              <span className="text-sm font-bold text-white mt-0.5 block">
-                {isRTL ? 'الحالة:' : 'Status:'} <span className="capitalize text-purple-300">{variantsStatus.status || variantsStatus.state || (isRTL ? 'مكتمل' : 'Completed')}</span>
-                {variantsStatus.variantsCount !== undefined && ` • ${isRTL ? 'المولدة:' : 'Generated:'} ${variantsStatus.variantsCount} ${isRTL ? 'نماذج' : 'variants'}`}
-              </span>
+        {(variantsStatus?.variantGeneration || variantsStatus?.status) && (() => {
+          const vg = variantsStatus.variantGeneration || variantsStatus;
+          const count = variantsStatus.variants?.length ?? vg.approvedCount ?? 0;
+          const statusText = vg.status || 'none';
+          if (statusText === 'none') return null;
+          return (
+            <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between text-start animate-fade-in">
+              <div className="text-start">
+                <span className="text-xs font-black text-purple-400 uppercase tracking-wider block">
+                  {isRTL ? "حالة مولد النماذج الذكي" : "AI Variant Generator Status"}
+                </span>
+                <div className="text-sm font-bold text-white mt-1 flex flex-wrap items-center gap-2">
+                  <span>{isRTL ? 'الحالة:' : 'Status:'}</span>
+                  <span className={`capitalize px-2.5 py-0.5 rounded-full text-xs font-black ${
+                    statusText === 'completed' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                    statusText === 'pending' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse' :
+                    'bg-red-500/20 text-red-300 border border-red-500/30'
+                  }`}>
+                    {statusText === 'completed' ? (isRTL ? 'مكتمل' : 'Completed') :
+                     statusText === 'pending' ? (isRTL ? 'جاري التوليد...' : 'Generating...') :
+                     (isRTL ? 'فشل' : 'Failed')}
+                  </span>
+                  {count > 0 && (
+                    <span className="text-purple-300 text-xs font-bold">
+                      • {isRTL ? `تم توليد ${count} نماذج` : `${count} variants generated`}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Weakness Topic Selector */}
         {weaknessTopics.length > 0 && (

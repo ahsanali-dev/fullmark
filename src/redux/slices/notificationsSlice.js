@@ -100,14 +100,15 @@ const notificationsSlice = createSlice({
       })
       // markAllNotificationsRead
       .addCase(markAllNotificationsRead.fulfilled, (state) => {
-        state.notifications = state.notifications.map((n) => ({ ...n, read: true }));
+        state.notifications = state.notifications.map((n) => ({ ...n, read: true, isRead: true }));
         state.unreadCount = 0;
       })
       // markNotificationRead
       .addCase(markNotificationRead.fulfilled, (state, action) => {
         const id = action.payload;
         const notification = state.notifications.find((n) => n._id === id);
-        if (notification && !notification.read) {
+        if (notification && (!notification.isRead || !notification.read)) {
+          notification.isRead = true;
           notification.read = true;
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }
@@ -117,7 +118,7 @@ const notificationsSlice = createSlice({
         const id = action.payload;
         const notification = state.notifications.find((n) => n._id === id);
         if (notification) {
-          if (!notification.read) {
+          if (!notification.isRead && !notification.read) {
             state.unreadCount = Math.max(0, state.unreadCount - 1);
           }
           state.notifications = state.notifications.filter((n) => n._id !== id);

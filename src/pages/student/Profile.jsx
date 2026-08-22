@@ -284,9 +284,10 @@ const Profile = () => {
                 </button>
               </div>
 
-              <p className={`text-xs font-semibold italic leading-relaxed ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+              {/* Bio display commented out for now */}
+              {/* <p className={`text-xs font-semibold italic leading-relaxed ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {bio ? `"${bio}"` : (isRTL ? 'لا يوجد نبذة شخصية بعد. اضغط تعديل للإضافة.' : 'No bio yet. Tap Edit to add one.')}
-              </p>
+              </p> */}
 
               <div className={`flex flex-col gap-2.5 mt-2 text-xs font-semibold ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 <div className="flex items-center gap-3">
@@ -381,7 +382,7 @@ const Profile = () => {
                   </div>
                   <div>
                     <h5 className={`text-sm font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h5>
-                    <span className={`text-[10px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الاسم، النبذة، الهاتف" : "Name, bio, phone"}</span>
+                    <span className={`text-[10px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الاسم، الهاتف" : "Name, phone"}</span>
                   </div>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-transform" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />}
@@ -728,7 +729,8 @@ const Profile = () => {
                       roleColor="student"
                     />
 
-                    <div className="w-full flex flex-col mb-2 relative">
+                    {/* Bio input field commented out for now */}
+                    {/* <div className="w-full flex flex-col mb-2 relative">
                       <div className={`w-full flex flex-col relative rounded-2xl px-4 py-3 border min-h-[100px] justify-start focus-within:border-purple-500/50 transition-colors ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800/80'
                         }`}>
                         <span className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1.5 pointer-events-none font-semibold text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-wider`}>
@@ -745,7 +747,7 @@ const Profile = () => {
                             }`}
                         />
                       </div>
-                    </div>
+                    </div> */}
 
                     <button
                       type="submit"
