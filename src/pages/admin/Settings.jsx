@@ -208,36 +208,36 @@ const Settings = () => {
 
           {/* 2. Admin Privileges Grid */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
-            <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider text-start pl-1">
+            <h3 className="text-xs sm:text-sm md:text-base font-black text-gray-400 uppercase tracking-wider text-start pl-1">
               {isRTL ? "صلاحيات المسؤول" : "Admin Privileges"}
             </h3>
-            <div className="grid grid-cols-4 gap-2">
-              <div className="flex flex-col items-center justify-center p-3 bg-red-500/5 border border-red-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(239,68,68,0.02)]">
-                <FiShield className="text-red-500 text-lg sm:text-xl" />
-                <span className="text-[10px] font-black text-red-500 whitespace-nowrap">{isRTL ? "مسؤول مميز" : "Super Admin"}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="flex flex-col items-center justify-center p-3.5 bg-red-500/5 border border-red-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(239,68,68,0.02)]">
+                <FiShield className="text-red-500 text-xl sm:text-2xl" />
+                <span className="text-xs sm:text-sm font-black text-red-500 whitespace-nowrap">{isRTL ? "مسؤول مميز" : "Super Admin"}</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(16,185,129,0.02)]">
-                <FiLock className="text-emerald-500 text-lg sm:text-xl" />
-                <span className="text-[10px] font-black text-emerald-500 whitespace-nowrap">{isRTL ? "صلاحيات كاملة" : "Full Access"}</span>
+              <div className="flex flex-col items-center justify-center p-3.5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(16,185,129,0.02)]">
+                <FiLock className="text-emerald-500 text-xl sm:text-2xl" />
+                <span className="text-xs sm:text-sm font-black text-emerald-500 whitespace-nowrap">{isRTL ? "صلاحيات كاملة" : "Full Access"}</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(59,130,246,0.02)]">
-                <FiCheckCircle className="text-blue-500 text-lg sm:text-xl" />
-                <span className="text-[10px] font-black text-blue-500 whitespace-nowrap">{isRTL ? "موثق" : "Verified"}</span>
+              <div className="flex flex-col items-center justify-center p-3.5 bg-blue-500/5 border border-blue-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(59,130,246,0.02)]">
+                <FiCheckCircle className="text-blue-500 text-xl sm:text-2xl" />
+                <span className="text-xs sm:text-sm font-black text-blue-500 whitespace-nowrap">{isRTL ? "موثق" : "Verified"}</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-3 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(234,179,8,0.02)]">
-                <FiStar className="text-yellow-500 text-lg sm:text-xl" />
-                <span className="text-[10px] font-black text-yellow-500 whitespace-nowrap">{isRTL ? "موثوق" : "Trusted"}</span>
+              <div className="flex flex-col items-center justify-center p-3.5 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl gap-1.5 shadow-[inset_0_1px_5px_rgba(234,179,8,0.02)]">
+                <FiStar className="text-yellow-500 text-xl sm:text-2xl" />
+                <span className="text-xs sm:text-sm font-black text-yellow-500 whitespace-nowrap">{isRTL ? "موثوق" : "Trusted"}</span>
               </div>
             </div>
           </div>
 
           {/* 3. Account Management Rows */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
-            <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-                <FiUser size={13} />
+            <div className="flex items-center gap-2.5 mb-1 pl-1">
+              <div className="w-7 h-7 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                <FiUser size={15} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "الحساب" : "Account"}</h3>
+              <h3 className="text-xs sm:text-sm md:text-base font-black text-gray-400 uppercase tracking-wider">{isRTL ? "الحساب" : "Account"}</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -247,42 +247,42 @@ const Settings = () => {
                 onClick={() => {
                   setIsEditProfileOpen(true);
                 }}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-red-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between hover:border-red-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-sm">
-                    <FiUser size={18} />
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shadow-sm shrink-0">
+                    <FiUser className="text-lg sm:text-xl" />
                   </div>
                   <div className="text-start">
-                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "الاسم، الصورة، بيانات الاتصال" : "Name, photo, contact info"}</p>
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "الاسم، الصورة، بيانات الاتصال" : "Name, photo, contact info"}</p>
                   </div>
                 </div>
                 {isRTL ? (
-                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300 shrink-0" />
                 ) : (
-                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300 shrink-0" />
                 )}
               </button>
 
               {/* Change Password Row */}
               <button
                 onClick={() => setIsChangePasswordOpen(true)}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-sm">
-                    <FiLock size={18} />
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-sm shrink-0">
+                    <FiLock className="text-lg sm:text-xl" />
                   </div>
                   <div className="text-start">
-                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "تغيير كلمة المرور" : "Change Password"}</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "تحديث كلمة المرور" : "Update your password"}</p>
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "تغيير كلمة المرور" : "Change Password"}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "تحديث كلمة المرور" : "Update your password"}</p>
                   </div>
                 </div>
                 {isRTL ? (
-                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300 shrink-0" />
                 ) : (
-                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300 shrink-0" />
                 )}
               </button>
 
@@ -291,21 +291,21 @@ const Settings = () => {
                 onClick={() => {
                   setIsEditProfileOpen(true);
                 }}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-emerald-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between hover:border-emerald-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-sm">
-                    <FiPhone size={18} />
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-sm shrink-0">
+                    <FiPhone className="text-lg sm:text-xl" />
                   </div>
                   <div className="text-start">
-                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "رقم الهاتف" : "Phone Number"}</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">{profileData.phone}</p>
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "رقم الهاتف" : "Phone Number"}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{profileData.phone}</p>
                   </div>
                 </div>
                 {isRTL ? (
-                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300 shrink-0" />
                 ) : (
-                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300 shrink-0" />
                 )}
               </button>
 
@@ -314,25 +314,25 @@ const Settings = () => {
 
           {/* 4. Appearance & Language */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
-            <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-                <MdPalette size={13} />
+            <div className="flex items-center gap-2.5 mb-1 pl-1">
+              <div className="w-7 h-7 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                <MdPalette size={15} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "المظهر واللغة" : "Appearance & Language"}</h3>
+              <h3 className="text-xs sm:text-sm md:text-base font-black text-gray-400 uppercase tracking-wider">{isRTL ? "المظهر واللغة" : "Appearance & Language"}</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Theme Toggle Card */}
-              <div className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between transition-all duration-300">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-sm">
-                    {isDarkMode ? <FiMoon size={18} /> : <FiSun size={18} />}
+              <div className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between transition-all duration-300">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shadow-sm shrink-0">
+                    {isDarkMode ? <FiMoon className="text-lg sm:text-xl" /> : <FiSun className="text-lg sm:text-xl" />}
                   </div>
                   <div className="text-start">
-                    <h4 className="text-sm font-black text-white leading-tight">
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">
                       {isDarkMode ? (isRTL ? 'الوضع الداكن' : 'Dark Mode') : (isRTL ? 'الوضع الفاتح' : 'Light Mode')}
                     </h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "تغيير مظهر التطبيق" : "Switch app appearance"}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "تغيير مظهر التطبيق" : "Switch app appearance"}</p>
                   </div>
                 </div>
 
@@ -351,16 +351,16 @@ const Settings = () => {
               </div>
 
               {/* Language Switcher Card */}
-              <div className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between transition-all duration-300">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-sm">
-                    <FiGlobe size={18} />
+              <div className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between transition-all duration-300">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-sm shrink-0">
+                    <FiGlobe className="text-lg sm:text-xl" />
                   </div>
                   <div className="text-start">
-                    <h4 className="text-sm font-black text-white leading-tight">
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">
                       {isRTL ? "لغة الواجهة" : "App Language"}
                     </h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "العربية / English" : "English / العربية"}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "العربية / English" : "English / العربية"}</p>
                   </div>
                 </div>
 
@@ -394,11 +394,11 @@ const Settings = () => {
 
           {/* 5. Quick Access Grid */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
-            <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-                <FiGrid size={13} />
+            <div className="flex items-center gap-2.5 mb-1 pl-1">
+              <div className="w-7 h-7 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                <FiGrid size={15} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "وصول سريع" : "Quick Access"}</h3>
+              <h3 className="text-xs sm:text-sm md:text-base font-black text-gray-400 uppercase tracking-wider">{isRTL ? "وصول سريع" : "Quick Access"}</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -406,63 +406,63 @@ const Settings = () => {
               {/* User Management */}
               <button
                 onClick={() => navigate('/admin/users')}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-emerald-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between hover:border-emerald-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-sm">
-                    <FiGrid size={18} />
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-sm shrink-0">
+                    <FiGrid className="text-lg sm:text-xl" />
                   </div>
                   <div className="text-start">
-                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "إدارة المستخدمين" : "User Management"}</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "عرض وإدارة جميع المستخدمين" : "View and manage all users"}</p>
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "إدارة المستخدمين" : "User Management"}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "عرض وإدارة جميع المستخدمين" : "View and manage all users"}</p>
                   </div>
                 </div>
                 {isRTL ? (
-                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300 shrink-0" />
                 ) : (
-                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300 shrink-0" />
                 )}
               </button>
 
               {/* Subject Management */}
               <button
                 onClick={() => navigate('/admin/content')}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between hover:border-blue-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-sm">
-                    <FiBookOpen size={18} />
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shadow-sm shrink-0">
+                    <FiBookOpen className="text-lg sm:text-xl" />
                   </div>
                   <div className="text-start">
-                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "إدارة المواد" : "Subject Management"}</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "إدارة المواد والمحتوى" : "Manage subjects and content"}</p>
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "إدارة المواد" : "Subject Management"}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "إدارة المواد والمحتوى" : "Manage subjects and content"}</p>
                   </div>
                 </div>
                 {isRTL ? (
-                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300 shrink-0" />
                 ) : (
-                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300 shrink-0" />
                 )}
               </button>
 
               {/* Platform Reports */}
               <button
                 onClick={() => navigate('/admin/reports')}
-                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl p-4 flex items-center justify-between hover:border-cyan-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
+                className="w-full bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between hover:border-cyan-500/20 hover:bg-[#121324] transition-all duration-300 group cursor-pointer text-start"
               >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-sm">
-                    <FiBarChart2 size={18} />
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shadow-sm shrink-0">
+                    <FiBarChart2 className="text-lg sm:text-xl" />
                   </div>
                   <div className="text-start">
-                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "تقارير المنصة" : "Platform Reports"}</h4>
-                    <p className="text-xs text-gray-500 font-semibold mt-1">{isRTL ? "التحليلات والرؤى" : "Analytics and insights"}</p>
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "تقارير المنصة" : "Platform Reports"}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "التحليلات والرؤى" : "Analytics and insights"}</p>
                   </div>
                 </div>
                 {isRTL ? (
-                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300" />
+                  <FiChevronLeft className="text-gray-500 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-300 shrink-0" />
                 ) : (
-                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300" />
+                  <FiChevronRight className="text-gray-500 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-300 shrink-0" />
                 )}
               </button>
 

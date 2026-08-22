@@ -237,17 +237,17 @@ const ParentSettings = () => {
 
           {/* ── My Children ── */}
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 px-1">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                <FiUsers size={13} />
+            <div className="flex items-center gap-2.5 px-1">
+              <div className="w-7 h-7 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <FiUsers size={15} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider text-start">{isRTL ? "أبنائي" : "My Children"}</h3>
+              <h3 className="text-xs sm:text-sm md:text-base font-black text-gray-400 uppercase tracking-wider text-start">{isRTL ? "أبنائي" : "My Children"}</h3>
             </div>
             {isLoading && children.length === 0 ? (
               <TableRowSkeleton />
             ) : children.length === 0 ? (
               <div className="p-8 text-center bg-[#0c0d19]/40 border border-gray-800 rounded-3xl">
-                <p className="text-sm font-bold text-gray-500">{isRTL ? "لم يتم ربط أية أبناء بعد." : "No children linked yet."}</p>
+                <p className="text-sm sm:text-base font-bold text-gray-500">{isRTL ? "لم يتم ربط أية أبناء بعد." : "No children linked yet."}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -256,19 +256,19 @@ const ParentSettings = () => {
                   return (
                     <div
                       key={c._id}
-                      className="flex items-center gap-4 p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl transition-all"
+                      className="flex items-center gap-4 p-4 sm:p-5 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl sm:rounded-3xl transition-all"
                     >
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-base text-white shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-lg text-white shrink-0">
                         {childInitials}
                       </div>
                       <div className="flex-1 min-w-0 text-start">
-                        <p className="text-sm font-black text-white capitalize">{c.name}</p>
-                        <p className="text-[11px] text-gray-500 font-semibold">{c.totalExams || 0} {isRTL ? "اختبارات مجراة" : "exams taken"}</p>
+                        <p className="text-sm sm:text-base font-black text-white capitalize">{c.name}</p>
+                        <p className="text-xs text-gray-500 font-semibold mt-0.5">{c.totalExams || 0} {isRTL ? "اختبارات مجراة" : "exams taken"}</p>
                         <div className="flex items-center gap-2 mt-1.5">
-                          <span className="px-2 py-0.5 rounded-md bg-orange-500/15 border border-orange-500/20 text-orange-400 text-[10px] font-black">
+                          <span className="px-2.5 py-0.5 rounded-md bg-orange-500/15 border border-orange-500/20 text-orange-400 text-xs font-black">
                             {c.avgScore || 0}% {isRTL ? "متوسط" : "avg"}
                           </span>
-                          <span className="px-2 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/20 text-amber-400 text-[10px] font-black">
+                          <span className="px-2.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/20 text-amber-400 text-xs font-black">
                             {c.streak || 0} {isRTL ? "أيام حماسة" : "d streak"}
                           </span>
                         </div>
@@ -276,17 +276,17 @@ const ParentSettings = () => {
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => navigate('/parent/children')}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black hover:bg-emerald-500/20 transition-all cursor-pointer"
+                          className="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black hover:bg-emerald-500/20 transition-all cursor-pointer"
                         >
                           {isRTL ? "عرض" : "View"}
                         </button>
                         <button
                           disabled={isActionLoading}
                           onClick={() => handleUnlink(c._id)}
-                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 transition-all cursor-pointer disabled:opacity-55"
+                          className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 transition-all cursor-pointer disabled:opacity-55"
                           title={isRTL ? "إلغاء ربط الابن" : "Unlink child"}
                         >
-                          <FiTrash2 size={14} />
+                          <FiTrash2 size={16} />
                         </button>
                       </div>
                     </div>
@@ -298,57 +298,57 @@ const ParentSettings = () => {
 
           {/* ── Preferences ── */}
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 px-1">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                <FiBell size={13} />
+            <div className="flex items-center gap-2.5 px-1">
+              <div className="w-7 h-7 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <FiBell size={15} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider text-start">{isRTL ? "التفضيلات" : "Preferences"}</h3>
+              <h3 className="text-xs sm:text-sm md:text-base font-black text-gray-400 uppercase tracking-wider text-start">{isRTL ? "التفضيلات" : "Preferences"}</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {/* Push Notifications */}
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl">
-                <div className="flex items-center gap-3.5 text-start">
-                  <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-400">
-                    <FiBell size={16} />
+              <div className="flex items-center justify-between p-4 sm:p-5 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl">
+                <div className="flex items-center gap-4 text-start">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-400 shrink-0">
+                    <FiBell className="text-lg sm:text-xl" />
                   </div>
                   <div>
-                    <h5 className="text-sm font-bold text-white leading-none">{isRTL ? "إشعارات التنبيه" : "Push Notifications"}</h5>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">{isRTL ? "استلام تقارير الأبناء" : "Receive sibling reports"}</span>
+                    <h5 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "إشعارات التنبيه" : "Push Notifications"}</h5>
+                    <span className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 block">{isRTL ? "استلام تقارير الأبناء" : "Receive sibling reports"}</span>
                   </div>
                 </div>
                 <Toggle value={pushNotifs} onChange={setPushNotifs} activeColor="bg-purple-500" isRTL={isRTL} />
               </div>
 
               {/* Dark Mode */}
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl">
-                <div className="flex items-center gap-3.5 text-start">
-                  <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400">
-                    {isDark ? <FiMoon size={18} /> : <FiSun size={18} />}
+              <div className="flex items-center justify-between p-4 sm:p-5 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl">
+                <div className="flex items-center gap-4 text-start">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0">
+                    {isDark ? <FiMoon className="text-lg sm:text-xl" /> : <FiSun className="text-lg sm:text-xl" />}
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "الوضع الداكن" : "Dark Mode"}</h4>
-                    <p className="text-[10px] text-gray-500 font-semibold mt-1">{isRTL ? "تبديل مظهر اللوحة" : "Switch dashboard theme"}</p>
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "الوضع الداكن" : "Dark Mode"}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "تبديل مظهر اللوحة" : "Switch dashboard theme"}</p>
                   </div>
                 </div>
                 <Toggle value={isDark} onChange={(val) => setTheme(val ? 'dark' : 'light')} activeColor="bg-yellow-500" isRTL={isRTL} />
               </div>
 
               {/* Language Switcher Card */}
-              <div className="flex items-center justify-between p-4 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl">
-                <div className="flex items-center gap-3.5 text-start">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                    <FiGlobe size={18} />
+              <div className="flex items-center justify-between p-4 sm:p-5 bg-[#0c0d19]/40 border border-gray-800/80 rounded-2xl sm:rounded-3xl">
+                <div className="flex items-center gap-4 text-start">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                    <FiGlobe className="text-lg sm:text-xl" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-white leading-tight">{isRTL ? "لغة الواجهة" : "App Language"}</h4>
-                    <p className="text-[10px] text-gray-500 font-semibold mt-1">{isRTL ? "العربية / English" : "English / العربية"}</p>
+                    <h4 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "لغة الواجهة" : "App Language"}</h4>
+                    <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "العربية / English" : "English / العربية"}</p>
                   </div>
                 </div>
                 <div className="flex items-center bg-gray-950 p-1 rounded-xl border border-gray-800">
                   <button
                     type="button"
                     onClick={() => changeLanguage('en')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                       language === 'en'
                         ? 'bg-purple-600 text-white shadow-md'
                         : 'text-gray-400 hover:text-white'
@@ -359,7 +359,7 @@ const ParentSettings = () => {
                   <button
                     type="button"
                     onClick={() => changeLanguage('ar')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                       language === 'ar'
                         ? 'bg-purple-600 text-white shadow-md'
                         : 'text-gray-400 hover:text-white'
@@ -374,24 +374,24 @@ const ParentSettings = () => {
 
           {/* ── About ── */}
           <div className="flex flex-col gap-3 text-start">
-            <div className="flex items-center gap-2 px-1">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-                <FiShield size={13} />
+            <div className="flex items-center gap-2.5 px-1">
+              <div className="w-7 h-7 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                <FiShield size={15} />
               </div>
-              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">{isRTL ? "حول المنصة" : "About"}</h3>
+              <h3 className="text-xs sm:text-sm md:text-base font-black text-gray-400 uppercase tracking-wider">{isRTL ? "حول المنصة" : "About"}</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <button
                 onClick={() => toast(isRTL ? 'شكراً لك على ملاحظاتك! 🌟' : 'Thank you for your feedback! 🌟')}
-                className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-start"
+                className="flex items-center justify-between p-4 sm:p-5 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl sm:rounded-3xl cursor-pointer transition-all group text-start"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-400">
-                    <FiStar size={18} />
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-400 shrink-0">
+                    <FiStar className="text-lg sm:text-xl" />
                   </div>
                   <div>
-                    <h5 className="text-sm font-bold text-white leading-none">{isRTL ? "تقييم التطبيق" : "Rate the App"}</h5>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">{isRTL ? "مشاركة ملاحظاتك" : "Share feedback"}</span>
+                    <h5 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "تقييم التطبيق" : "Rate the App"}</h5>
+                    <span className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 block">{isRTL ? "مشاركة ملاحظاتك" : "Share feedback"}</span>
                   </div>
                 </div>
                 <FiChevronRight className={`text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0 ${isRTL ? 'rotate-180' : ''}`} />
@@ -399,15 +399,15 @@ const ParentSettings = () => {
 
               <button
                 onClick={() => toast(isRTL ? 'فول مارك — منصة متابعة الأبناء v1.0.0' : 'FullMark — Sibling Tracker Platform v1.0.0')}
-                className="flex items-center justify-between p-4 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl cursor-pointer transition-all group text-start"
+                className="flex items-center justify-between p-4 sm:p-5 bg-[#0c0d19]/40 hover:bg-[#121424] border border-gray-800/80 rounded-2xl sm:rounded-3xl cursor-pointer transition-all group text-start"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-400">
-                    <FiShield size={18} />
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-400 shrink-0">
+                    <FiShield className="text-lg sm:text-xl" />
                   </div>
                   <div>
-                    <h5 className="text-sm font-bold text-white leading-none">{isRTL ? "عن فول مارك" : "About FullMark"}</h5>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1 block">{isRTL ? "الإصدار 1.0.0" : "Version 1.0.0"}</span>
+                    <h5 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "عن فول مارك" : "About FullMark"}</h5>
+                    <span className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 block">{isRTL ? "الإصدار 1.0.0" : "Version 1.0.0"}</span>
                   </div>
                 </div>
                 <FiChevronRight className={`text-gray-400 group-hover:translate-x-0.5 transition-transform shrink-0 ${isRTL ? 'rotate-180' : ''}`} />

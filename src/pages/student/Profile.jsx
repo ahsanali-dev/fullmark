@@ -333,29 +333,29 @@ const Profile = () => {
 
           {/* 3. Metrics grid */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
-            <h3 className={`text-xs font-black uppercase tracking-wider pl-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
+            <h3 className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-wider pl-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
               {isRTL ? "مقاييس الأداء" : "Performance Metrics"}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+              <div className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
                 }`}>
-                <span className="text-lg md:text-xl font-black text-emerald-600 dark:text-emerald-400 leading-none mb-1">{averageScore}%</span>
-                <span className={`text-[8px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "متوسط الدرجات" : "Avg Score"}</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-emerald-600 dark:text-emerald-400 leading-none mb-1.5">{averageScore}%</span>
+                <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "متوسط الدرجات" : "Avg Score"}</span>
               </div>
-              <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+              <div className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
                 }`}>
-                <span className="text-lg md:text-xl font-black text-purple-600 dark:text-purple-400 leading-none mb-1">{totalExams}</span>
-                <span className={`text-[8px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الاختبارات المجتازة" : "Exams taken"}</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-purple-600 dark:text-purple-400 leading-none mb-1.5">{totalExams}</span>
+                <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الاختبارات المجتازة" : "Exams taken"}</span>
               </div>
-              <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+              <div className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
                 }`}>
-                <span className="text-lg md:text-xl font-black text-blue-600 dark:text-blue-400 leading-none mb-1">{enrolledCoursesCount}</span>
-                <span className={`text-[8px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "المواد النشطة" : "Active Courses"}</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-blue-600 dark:text-blue-400 leading-none mb-1.5">{enrolledCoursesCount}</span>
+                <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "المواد النشطة" : "Active Courses"}</span>
               </div>
-              <div className={`p-4 rounded-2xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+              <div className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border flex flex-col items-center justify-center text-center shadow-md ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
                 }`}>
-                <span className="text-lg md:text-xl font-black text-yellow-600 dark:text-yellow-500 leading-none mb-1">{passedExams}</span>
-                <span className={`text-[8px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "عدد مرات النجاح" : "Passed count"}</span>
+                <span className="text-xl sm:text-2xl md:text-3xl font-black text-yellow-600 dark:text-yellow-500 leading-none mb-1.5">{passedExams}</span>
+                <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "عدد مرات النجاح" : "Passed count"}</span>
               </div>
             </div>
           </div>
@@ -363,26 +363,26 @@ const Profile = () => {
           {/* 4. Account Settings Section (3 Column Grid Desktop) */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                <FiUser size={13} />
+              <div className="w-7 h-7 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                <FiUser size={15} />
               </div>
-              <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الحساب" : "Account"}</h3>
+              <h3 className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الحساب" : "Account"}</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Edit Profile */}
               <div
                 onClick={() => setIsEditProfileOpen(true)}
-                className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800/80'
+                className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800/80'
                   }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
-                    <FiUser size={18} />
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                    <FiUser className="text-lg sm:text-xl" />
                   </div>
                   <div>
-                    <h5 className={`text-sm font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h5>
-                    <span className={`text-[10px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الاسم، الهاتف" : "Name, phone"}</span>
+                    <h5 className={`text-sm sm:text-base md:text-lg font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h5>
+                    <span className={`text-xs sm:text-sm font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الاسم، الهاتف" : "Name, phone"}</span>
                   </div>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-transform" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />}
@@ -391,16 +391,16 @@ const Profile = () => {
               {/* Change Password */}
               <div
                 onClick={() => setIsChangePasswordOpen(true)}
-                className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800/80'
+                className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800/80'
                   }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-                    <FiLock size={18} />
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                    <FiLock className="text-lg sm:text-xl" />
                   </div>
                   <div>
-                    <h5 className={`text-sm font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تغيير كلمة المرور" : "Change Password"}</h5>
-                    <span className={`text-[10px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تحديث كلمة المرور" : "Update security password"}</span>
+                    <h5 className={`text-sm sm:text-base md:text-lg font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تغيير كلمة المرور" : "Change Password"}</h5>
+                    <span className={`text-xs sm:text-sm font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تحديث كلمة المرور" : "Update security password"}</span>
                   </div>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-transform" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />}
@@ -409,16 +409,16 @@ const Profile = () => {
               {/* Language Selection */}
               <div
                 onClick={() => { setTempLanguage(selectedLanguage); setIsLanguageOpen(true); }}
-                className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800/80'
+                className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800/80'
                   }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                    <FiGlobe size={18} />
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <FiGlobe className="text-lg sm:text-xl" />
                   </div>
                   <div>
-                    <h5 className={`text-sm font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "اللغة" : "Language"}</h5>
-                    <span className={`text-[10px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? 'العربية / English' : `${selectedLanguage} / العربية`}</span>
+                    <h5 className={`text-sm sm:text-base md:text-lg font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "اللغة" : "Language"}</h5>
+                    <span className={`text-xs sm:text-sm font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? 'العربية / English' : `${selectedLanguage} / العربية`}</span>
                   </div>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-transform" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-transform" />}
@@ -429,42 +429,42 @@ const Profile = () => {
           {/* 5. Family & Badges Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0 text-start">
             {/* Link a parent card */}
-            <div className={`p-6 border rounded-[2rem] shadow-lg flex flex-col gap-4 text-start justify-between ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
+            <div className={`p-6 md:p-7 border rounded-[2rem] shadow-lg flex flex-col gap-4 text-start justify-between ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
               }`}>
-              <div className={`flex items-center gap-3 pb-2 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/40'}`}>
-                <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                  <FiUsers size={16} />
+              <div className={`flex items-center gap-3 pb-2.5 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/40'}`}>
+                <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                  <FiUsers size={18} />
                 </div>
-                <h4 className={`text-sm font-extrabold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "ربط العائلة" : "Family Linking"}</h4>
+                <h4 className={`text-base sm:text-lg font-black uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "ربط العائلة" : "Family Linking"}</h4>
               </div>
 
-              <p className={`text-xs font-semibold leading-relaxed ${isLight ? 'text-slate-600' : 'text-gray-500'}`}>
+              <p className={`text-xs sm:text-sm md:text-base font-medium leading-relaxed ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {isRTL ? "قم بربط حساب ولي الأمر لمتابعة تقدمك ودرجات الاختبارات وسجل الدراسة." : "Connect a parent account to follow your progress, exam scores, and study completion history."}
               </p>
 
-              <div className={`flex items-center justify-between gap-3 p-3 rounded-2xl mt-1 border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-gray-950/65 border-gray-800'
+              <div className={`flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl mt-1 border ${isLight ? 'bg-slate-100 border-slate-200' : 'bg-gray-950/65 border-gray-800'
                 }`}>
-                <span className={`text-xs font-black tracking-widest pl-1 ${isLight ? 'text-slate-900' : 'text-white'}`}># {linkCode || 'FM-8UTT2N'}</span>
+                <span className={`text-sm sm:text-base font-black tracking-widest pl-1 ${isLight ? 'text-slate-900' : 'text-white'}`}># {linkCode || 'FM-8UTT2N'}</span>
                 <button
                   onClick={handleCopyCode}
-                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer transition-all shadow-[0_4px_15px_rgba(139,92,246,0.3)]"
+                  className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer transition-all shadow-[0_4px_15px_rgba(139,92,246,0.3)]"
                 >
-                  <FiCopy size={11} /> {isRTL ? "نسخ الرمز" : "Copy Code"}
+                  <FiCopy size={13} /> {isRTL ? "نسخ الرمز" : "Copy Code"}
                 </button>
               </div>
             </div>
 
             {/* Badges showcase */}
-            <div className={`p-6 border rounded-[2rem] shadow-lg flex flex-col gap-4 text-start ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
+            <div className={`p-6 md:p-7 border rounded-[2rem] shadow-lg flex flex-col gap-4 text-start ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
               }`}>
-              <div className={`flex justify-between items-center pb-2 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/40'}`}>
+              <div className={`flex justify-between items-center pb-2.5 border-b ${isLight ? 'border-slate-200' : 'border-gray-800/40'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-500">
-                    <FiAward size={16} />
+                  <div className="w-10 h-10 rounded-2xl bg-yellow-500/10 flex items-center justify-center text-yellow-500">
+                    <FiAward size={18} />
                   </div>
-                  <h4 className={`text-sm font-extrabold uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "أوسمتي" : "My Badges"}</h4>
+                  <h4 className={`text-base sm:text-lg font-black uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "أوسمتي" : "My Badges"}</h4>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-[9px] font-black text-yellow-600 dark:text-yellow-500">
+                <span className="px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-xs font-black text-yellow-600 dark:text-yellow-500">
                   {badgesCount} {isRTL ? "مكتسبة" : "earned"}
                 </span>
               </div>
@@ -472,36 +472,36 @@ const Profile = () => {
               <div className="grid grid-cols-3 gap-3.5 mt-2">
                 {studentProfile?.badges && studentProfile.badges.length > 0 ? (
                   studentProfile.badges.slice(0, 3).map((b, idx) => (
-                    <div key={idx} className={`flex flex-col items-center gap-2 p-2 rounded-xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
+                    <div key={idx} className={`flex flex-col items-center gap-2.5 p-3 rounded-2xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
                       }`}>
-                      <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
-                        <FiAward size={13} />
+                      <div className="w-10 h-10 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
+                        <FiAward size={16} />
                       </div>
-                      <span className={`text-[8.5px] font-black capitalize truncate w-full ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{b.label}</span>
+                      <span className={`text-xs sm:text-sm font-bold capitalize truncate w-full ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{b.label}</span>
                     </div>
                   ))
                 ) : (
                   <>
-                    <div className={`flex flex-col items-center gap-2 p-2 rounded-xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
+                    <div className={`flex flex-col items-center gap-2.5 p-3 rounded-2xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
                       }`}>
-                      <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
-                        <FiBookOpen size={13} />
+                      <div className="w-10 h-10 rounded-full bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-600 dark:text-yellow-400">
+                        <FiBookOpen size={16} />
                       </div>
-                      <span className={`text-[8.5px] font-black ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{isRTL ? "الاختبار الأول" : "First Exam"}</span>
+                      <span className={`text-xs sm:text-sm font-bold ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{isRTL ? "الاختبار الأول" : "First Exam"}</span>
                     </div>
-                    <div className={`flex flex-col items-center gap-2 p-2 rounded-xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
+                    <div className={`flex flex-col items-center gap-2.5 p-3 rounded-2xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
                       }`}>
-                      <div className="w-8 h-8 rounded-full bg-pink-500/15 border border-pink-500/25 flex items-center justify-center text-pink-600 dark:text-pink-400">
-                        <FiStar size={13} />
+                      <div className="w-10 h-10 rounded-full bg-pink-500/15 border border-pink-500/25 flex items-center justify-center text-pink-600 dark:text-pink-400">
+                        <FiStar size={16} />
                       </div>
-                      <span className={`text-[8.5px] font-black ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{isRTL ? "درجة كاملة" : "Perfect Score"}</span>
+                      <span className={`text-xs sm:text-sm font-bold ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{isRTL ? "درجة كاملة" : "Perfect Score"}</span>
                     </div>
-                    <div className={`flex flex-col items-center gap-2 p-2 rounded-xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
+                    <div className={`flex flex-col items-center gap-2.5 p-3 rounded-2xl border text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-gray-950/40 border-gray-800'
                       }`}>
-                      <div className="w-8 h-8 rounded-full bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                        <FaFire size={13} />
+                      <div className="w-10 h-10 rounded-full bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                        <FaFire size={16} />
                       </div>
-                      <span className={`text-[8.5px] font-black ${isLight ? 'text-slate-700' : 'text-gray-400'}`}>{isRTL ? "تتابع 7 أيام" : "7-Day Streak"}</span>
+                      <span className={`text-xs sm:text-sm font-bold ${isLight ? 'text-slate-700' : 'text-gray-300'}`}>{isRTL ? "تتابع 7 أيام" : "7-Day Streak"}</span>
                     </div>
                   </>
                 )}
@@ -512,70 +512,70 @@ const Profile = () => {
           {/* 6. Notifications & Sound grid (4 Column Grid Desktop) */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                <FiBell size={13} />
+              <div className="w-7 h-7 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                <FiBell size={15} />
               </div>
-              <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "التنبيهات وخيارات الإشعارات" : "Notifications & Alert Toggles"}</h3>
+              <h3 className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "التنبيهات وخيارات الإشعارات" : "Notifications & Alert Toggles"}</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Push notifications */}
-              <div className={`flex items-center justify-between p-4 border rounded-2xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+              <div className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
                 }`}>
                 <div className="text-start">
-                  <h5 className={`text-xs font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "إشعارات التطبيق" : "Push"}</h5>
-                  <span className={`text-[9px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تلقي تنبيهات التطبيق" : "Receive app alerts"}</span>
+                  <h5 className={`text-sm sm:text-base font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "إشعارات التطبيق" : "Push"}</h5>
+                  <span className={`text-xs sm:text-sm font-medium mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تلقي تنبيهات التطبيق" : "Receive app alerts"}</span>
                 </div>
                 <button
                   onClick={() => setPushNotifications(!pushNotifications)}
-                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${pushNotifications ? 'bg-purple-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
+                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${pushNotifications ? 'bg-purple-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
                 >
-                  <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
+                  <div className="w-5 h-5 rounded-full bg-white shadow-md" />
                 </button>
               </div>
 
               {/* Exam Reminders */}
-              <div className={`flex items-center justify-between p-4 border rounded-2xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+              <div className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
                 }`}>
                 <div className="text-start">
-                  <h5 className={`text-xs font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "التذكيرات" : "Reminders"}</h5>
-                  <span className={`text-[9px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "التنبيه قبل الاختبارات" : "Get warned before exams"}</span>
+                  <h5 className={`text-sm sm:text-base font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "التذكيرات" : "Reminders"}</h5>
+                  <span className={`text-xs sm:text-sm font-medium mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "التنبيه قبل الاختبارات" : "Get warned before exams"}</span>
                 </div>
                 <button
                   onClick={() => setExamReminders(!examReminders)}
-                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${examReminders ? 'bg-blue-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
+                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${examReminders ? 'bg-blue-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
                 >
-                  <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
+                  <div className="w-5 h-5 rounded-full bg-white shadow-md" />
                 </button>
               </div>
 
               {/* Result alerts */}
-              <div className={`flex items-center justify-between p-4 border rounded-2xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+              <div className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
                 }`}>
                 <div className="text-start">
-                  <h5 className={`text-xs font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تنبيهات النتائج" : "Result Alerts"}</h5>
-                  <span className={`text-[9px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الإشعار عند صدور النتيجة" : "Notify when scored"}</span>
+                  <h5 className={`text-sm sm:text-base font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تنبيهات النتائج" : "Result Alerts"}</h5>
+                  <span className={`text-xs sm:text-sm font-medium mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الإشعار عند صدور النتيجة" : "Notify when scored"}</span>
                 </div>
                 <button
                   onClick={() => setResultAlerts(!resultAlerts)}
-                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${resultAlerts ? 'bg-emerald-500 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
+                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${resultAlerts ? 'bg-emerald-500 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
                 >
-                  <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
+                  <div className="w-5 h-5 rounded-full bg-white shadow-md" />
                 </button>
               </div>
 
               {/* Sound Effects */}
-              <div className={`flex items-center justify-between p-4 border rounded-2xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
+              <div className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800'
                 }`}>
                 <div className="text-start">
-                  <h5 className={`text-xs font-bold leading-none ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "الأصوات" : "Sounds"}</h5>
-                  <span className={`text-[9px] font-semibold mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تشغيل التنبيهات الصوتية" : "Play audio cues"}</span>
+                  <h5 className={`text-sm sm:text-base font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "الأصوات" : "Sounds"}</h5>
+                  <span className={`text-xs sm:text-sm font-medium mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تشغيل التنبيهات الصوتية" : "Play audio cues"}</span>
                 </div>
                 <button
                   onClick={() => setSoundEffects(!soundEffects)}
-                  className={`w-10 h-6.5 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${soundEffects ? 'bg-gray-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
+                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${soundEffects ? 'bg-gray-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
                 >
-                  <div className="w-4.5 h-4.5 rounded-full bg-white shadow-md" />
+                  <div className="w-5 h-5 rounded-full bg-white shadow-md" />
                 </button>
               </div>
             </div>
@@ -584,21 +584,21 @@ const Profile = () => {
           {/* 7. Appearance section */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500">
-                <FiSun size={13} />
+              <div className="w-7 h-7 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-500">
+                <FiSun size={15} />
               </div>
-              <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "المظهر" : "Appearance"}</h3>
+              <h3 className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "المظهر" : "Appearance"}</h3>
             </div>
 
-            <div className={`w-full border rounded-2xl p-4 flex items-center justify-between ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
+            <div className={`w-full border rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex items-center justify-between ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80'
               }`}>
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400 shadow-sm shrink-0">
-                  {theme === 'dark' ? <FiMoon size={18} /> : <FiSun size={18} />}
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-600 dark:text-yellow-400 shadow-sm shrink-0">
+                  {theme === 'dark' ? <FiMoon className="text-lg sm:text-xl" /> : <FiSun className="text-lg sm:text-xl" />}
                 </div>
                 <div className="text-start">
-                  <h4 className={`text-sm font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "الوضع الداكن" : "Dark Mode"}</h4>
-                  <p className={`text-xs font-semibold mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تغيير ثيم التطبيق" : "Switch app appearance theme"}</p>
+                  <h4 className={`text-sm sm:text-base md:text-lg font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "الوضع الداكن" : "Dark Mode"}</h4>
+                  <p className={`text-xs sm:text-sm font-medium mt-1 ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تغيير ثيم التطبيق" : "Switch app appearance theme"}</p>
                 </div>
               </div>
               <button
@@ -613,45 +613,45 @@ const Profile = () => {
           {/* 8. Support Row (4 column Grid Desktop) */}
           <div className="flex flex-col gap-3 shrink-0 text-start">
             <div className="flex items-center gap-2 mb-1 pl-1">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                <FiGlobe size={13} />
+              <div className="w-7 h-7 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                <FiGlobe size={15} />
               </div>
-              <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الدعم والمساعدة" : "Support"}</h3>
+              <h3 className={`text-xs sm:text-sm md:text-base font-black uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الدعم والمساعدة" : "Support"}</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
+              <div className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
                 }`}>
                 <div>
-                  <h5 className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "مركز المساعدة" : "Help Center"}</h5>
-                  <span className={`text-[9px] font-semibold mt-0.5 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الأسئلة الشائعة والإرشادات" : "FAQs & guides"}</span>
+                  <h5 className={`text-sm sm:text-base font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "مركز المساعدة" : "Help Center"}</h5>
+                  <span className={`text-xs sm:text-sm font-medium mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "الأسئلة الشائعة والإرشادات" : "FAQs & guides"}</span>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-all" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />}
               </div>
 
-              <div className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
+              <div className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
                 }`}>
                 <div>
-                  <h5 className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تواصل معنا" : "Contact Us"}</h5>
-                  <span className={`text-[9px] font-semibold mt-0.5 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "التواصل مع فريق الدعم" : "Reach our support team"}</span>
+                  <h5 className={`text-sm sm:text-base font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "تواصل معنا" : "Contact Us"}</h5>
+                  <span className={`text-xs sm:text-sm font-medium mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "التواصل مع فريق الدعم" : "Reach our support team"}</span>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-all" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />}
               </div>
 
-              <div className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
+              <div className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
                 }`}>
                 <div>
-                  <h5 className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "الآراء والملاحظات" : "Feedback"}</h5>
-                  <span className={`text-[9px] font-semibold mt-0.5 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تقييم تجربة التطبيق" : "Rate app experience"}</span>
+                  <h5 className={`text-sm sm:text-base font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "الآراء والملاحظات" : "Feedback"}</h5>
+                  <span className={`text-xs sm:text-sm font-medium mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>{isRTL ? "تقييم تجربة التطبيق" : "Rate app experience"}</span>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-all" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />}
               </div>
 
-              <div className={`flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
+              <div className={`flex items-center justify-between p-4 sm:p-5 border rounded-2xl sm:rounded-3xl cursor-pointer transition-all group text-start ${isLight ? 'bg-white hover:bg-slate-50 border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 hover:bg-[#121424] border-gray-800'
                 }`}>
                 <div>
-                  <h5 className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "حول التطبيق" : "About"}</h5>
-                  <span className={`text-[9px] font-semibold mt-0.5 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>FullMark v1.0.0</span>
+                  <h5 className={`text-sm sm:text-base font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "حول التطبيق" : "About"}</h5>
+                  <span className={`text-xs sm:text-sm font-medium mt-1 block ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>FullMark v1.0.0</span>
                 </div>
                 {isRTL ? <FiChevronLeft className="text-gray-500 group-hover:-translate-x-0.5 transition-all" /> : <FiChevronRight className="text-gray-500 group-hover:translate-x-0.5 transition-all" />}
               </div>

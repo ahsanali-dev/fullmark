@@ -188,33 +188,33 @@ const TeacherSettings = () => {
         </div>
 
         {/* B. About Me Section */}
-        <div className="p-6 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-start">
-          <div className="flex justify-between items-center pb-2 border-b border-gray-800/40">
+        <div className="p-6 md:p-7 bg-[#0e101a] border border-gray-800/80 rounded-[2rem] shadow-lg flex flex-col gap-4 text-start">
+          <div className="flex justify-between items-center pb-2.5 border-b border-gray-800/40">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
-                <FiUser size={16} />
+              <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                <FiUser size={18} />
               </div>
-              <h4 className="text-base font-extrabold text-white">{isRTL ? "نبذة عني" : "About Me"}</h4>
+              <h4 className="text-base sm:text-lg font-black text-white">{isRTL ? "نبذة عني" : "About Me"}</h4>
             </div>
             <button
               onClick={() => setIsEditProfileOpen(true)}
-              className="text-sm font-extrabold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+              className="text-xs sm:text-sm font-black text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
             >
               {isRTL ? "تعديل" : "Edit"}
             </button>
           </div>
 
-          <p className="text-base font-semibold text-gray-400 italic text-start">
+          <p className="text-sm sm:text-base font-medium text-gray-400 italic text-start">
             {profileData.bio || (isRTL ? 'لا توجد نبذة شخصية بعد. انقر على تعديل لإضافة واحدة.' : 'No bio yet. Tap Edit to add one.')}
           </p>
 
-          <div className="flex flex-col gap-2.5 mt-2 text-sm font-semibold text-gray-400 text-start">
+          <div className="flex flex-col gap-2.5 mt-2 text-xs sm:text-sm font-semibold text-gray-400 text-start">
             <div className="flex items-center gap-3">
-              <FiMail className="text-gray-500 text-sm shrink-0" />
+              <FiMail className="text-gray-500 text-base shrink-0" />
               <span>{profileData.email}</span>
             </div>
             <div className="flex items-center gap-3">
-              <FiPhone className="text-gray-500 text-sm shrink-0" />
+              <FiPhone className="text-gray-500 text-base shrink-0" />
               <span>{profileData.phone || (isRTL ? 'غير متاح' : 'Not provided')}</span>
             </div>
           </div>
@@ -222,26 +222,26 @@ const TeacherSettings = () => {
 
         {/* C. Account Settings Section */}
         <div className="flex flex-col gap-4 text-start">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 shadow-sm">
+          <div className="flex items-center gap-2.5 px-1">
+            <div className="w-7 h-7 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 shadow-sm">
               <FiSettings size={15} />
             </div>
-            <h4 className="text-sm font-black tracking-wide text-gray-400 uppercase">{isRTL ? "إعدادات الحساب" : "Account Settings"}</h4>
+            <h4 className="text-xs sm:text-sm md:text-base font-black tracking-wider text-gray-400 uppercase">{isRTL ? "إعدادات الحساب" : "Account Settings"}</h4>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Edit Profile Row */}
             <div
               onClick={() => setIsEditProfileOpen(true)}
-              className="flex items-center justify-between p-4 bg-[#0e101a] hover:bg-[#121424] border border-gray-800/80 rounded-2xl transition-all cursor-pointer group"
+              className="flex items-center justify-between p-4 sm:p-5 bg-[#0e101a] hover:bg-[#121424] border border-gray-800/80 rounded-2xl sm:rounded-3xl transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-4 text-start">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
-                  <FiUser size={18} />
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
+                  <FiUser className="text-lg sm:text-xl" />
                 </div>
                 <div className="text-start">
-                  <h5 className="text-base font-bold text-white leading-none">{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h5>
-                  <span className="text-xs text-gray-500 font-semibold mt-1 block">{isRTL ? "الاسم، النبذة الشخصية، الصورة" : "Name, bio, photo"}</span>
+                  <h5 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "تعديل الملف الشخصي" : "Edit Profile"}</h5>
+                  <span className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 block">{isRTL ? "الاسم، النبذة الشخصية، الصورة" : "Name, bio, photo"}</span>
                 </div>
               </div>
               <FiChevronRight className={`text-gray-500 transition-transform ${isRTL ? 'rotate-180 group-hover:-translate-x-0.5' : 'group-hover:translate-x-0.5'}`} />
@@ -250,15 +250,15 @@ const TeacherSettings = () => {
             {/* Change Password Row */}
             <div
               onClick={() => setIsChangePasswordOpen(true)}
-              className="flex items-center justify-between p-4 bg-[#0e101a] hover:bg-[#121424] border border-gray-800/80 rounded-2xl transition-all cursor-pointer group"
+              className="flex items-center justify-between p-4 sm:p-5 bg-[#0e101a] hover:bg-[#121424] border border-gray-800/80 rounded-2xl sm:rounded-3xl transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-4 text-start">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
-                  <FiLock size={18} />
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
+                  <FiLock className="text-lg sm:text-xl" />
                 </div>
                 <div className="text-start">
-                  <h5 className="text-base font-bold text-white leading-none">{isRTL ? "تغيير كلمة المرور" : "Change Password"}</h5>
-                  <span className="text-xs text-gray-500 font-semibold mt-1 block">{isRTL ? "تحديث كلمة المرور الخاصة بك" : "Update your password"}</span>
+                  <h5 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "تغيير كلمة المرور" : "Change Password"}</h5>
+                  <span className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 block">{isRTL ? "تحديث كلمة المرور الخاصة بك" : "Update your password"}</span>
                 </div>
               </div>
               <FiChevronRight className={`text-gray-500 transition-transform ${isRTL ? 'rotate-180 group-hover:-translate-x-0.5' : 'group-hover:translate-x-0.5'}`} />
@@ -267,15 +267,15 @@ const TeacherSettings = () => {
             {/* Phone Number Row */}
             <div
               onClick={() => setIsEditProfileOpen(true)}
-              className="flex items-center justify-between p-4 bg-[#0e101a] hover:bg-[#121424] border border-gray-800/80 rounded-2xl transition-all cursor-pointer group"
+              className="flex items-center justify-between p-4 sm:p-5 bg-[#0e101a] hover:bg-[#121424] border border-gray-800/80 rounded-2xl sm:rounded-3xl transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-4 text-start">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shrink-0">
-                  <FiPhone size={18} />
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shrink-0">
+                  <FiPhone className="text-lg sm:text-xl" />
                 </div>
                 <div className="text-start">
-                  <h5 className="text-base font-bold text-white leading-none">{isRTL ? "رقم الهاتف" : "Phone Number"}</h5>
-                  <span className="text-xs text-gray-500 font-semibold mt-1 block">
+                  <h5 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "رقم الهاتف" : "Phone Number"}</h5>
+                  <span className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 block">
                     {profileData.phone || (isRTL ? 'غير متاح' : 'Not provided')}
                   </span>
                 </div>
@@ -287,23 +287,23 @@ const TeacherSettings = () => {
 
         {/* D. Appearance & Language Section */}
         <div className="flex flex-col gap-4 text-start">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 shadow-sm">
+          <div className="flex items-center gap-2.5 px-1">
+            <div className="w-7 h-7 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 shadow-sm">
               {theme === 'dark' ? <FiMoon size={15} /> : <FiSun size={15} />}
             </div>
-            <h4 className="text-sm font-black tracking-wide text-gray-400 uppercase">{isRTL ? "المظهر واللغة" : "Appearance & Language"}</h4>
+            <h4 className="text-xs sm:text-sm md:text-base font-black tracking-wider text-gray-400 uppercase">{isRTL ? "المظهر واللغة" : "Appearance & Language"}</h4>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Dark Mode Row */}
-            <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl">
+            <div className="flex items-center justify-between p-4 sm:p-5 bg-[#0e101a] border border-gray-800/80 rounded-2xl sm:rounded-3xl">
               <div className="flex items-center gap-4 text-start">
-                <div className="w-10 h-10 rounded-full bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-500 shrink-0">
-                  {theme === 'dark' ? <FiMoon size={18} /> : <FiSun size={18} />}
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center text-yellow-500 shrink-0">
+                  {theme === 'dark' ? <FiMoon className="text-lg sm:text-xl" /> : <FiSun className="text-lg sm:text-xl" />}
                 </div>
                 <div className="text-start">
-                  <h5 className="text-base font-bold text-white leading-none">{isRTL ? "الوضع الداكن" : "Dark Mode"}</h5>
-                  <span className="text-xs text-gray-500 font-semibold mt-1 block">{isRTL ? "تبديل مظهر التطبيق" : "Switch app appearance"}</span>
+                  <h5 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "الوضع الداكن" : "Dark Mode"}</h5>
+                  <span className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 block">{isRTL ? "تبديل مظهر التطبيق" : "Switch app appearance"}</span>
                 </div>
               </div>
 
@@ -322,14 +322,14 @@ const TeacherSettings = () => {
             </div>
 
             {/* Language Switcher Card */}
-            <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl">
+            <div className="flex items-center justify-between p-4 sm:p-5 bg-[#0e101a] border border-gray-800/80 rounded-2xl sm:rounded-3xl">
               <div className="flex items-center gap-4 text-start">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
-                  <FiGlobe size={18} />
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 shrink-0">
+                  <FiGlobe className="text-lg sm:text-xl" />
                 </div>
                 <div className="text-start">
-                  <h5 className="text-base font-bold text-white leading-none">{isRTL ? "لغة الواجهة" : "App Language"}</h5>
-                  <span className="text-xs text-gray-500 font-semibold mt-1 block">{isRTL ? "العربية / English" : "English / العربية"}</span>
+                  <h5 className="text-sm sm:text-base md:text-lg font-black text-white leading-tight">{isRTL ? "لغة الواجهة" : "App Language"}</h5>
+                  <span className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 block">{isRTL ? "العربية / English" : "English / العربية"}</span>
                 </div>
               </div>
 
