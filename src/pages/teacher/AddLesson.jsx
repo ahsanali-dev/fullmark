@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   FiChevronLeft,
@@ -6,15 +6,13 @@ import {
   FiClock,
   FiPlay,
   FiImage,
-  FiUploadCloud,
   FiLock,
   FiCalendar,
   FiChevronDown,
   FiEye,
   FiRefreshCw,
   FiBookOpen,
-  FiPlus,
-  FiX
+  FiPlus
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -27,9 +25,7 @@ import {
   fetchSubjectUnits,
   fetchLessons,
   createLesson,
-  updateLesson,
-  uploadLessonPdf,
-  deleteLessonPdf
+  updateLesson
 } from '../../redux/slices/teacherSlice';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -84,50 +80,12 @@ const AddLesson = () => {
   const [videoLength, setVideoLength] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
 
-  // PDF states
-  const [pdfUrl, setPdfUrl] = useState(null);
-  const [pdfFile, setPdfFile] = useState(null);
-  const [pdfFileName, setPdfFileName] = useState('');
-  const [isDeletingPdf, setIsDeletingPdf] = useState(false);
-
-  const fileInputRef = useRef(null);
-
   // Settings Toggles
   const [isPublished, setIsPublished] = useState(true);
   const [requirePrevious, setRequirePrevious] = useState(false);
   const [allowRetakes, setAllowRetakes] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      toast.error(isRTL ? 'يُسمح بملفات PDF فقط' : 'Only PDF files are allowed');
-      return;
-    }
-
-    if (file.size > 25 * 1024 * 1024) {
-      toast.error(isRTL ? 'يجب أن يكون حجم الملف أقل من 25 ميجابايت' : 'File size must be less than 25MB');
-      return;
-    }
-
-    setPdfFile(file);
-    setPdfFileName(file.name);
-  };
-
-  const handleRemoveFile = () => {
-    setPdfFile(null);
-    setPdfFileName('');
-    if (pdfUrl) {
-      setIsDeletingPdf(true);
-      setPdfUrl(null);
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
 
   const parseVideoLengthToSeconds = (lengthStr) => {
     if (!lengthStr || typeof lengthStr !== 'string') return 0;
@@ -155,10 +113,6 @@ const AddLesson = () => {
       setIsPublished(existingLesson.isPublished !== false);
       setRequirePrevious(!!existingLesson.requirePrevious);
       setAllowRetakes(existingLesson.allowRetakes !== false);
-      setPdfUrl(existingLesson.pdfUrl || null);
-      setPdfFile(null);
-      setPdfFileName('');
-      setIsDeletingPdf(false);
     }
   }, [existingLesson]);
 
@@ -177,6 +131,13 @@ const AddLesson = () => {
       navigate(subjectId === 'select' ? '/teacher/subjects' : `/teacher/subjects/${subjectId}`);
     }
   }, [isEditing, existingLesson, subjectId, navigate, isLoading, lessons]);
+
+  const parseDurationToMinutes = (durStr) => {
+    if (typeof durStr === 'number') return durStr;
+    if (!durStr || typeof durStr !== 'string') return 0;
+    const val = parseInt(durStr, 10);
+    return isNaN(val) ? 0 : val;
+  };
 
   // Handle Form Submission
   const handleSaveLesson = async (e) => {
@@ -216,7 +177,7 @@ const AddLesson = () => {
       unit: selectedUnitId || null,
       title: lessonTitle,
       description: lessonDescription,
-      duration: lessonDuration,
+      duration: parseDurationToMinutes(lessonDuration),
       order: Number(lessonOrder),
       videoLength,
       videoDuration: parseVideoLengthToSeconds(videoLength),
@@ -229,29 +190,12 @@ const AddLesson = () => {
 
     const loadingToast = toast.loading(isEditing ? (isRTL ? 'جاري تحديث الدرس...' : 'Updating lesson...') : (isRTL ? 'جاري إنشاء الدرس...' : 'Creating lesson...'));
     try {
-      // 1. Create or update lesson details
+      // Create or update lesson details
       const action = isEditing
         ? dispatch(updateLesson({ id: lessonId, lessonData: payload }))
         : dispatch(createLesson(payload));
       
-      const response = await action.unwrap();
-      
-      // Get the lesson ID (could be inside nested response.lesson or directly response)
-      const savedLessonId = isEditing ? lessonId : (response.lesson?._id || response.lesson?.id || response._id || response.id);
-
-      if (!savedLessonId) {
-        throw new Error('Could not retrieve Lesson ID from backend');
-      }
-
-      // 2. Delete old PDF if deletion was requested and we are not uploading a new one
-      if (isEditing && isDeletingPdf && !pdfFile) {
-        await dispatch(deleteLessonPdf(savedLessonId)).unwrap();
-      }
-
-      // 3. Upload new PDF if selected
-      if (pdfFile) {
-        await dispatch(uploadLessonPdf({ lessonId: savedLessonId, file: pdfFile })).unwrap();
-      }
+      await action.unwrap();
 
       toast.success(isEditing ? (isRTL ? 'تم تحديث الدرس بنجاح!' : 'Lesson updated successfully!') : (isRTL ? 'تم إنشاء الدرس بنجاح!' : 'Lesson created successfully!'), { id: loadingToast });
       setIsSubmitting(false);
@@ -270,15 +214,6 @@ const AddLesson = () => {
       subtitle={subjectId === 'select' ? (isRTL ? 'اختر المادة والتفاصيل' : 'Choose subject and details') : `${isRTL ? 'المادة' : 'Subject'}: ${subject.name || subject.title}`}
     >
       <div className="w-full max-w-full p-6 md:p-8 pb-32 text-start flex flex-col gap-6 animate-fade-in">
-
-        {/* Hidden File Input for PDF Materials — always mounted */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="application/pdf"
-          className="hidden"
-        />
 
         {/* Header Block */}
         <div className="flex justify-between items-center pb-2 border-b border-gray-800/40">
@@ -490,63 +425,6 @@ const AddLesson = () => {
                     roleColor="teacher"
                   />
                 </div>
-
-                {/* Upload Card / File Display */}
-                {!pdfFile && !pdfUrl ? (
-                  <div className="border border-dashed border-gray-800 rounded-3xl p-6 text-center flex flex-col items-center justify-center gap-3 bg-[#0e101a]/30">
-                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shadow-inner shrink-0 text-center">
-                      <FiUploadCloud size={22} className="mx-auto" />
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-sm text-white block">{isRTL ? "رفع مواد الدرس" : "Upload Lesson Materials"}</span>
-                      <span className="text-[10px] text-gray-500 font-bold block mt-0.5">{isRTL ? "صيغة PDF فقط (الحد الأقصى 25 ميجابايت)" : "PDF format only (Max 25MB)"}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-4 py-2 border border-gray-800 hover:border-gray-700 bg-gray-900/50 hover:bg-gray-900 rounded-xl text-xs font-bold text-gray-400 hover:text-white transition-all cursor-pointer"
-                    >
-                      {isRTL ? "تصفح الملفات" : "Browse Files"}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between p-4 bg-[#0c0d19] border border-gray-800 rounded-2xl">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center shrink-0">
-                        <FiBookOpen size={18} />
-                      </div>
-                      <div className="flex flex-col text-start overflow-hidden">
-                        <span className="text-sm font-extrabold text-white truncate max-w-[200px] sm:max-w-md">
-                          {pdfFile ? pdfFile.name : (pdfUrl.split('/').pop() || 'lesson_material.pdf')}
-                        </span>
-                        <span className="text-[10px] text-gray-500 font-bold">
-                          {pdfFile ? `${(pdfFile.size / (1024 * 1024)).toFixed(2)} MB` : (isRTL ? "مستند مرفوع" : "Uploaded Document")}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {pdfUrl && !pdfFile && (
-                        <a
-                          href={pdfUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="w-8 h-8 rounded-full bg-blue-500/10 hover:bg-blue-500/20 flex items-center justify-center text-blue-400 transition-all cursor-pointer"
-                          title={isRTL ? "عرض الملف" : "View Material"}
-                        >
-                          <FiEye size={14} />
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleRemoveFile}
-                        className="w-8 h-8 rounded-full bg-red-600/10 hover:bg-red-600/20 flex items-center justify-center text-red-400 transition-all cursor-pointer"
-                        title={isRTL ? "حذف الملف" : "Remove Material"}
-                      >
-                        <FiX size={14} />
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>

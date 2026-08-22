@@ -58,7 +58,7 @@ const Login = () => {
       role: selectedRole,
       ...(fcmToken ? { fcmToken } : {}),
     };
-    
+
     const loadToast = toast.loading(t('auth.loggingIn'));
     try {
       const data = await dispatch(loginUser(payload)).unwrap();
@@ -70,7 +70,7 @@ const Login = () => {
       setSubmitting(false);
       if (selectedRole === 'admin') {
         navigate('/admin/dashboard');
-      } else if (selectedRole === 'teacher') {o
+      } else if (selectedRole === 'teacher') {
         navigate('/teacher/dashboard');
       } else if (selectedRole === 'student') {
         navigate('/student/dashboard');
@@ -102,9 +102,8 @@ const Login = () => {
   const themeColor = getRoleThemeColor();
 
   return (
-    <div className={`relative min-h-screen w-full overflow-hidden select-none z-0 transition-colors duration-300 ${
-      isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#080911] text-gray-100'
-    }`}>
+    <div className={`relative min-h-screen w-full overflow-hidden select-none z-0 transition-colors duration-300 ${isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#080911] text-gray-100'
+      }`}>
       {/* Background Starry Nebula Layer */}
       {!isLight && <Background3D roleColor={selectedRole} />}
 
@@ -114,10 +113,10 @@ const Login = () => {
       {/* Centered Form Container */}
       <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-8 relative z-10">
         <div className="w-full max-w-lg z-20 flex flex-col justify-center">
-          
+
           {/* Brand/Heading Header */}
           <div className="flex flex-col items-start mb-6 text-start">
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
               onClick={() => navigate('/')}
               className="mb-6 cursor-pointer"
@@ -129,7 +128,7 @@ const Login = () => {
               <span className={`inline-block transition-all duration-1000 ${colorFlow ? 'color-flow-text' : (isLight ? 'text-slate-900' : 'text-white')}`}>
                 {t('auth.signInTitle')}
               </span>
-              <motion.span 
+              <motion.span
                 animate={{ rotate: [0, 20, 0, 20, 0] }}
                 transition={{ repeat: Infinity, duration: 2.5, repeatDelay: 1 }}
                 className="inline-block mx-3 origin-[70%_70%]"
@@ -137,7 +136,7 @@ const Login = () => {
                 👋
               </motion.span>
             </h1>
-            
+
             <p className={`text-sm md:text-base font-medium tracking-wide ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
               {t('auth.signInSubtitle')}
             </p>
@@ -145,12 +144,12 @@ const Login = () => {
 
           {/* Selector Header */}
           <div className="flex items-center mb-4 mt-2">
-            <motion.span 
-              animate={{ 
-                backgroundColor: 
-                  selectedRole === 'student' ? '#10b981' : 
-                  selectedRole === 'teacher' ? '#3b82f6' : 
-                  selectedRole === 'admin' ? '#ef4444' : '#a855f7'
+            <motion.span
+              animate={{
+                backgroundColor:
+                  selectedRole === 'student' ? '#10b981' :
+                    selectedRole === 'teacher' ? '#3b82f6' :
+                      selectedRole === 'admin' ? '#ef4444' : '#a855f7'
               }}
               transition={{ duration: 0.3 }}
               className="inline-block w-1.5 h-6 rounded-full mx-3 shadow-[0_0_8px_currentColor]"
@@ -173,13 +172,12 @@ const Login = () => {
               <Form className="w-full">
                 <motion.div
                   layout
-                  className={`p-5 md:p-6 rounded-3xl mb-4 flex flex-col relative overflow-hidden transition-all duration-500 ${
-                    isLight 
-                      ? 'bg-white/90 border border-slate-200 shadow-xl text-slate-900' 
+                  className={`p-5 md:p-6 rounded-3xl mb-4 flex flex-col relative overflow-hidden transition-all duration-500 ${isLight
+                      ? 'bg-white/90 border border-slate-200 shadow-xl text-slate-900'
                       : (selectedRole === 'student' ? 'card-3d-student' :
-                         selectedRole === 'teacher' ? 'card-3d-teacher' :
-                         selectedRole === 'admin' ? 'card-3d-admin' : 'card-3d-parent')
-                  }`}
+                        selectedRole === 'teacher' ? 'card-3d-teacher' :
+                          selectedRole === 'admin' ? 'card-3d-admin' : 'card-3d-parent')
+                    }`}
                 >
                   <Input
                     name="email"
@@ -202,14 +200,13 @@ const Login = () => {
 
                   {/* Forgot Password */}
                   <div className={`w-full flex mb-4 -mt-2 ${isRTL ? 'justify-start' : 'justify-end'}`}>
-                    <Link 
-                      to="/forgot-password" 
-                      className={`text-xs md:text-sm font-bold transition-all duration-300 ${
-                        selectedRole === 'student' ? 'text-emerald-500 hover:text-emerald-600' :
-                        selectedRole === 'teacher' ? 'text-blue-500 hover:text-blue-600' :
-                        selectedRole === 'admin' ? 'text-red-500 hover:text-red-600' :
-                        'text-purple-500 hover:text-purple-600'
-                      }`}
+                    <Link
+                      to="/forgot-password"
+                      className={`text-xs md:text-sm font-bold transition-all duration-300 ${selectedRole === 'student' ? 'text-emerald-500 hover:text-emerald-600' :
+                          selectedRole === 'teacher' ? 'text-blue-500 hover:text-blue-600' :
+                            selectedRole === 'admin' ? 'text-red-500 hover:text-red-600' :
+                              'text-purple-500 hover:text-purple-600'
+                        }`}
                     >
                       {t('auth.forgotPassword')}
                     </Link>
