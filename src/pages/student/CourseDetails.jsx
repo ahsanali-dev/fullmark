@@ -222,11 +222,11 @@ const CourseDetails = () => {
         {/* About Course Section */}
         <div className="flex flex-col gap-2 text-start">
           <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest">{isRTL ? "عن الكورس" : "About this Course"}</h4>
-          <p className="text-sm text-gray-500 leading-relaxed font-semibold">
-            {isRTL 
+          <p className="text-sm text-gray-400 leading-relaxed font-semibold">
+            {course.description || (isRTL 
               ? "يغطي هذا الكورس كامل المواد والشرائح الدراسية. باختيارك لهذا الكورس ستتعلم القوانين والتعاريف بالتفصيل وتجري تقييمات تحتوي على أسئلة منظمة."
               : "This course covers full materials and slide modules. By selecting this course you will learn detailed formulas, definitions, and verify assessments containing structured questions."
-            }
+            )}
           </p>
         </div>
 

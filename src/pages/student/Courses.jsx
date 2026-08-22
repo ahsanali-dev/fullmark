@@ -185,7 +185,7 @@ const Courses = () => {
               // Progress math
               const totalLessons = course.totalLessons || 0;
               const completedCount = course.completedLessons || 0;
-              const progressPercent = course.progress ? Math.round(course.progress * 100) : 0;
+              const progressPercent = totalLessons > 0 ? Math.min(100, Math.round((completedCount / totalLessons) * 100)) : 0;
 
               return (
                 <div

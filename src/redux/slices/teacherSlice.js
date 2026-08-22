@@ -222,8 +222,17 @@ export const toggleLessonPublish = createAsyncThunk(
   async (id, thunkAPI) => {
     try {
       const token = thunkAPI.getState().auth.token;
-      const response = await axios.patch(apiEndpoints.teacher.toggleLessonPublish(id), {}, getAuthConfig(token));
-      return response.data.data;
+      let response;
+      try {
+        response = await axios.patch(apiEndpoints.teacher.toggleLessonPublish(id), {}, getAuthConfig(token));
+      } catch (err) {
+        if (err.response?.status === 405 || err.response?.status === 404) {
+          response = await axios.post(apiEndpoints.teacher.toggleLessonPublish(id), {}, getAuthConfig(token));
+        } else {
+          throw err;
+        }
+      }
+      return response.data?.data || response.data;
     } catch (error) {
       const message = error.response?.data?.message || error.message || 'Failed to toggle lesson status';
       return thunkAPI.rejectWithValue(message);

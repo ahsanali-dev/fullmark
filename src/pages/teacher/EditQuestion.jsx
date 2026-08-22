@@ -18,6 +18,7 @@ import {
 import toast from 'react-hot-toast';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import VideoUploader from '../../components/shared/VideoUploader';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchTeacherSubjects,
@@ -700,6 +701,24 @@ const EditQuestion = () => {
                   className="w-full bg-[#0e101a] border border-gray-800 rounded-2xl p-4 text-white text-base focus:outline-none focus:border-blue-500/50 resize-none font-semibold focus:ring-0 text-start"
                 />
 
+                {/* Bunny Video Uploader for Question */}
+                {questionId && (
+                  <VideoUploader
+                    targetType="question"
+                    targetId={questionId}
+                    title={`Question Explanation ${questionId}`}
+                    currentVideoUrl={videoUrl}
+                    videoReady={existingQuestion?.videoReady !== false}
+                    onUploadSuccess={() => {
+                      dispatch(fetchQuestions());
+                    }}
+                    onDeleteSuccess={() => {
+                      setVideoUrl('');
+                      dispatch(fetchQuestions());
+                    }}
+                  />
+                )}
+
                 <div className="relative w-full">
                   <FiPlayCircle className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-500`} size={16} />
                   <input
@@ -707,7 +726,7 @@ const EditQuestion = () => {
                     value={videoUrl}
                     onChange={(e) => setVideoUrl(e.target.value)}
                     disabled={useGeneralVideo}
-                    placeholder={useGeneralVideo ? (isRTL ? "استخدام الفيديو العام لموضوع الضعف" : "Using Weakness Topic General Video") : (isRTL ? "رابط فيديو الشرح" : "Explanation Video URL")}
+                    placeholder={useGeneralVideo ? (isRTL ? "استخدام الفيديو العام لموضوع الضعف" : "Using Weakness Topic General Video") : (isRTL ? "رابط فيديو الشرح الخارجي" : "External Explanation Video URL")}
                     className={`w-full ${isRTL ? 'pr-11 pl-4' : 'pl-11 pr-4'} py-3 bg-[#0e101a] border border-gray-800 rounded-2xl text-white text-base focus:outline-none focus:border-blue-500/50 transition-colors placeholder:text-gray-650 font-semibold focus:ring-0 disabled:opacity-50 text-start`}
                   />
                 </div>

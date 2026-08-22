@@ -140,6 +140,12 @@ export const apiEndpoints = {
     fcmToken: `${BASE_URL}/notifications/fcm-token`,
   },
 
+  video: {
+    uploadTicket: `${BASE_URL}/video/upload-ticket`,
+    deleteVideo: (targetType, targetId) => `${BASE_URL}/video/${targetType}/${targetId}`,
+    playbackUrl: (targetType, targetId) => `${BASE_URL}/video/playback/${targetType}/${targetId}`,
+  },
+
   public: {
     appInfo: `${BASE_URL}/public/app-info`,
     subjects: `${BASE_URL}/public/subjects`,

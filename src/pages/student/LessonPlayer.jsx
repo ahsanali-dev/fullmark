@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import axios from 'axios';
 import { 
   FiCheckCircle, 
   FiTv,
@@ -10,9 +11,12 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { fetchSubjectLessons, updateLessonProgress } from '../../redux/slices/studentSlice';
+import { fetchSubjectLessons } from '../../redux/slices/studentSlice';
+import apiEndpoints from '../../redux/apiEndpoint';
 import { getImageUrl } from '../../utils/imageUrl';
 import { useLanguage } from '../../context/LanguageContext';
+
+import VideoPlayer from '../../components/shared/VideoPlayer';
 
 const LessonPlayer = () => {
   const { courseId, lessonId } = useParams();
@@ -23,6 +27,7 @@ const LessonPlayer = () => {
   const { lessonsData, isLoading, isActionLoading } = useSelector((state) => state.student);
   
   const [lesson, setLesson] = useState(null);
+  const [localProgress, setLocalProgress] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const videoRef = useRef(null);
   const simulationInterval = useRef(null);
@@ -36,15 +41,15 @@ const LessonPlayer = () => {
     const handleThemeChange = () => {
       setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
     };
-    handleThemeChange();
     window.addEventListener('themeChange', handleThemeChange);
     return () => window.removeEventListener('themeChange', handleThemeChange);
   }, []);
 
-  // Fetch subject lessons on load if not loaded or if route changes
   useEffect(() => {
-    dispatch(fetchSubjectLessons(courseId));
-  }, [dispatch, courseId, lessonId]);
+    if (courseId) {
+      dispatch(fetchSubjectLessons(courseId));
+    }
+  }, [dispatch, courseId]);
 
   // Find the selected lesson
   useEffect(() => {
@@ -55,13 +60,6 @@ const LessonPlayer = () => {
       }
     }
   }, [lessonId, lessonsData]);
-
-  // Set initial video position from lastPosition
-  useEffect(() => {
-    if (lesson && videoRef.current && lesson.lastPosition) {
-      videoRef.current.currentTime = lesson.lastPosition;
-    }
-  }, [lesson]);
 
   // Cleanup simulation interval on unmount
   useEffect(() => {
@@ -75,22 +73,30 @@ const LessonPlayer = () => {
   const reportProgress = async (currentTime) => {
     if (!lesson) return;
     const roundedPos = Math.floor(currentTime);
-    // Don't spam API if position hasn't changed by at least 3 seconds
     if (Math.abs(roundedPos - lastReportedTime.current) < 3 && roundedPos > 0) return;
     
     lastReportedTime.current = roundedPos;
     try {
-      const res = await dispatch(updateLessonProgress({
-        lessonId: lesson._id || lesson.id,
-        position: roundedPos
-      })).unwrap();
+      const token = localStorage.getItem('token');
+      const res = await axios.post(
+        apiEndpoints.student.lessonProgress(lesson._id || lesson.id),
+        { position: roundedPos },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
 
-      if (res?.data?.lessonProgress?.isCompleted && !lesson.isCompleted) {
-        toast.success(isRTL ? 'اكتمل الدرس! 🎓' : 'Lesson completed! 🎓');
-        dispatch(fetchSubjectLessons(courseId));
+      const progressData = res.data?.data?.lessonProgress || res.data?.data;
+      if (progressData) {
+        setLocalProgress({
+          progressPercent: progressData.progressPercent ?? Math.min(100, Math.round((roundedPos / (lesson.videoDuration || 1)) * 100)),
+          isCompleted: !!progressData.isCompleted
+        });
+
+        if (progressData.isCompleted && !lesson.isCompleted && !localProgress?.isCompleted) {
+          toast.success(isRTL ? 'اكتمل الدرس! 🎓' : 'Lesson completed! 🎓');
+        }
       }
     } catch (err) {
-      console.error('Failed to report progress:', err);
+      console.error('Failed to report progress silently:', err);
     }
   };
 
@@ -111,27 +117,16 @@ const LessonPlayer = () => {
     const duration = lesson.videoDuration || (lesson.duration ? lesson.duration * 60 : 100);
     let currentPos = lesson.lastPosition || 0;
 
-    const step = Math.max(2, Math.round(duration / 10)); // 10 steps
+    toast.success(isRTL ? 'بدأ محاكاة مشاهدة الدرس...' : 'Started simulating lesson watch...');
 
-    simulationInterval.current = setInterval(async () => {
-      currentPos = Math.min(currentPos + step, duration);
-      
-      try {
-        const result = await dispatch(updateLessonProgress({
-          lessonId: lesson._id || lesson.id,
-          position: currentPos
-        })).unwrap();
+    simulationInterval.current = setInterval(() => {
+      currentPos += 5;
+      reportProgress(currentPos);
 
-        if (result?.data?.lessonProgress?.isCompleted || currentPos >= duration) {
-          clearInterval(simulationInterval.current);
-          setIsSimulating(false);
-          toast.success(isRTL ? 'اكتمل الدرس! 🎓' : 'Lesson completed! 🎓');
-          dispatch(fetchSubjectLessons(courseId));
-        }
-      } catch (err) {
+      if (currentPos >= duration) {
         clearInterval(simulationInterval.current);
         setIsSimulating(false);
-        toast.error(err || (isRTL ? 'فشل تحديث تقدم الدرس.' : 'Failed to update lesson progress.'));
+        toast.success(isRTL ? 'اكتملت محاكاة الدرس!' : 'Lesson simulation completed!');
       }
     }, 1000);
   };
@@ -168,16 +163,8 @@ const LessonPlayer = () => {
     );
   }
 
-  const progress = lesson.progressPercent || 0;
-  const isCompleted = lesson.isCompleted;
-
-  const isYouTube = lesson.videoUrl && (lesson.videoUrl.includes('youtube.com') || lesson.videoUrl.includes('youtu.be'));
-  const getEmbedYouTube = (url) => {
-    let videoId = '';
-    if (url.includes('v=')) videoId = url.split('v=')[1]?.split('&')[0];
-    else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1]?.split('?')[0];
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-  };
+  const progress = localProgress?.progressPercent ?? (lesson.progressPercent || 0);
+  const isCompleted = localProgress?.isCompleted ?? (lesson.isCompleted || false);
 
   return (
     <DashboardLayout
@@ -190,28 +177,24 @@ const LessonPlayer = () => {
     >
       <div className="flex flex-col gap-6 text-start p-4 sm:p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
         {/* Main Video / Slide Player Display */}
-        {lesson.videoUrl ? (
-          <div className="aspect-video w-full rounded-3xl sm:rounded-[2.5rem] bg-black border border-gray-800 shadow-2xl overflow-hidden relative flex items-center justify-center">
-            {isYouTube ? (
-              <iframe
-                src={getEmbedYouTube(lesson.videoUrl)}
-                title={lesson.title}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            ) : (
-              <video
-                ref={videoRef}
-                src={getImageUrl(lesson.videoUrl)}
-                poster={getImageUrl(lesson.thumbnailUrl)}
-                controls
-                onTimeUpdate={handleVideoTimeUpdate}
-                onEnded={handleVideoEnded}
-                className="w-full h-full object-contain bg-black"
-              />
-            )}
-          </div>
+        {(lesson.videoUrl || lesson.videoId || lesson.videoStatus || lesson.videoReady === false) ? (
+          <VideoPlayer
+            videoUrl={lesson.videoUrl}
+            videoReady={lesson.videoReady !== false}
+            thumbnailUrl={lesson.thumbnailUrl}
+            title={lesson.title}
+            targetType="lesson"
+            targetId={lesson._id || lesson.id}
+            lastPosition={lesson.lastPosition || 0}
+            onTimeUpdate={handleVideoTimeUpdate}
+            onEnded={handleVideoEnded}
+            onRefreshUrl={async () => {
+              const res = await dispatch(fetchSubjectLessons(courseId)).unwrap();
+              const found = res?.lessons?.find(l => (l._id || l.id) === (lesson._id || lesson.id));
+              return found?.videoUrl || null;
+            }}
+            className="sm:rounded-[2.5rem]"
+          />
         ) : (
           <div className={`min-h-[260px] sm:min-h-[300px] sm:aspect-video h-auto w-full rounded-3xl sm:rounded-[2.5rem] border shadow-2xl p-5 sm:p-6 md:p-8 flex flex-col justify-between text-start relative overflow-hidden select-none ${isLight ? 'bg-gradient-to-br from-slate-100 to-white border-slate-200/90 shadow-md' : 'bg-gradient-to-br from-[#0a0f26] to-[#05081a] border-gray-800 shadow-2xl'}`}>
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
@@ -248,7 +231,7 @@ const LessonPlayer = () => {
               <span className={`text-xs font-bold uppercase ${isLight ? 'text-slate-400' : 'text-gray-500'}`}>
                 {isRTL ? "مواد فول مارك" : "Fullmark Courseware"}
               </span>
-              <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs ${isLight ? 'bg-slate-200 text-slate-600' : 'bg-white/5 text-gray-400'}`}>
+              <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-xs ${isLight ? 'bg-[#e2e8f0] text-slate-600' : 'bg-white/5 text-gray-400'}`}>
                 FM
               </span>
             </div>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiTrendingUp, FiCheckCircle, FiClock, FiPlayCircle, FiZap, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
+import { FiTrendingUp, FiCheckCircle, FiClock, FiPlayCircle, FiZap, FiChevronRight, FiChevronLeft, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import VideoPlayer from '../../components/shared/VideoPlayer';
 import { fetchWeaknesses } from '../../redux/slices/studentSlice';
 import { ContentSkeleton } from '../../components/shared/SkeletonLoading';
 import { useLanguage } from '../../context/LanguageContext';
@@ -15,6 +16,7 @@ const WeaknessPoints = () => {
   const { t, isRTL } = useLanguage();
 
   const [activeTab, setActiveTab] = useState('active'); // 'active' | 'improving' | 'resolved'
+  const [activeVideo, setActiveVideo] = useState(null); // { url, title, topicId }
   const { weaknesses = [], isLoading } = useSelector((state) => state.student);
 
   const [isLight, setIsLight] = useState(() => {
@@ -194,10 +196,12 @@ const WeaknessPoints = () => {
                   </div>
 
                   {topic.generalVideoUrl && (
-                    <a
-                      href={topic.generalVideoUrl}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      onClick={() => setActiveVideo({
+                        url: topic.generalVideoUrl,
+                        title: (isRTL && topic.titleAr) ? topic.titleAr : title,
+                        topicId: topic._id || topic.id
+                      })}
                       className={`px-4 py-2.5 rounded-xl border font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer mt-1 ${
                         isLight 
                           ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-700' 
@@ -205,7 +209,7 @@ const WeaknessPoints = () => {
                       }`}
                     >
                       <FiPlayCircle size={16} /> {t('student.weakness.watchExplanation')}
-                    </a>
+                    </button>
                   )}
                 </div>
               );
@@ -220,6 +224,31 @@ const WeaknessPoints = () => {
             <p className={`text-xs font-medium mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
               {t('student.weakness.keepPracticing')}
             </p>
+          </div>
+        )}
+
+        {/* Video Explanation Modal */}
+        {activeVideo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+            <div className="bg-[#0e101a] border border-gray-800 rounded-3xl p-5 max-w-3xl w-full flex flex-col gap-4 shadow-2xl relative">
+              <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                <h3 className="text-base font-black text-white">{activeVideo.title}</h3>
+                <button
+                  onClick={() => setActiveVideo(null)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-all"
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <VideoPlayer
+                videoUrl={activeVideo.url}
+                targetType="weaknessTopic"
+                targetId={activeVideo.topicId}
+                autoPlay={true}
+                className="w-full h-full"
+              />
+            </div>
           </div>
         )}
 

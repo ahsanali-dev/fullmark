@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import VideoPlayer from '../../components/shared/VideoPlayer';
 import { fetchAttemptDetail, fetchSimilarQuestion } from '../../redux/slices/studentSlice';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -411,18 +412,12 @@ const ResultDetails = () => {
                 </button>
               </div>
 
-              <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black border border-gray-800 flex items-center justify-center">
-                {videoModalUrl.includes('youtube.com') || videoModalUrl.includes('youtu.be') ? (
-                  <iframe
-                    src={videoModalUrl.replace('watch?v=', 'embed/')}
-                    title="Explanation Video"
-                    className="w-full h-full"
-                    allowFullScreen
-                  />
-                ) : (
-                  <video src={videoModalUrl} controls className="w-full h-full" />
-                )}
-              </div>
+              <VideoPlayer
+                videoUrl={videoModalUrl}
+                targetType="question"
+                autoPlay={true}
+                className="w-full h-full"
+              />
             </motion.div>
           </div>
         )}

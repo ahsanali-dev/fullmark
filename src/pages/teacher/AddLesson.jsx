@@ -19,13 +19,15 @@ import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import VideoUploader, { startBunnyDirectUpload } from '../../components/shared/VideoUploader';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchTeacherSubjects,
   fetchSubjectUnits,
   fetchLessons,
   createLesson,
-  updateLesson
+  updateLesson,
+  toggleLessonPublish
 } from '../../redux/slices/teacherSlice';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -79,6 +81,7 @@ const AddLesson = () => {
   const [explanationVideoUrl, setExplanationVideoUrl] = useState('');
   const [videoLength, setVideoLength] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [pendingVideoFile, setPendingVideoFile] = useState(null);
 
   // Settings Toggles
   const [isPublished, setIsPublished] = useState(true);
@@ -99,12 +102,21 @@ const AddLesson = () => {
     return isNaN(val) ? 0 : val;
   };
 
-  // Sync form states when existingLesson changes
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
+
   useEffect(() => {
-    if (existingLesson) {
+    setIsFormInitialized(false);
+  }, [lessonId]);
+
+  // Sync form states when existingLesson is first loaded
+  useEffect(() => {
+    if (existingLesson && !isFormInitialized) {
+      if (existingLesson.subject && !selectedSubjectId) {
+        setSelectedSubjectId(existingLesson.subject?._id || existingLesson.subject);
+      }
       setLessonTitle(existingLesson.title || '');
       setLessonDescription(existingLesson.description || '');
-      setLessonDuration(existingLesson.duration || '');
+      setLessonDuration(existingLesson.duration !== undefined && existingLesson.duration !== null ? String(existingLesson.duration) : '');
       setLessonOrder(existingLesson.order || 1);
       setSelectedUnitId(existingLesson.unit?._id || existingLesson.unit || '');
       setExplanationVideoUrl(existingLesson.videoUrl || '');
@@ -113,8 +125,9 @@ const AddLesson = () => {
       setIsPublished(existingLesson.isPublished !== false);
       setRequirePrevious(!!existingLesson.requirePrevious);
       setAllowRetakes(existingLesson.allowRetakes !== false);
+      setIsFormInitialized(true);
     }
-  }, [existingLesson]);
+  }, [existingLesson, isFormInitialized, selectedSubjectId]);
 
   // Set default order for new lesson
   useEffect(() => {
@@ -157,16 +170,6 @@ const AddLesson = () => {
       setActiveAccordion('basic');
       return;
     }
-    if (!explanationVideoUrl.trim()) {
-      toast.error(isRTL ? 'رابط فيديو الشرح مطلوب' : 'Explanation Video URL is required');
-      setActiveAccordion('content');
-      return;
-    }
-    if (!videoLength.trim()) {
-      toast.error(isRTL ? 'طول الفيديو مطلوب' : 'Video length is required');
-      setActiveAccordion('content');
-      return;
-    }
 
     setIsSubmitting(true);
 
@@ -195,9 +198,42 @@ const AddLesson = () => {
         ? dispatch(updateLesson({ id: lessonId, lessonData: payload }))
         : dispatch(createLesson(payload));
       
-      await action.unwrap();
+      const res = await action.unwrap();
+      const savedLesson = res?.lesson || res;
+      const targetLessonId = savedLesson?._id || savedLesson?.id || lessonId;
+
+      // Invoke lessons/:id/toggle-publish if publish status was changed or differs
+      if (targetLessonId && isEditing && existingLesson && (!!existingLesson.isPublished !== !!isPublished)) {
+        try {
+          await dispatch(toggleLessonPublish(targetLessonId)).unwrap();
+        } catch (pubErr) {
+          console.warn('Failed to invoke toggle-publish endpoint:', pubErr);
+        }
+      }
 
       toast.success(isEditing ? (isRTL ? 'تم تحديث الدرس بنجاح!' : 'Lesson updated successfully!') : (isRTL ? 'تم إنشاء الدرس بنجاح!' : 'Lesson created successfully!'), { id: loadingToast });
+
+      // If user picked a video file before saving, start Bunny upload now!
+      if (pendingVideoFile && targetLessonId) {
+        const uploadToast = toast.loading(isRTL ? 'جاري بدء رفع الفيديو إلى Bunny Stream...' : 'Starting video upload to Bunny Stream...');
+        startBunnyDirectUpload({
+          targetType: 'lesson',
+          targetId: targetLessonId,
+          title: lessonTitle,
+          file: pendingVideoFile,
+          onProgress: (pct) => {
+            toast.loading(isRTL ? `جاري رفع الفيديو إلى Bunny Stream... ${pct}%` : `Uploading video to Bunny Stream... ${pct}%`, { id: uploadToast });
+          },
+          onSuccess: () => {
+            toast.success(isRTL ? 'تم رفع الفيديو بنجاح إلى Bunny Stream!' : 'Video uploaded successfully to Bunny Stream!', { id: uploadToast });
+            dispatch(fetchLessons(selectedSubjectId));
+          },
+          onError: (err) => {
+            toast.error((isRTL ? 'فشل رفع الفيديو: ' : 'Video upload failed: ') + (err.message || ''), { id: uploadToast });
+          }
+        });
+      }
+
       setIsSubmitting(false);
       navigate(`/teacher/subjects/${selectedSubjectId}`);
     } catch (err) {
@@ -390,10 +426,28 @@ const AddLesson = () => {
             </div>
 
             {activeAccordion === 'content' && (
-              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-start">
-                {/* Explanation Video URL */}
+              <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-5 animate-fade-in text-start">
+                {/* Bunny Direct Video Uploader */}
+                <VideoUploader
+                  targetType="lesson"
+                  targetId={lessonId || null}
+                  title={lessonTitle}
+                  currentVideoUrl={explanationVideoUrl}
+                  videoReady={existingLesson?.videoReady !== false}
+                  selectedFile={pendingVideoFile}
+                  onFileSelect={(file) => setPendingVideoFile(file)}
+                  onUploadSuccess={(ticket) => {
+                    dispatch(fetchLessons(selectedSubjectId));
+                  }}
+                  onDeleteSuccess={() => {
+                    setExplanationVideoUrl('');
+                    dispatch(fetchLessons(selectedSubjectId));
+                  }}
+                />
+
+                {/* Manual Explanation Video URL / Fallback */}
                 <Input
-                  label={isRTL ? "رابط فيديو الشرح" : "Explanation Video URL"}
+                  label={isRTL ? "رابط فيديو خارجي (YouTube أو رابط مباشر)" : "External Video URL (YouTube or direct link)"}
                   type="text"
                   value={explanationVideoUrl}
                   onChange={(e) => setExplanationVideoUrl(e.target.value)}

@@ -16,7 +16,10 @@ import {
   FiArrowDown,
   FiX,
   FiVideo,
-  FiVideoOff
+  FiVideoOff,
+  FiMoreVertical,
+  FiEye,
+  FiEyeOff
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,6 +37,7 @@ import {
   fetchExams,
   fetchLessons,
   deleteLesson,
+  toggleLessonPublish,
   deleteExam,
   deleteQuestion,
   uploadSubjectBanner,
@@ -58,6 +62,7 @@ const SubjectDetails = () => {
   const [activeTab, setActiveTab] = useState('units'); // 'units' | 'lessons' | 'questions' | 'exams' | 'weaknesses'
   const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'unit'|'lesson'|'question'|'exam'|'topic', id, title, name }
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeLessonDropdown, setActiveLessonDropdown] = useState(null);
 
   // Unit Modal States
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
@@ -247,6 +252,17 @@ const SubjectDetails = () => {
       dispatch(fetchSubjectUnits(subjectId));
     } catch (err) {
       toast.error(isRTL ? 'فشل إعادة ترتيب الوحدة' : 'Failed to reorder unit');
+    }
+  };
+
+  const handleTogglePublishLesson = async (les) => {
+    const targetId = les._id || les.id;
+    try {
+      await dispatch(toggleLessonPublish(targetId)).unwrap();
+      toast.success(isRTL ? 'تم تغيير حالة نشر الدرس بنجاح!' : 'Lesson publish status updated!');
+      dispatch(fetchLessons(subjectId));
+    } catch (err) {
+      toast.error(err || (isRTL ? 'فشل تغيير حالة النشر' : 'Failed to update publish status'));
     }
   };
 
@@ -602,35 +618,86 @@ const SubjectDetails = () => {
                     return (
                       <div
                         key={les._id || les.id}
-                        className="p-5 rounded-2xl bg-[#0e101a] border border-gray-800/80 hover:border-gray-700 transition-all flex flex-col justify-between gap-4 text-start group"
+                        className={`p-5 rounded-2xl bg-[#0e101a] border border-gray-800/80 hover:border-gray-700 transition-all flex flex-col justify-between gap-4 text-start group relative min-w-0 ${activeLessonDropdown === (les._id || les.id) ? 'z-30' : 'z-10'}`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex flex-col text-start">
-                            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
+                        <div className="flex items-start justify-between gap-3 min-w-0">
+                          <div className="flex flex-col text-start min-w-0 flex-1">
+                            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider truncate">
                               {isRTL ? "الوحدة" : "Module"} {les.order || 1} {lessonUnit ? `• ${lessonUnit.title}` : ''}
                             </span>
-                            <h4 className="text-base font-extrabold text-white mt-1 group-hover:text-blue-400 transition-colors">
+                            <h4 className="text-base font-extrabold text-white mt-1 group-hover:text-blue-400 transition-colors line-clamp-2 break-words break-all" title={les.title}>
                               {les.title}
                             </h4>
                           </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="relative shrink-0">
                             <button
                               type="button"
-                              onClick={() => navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les._id || les.id}`)}
-                              className="px-3 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-blue-500/20"
-                              title={isRTL ? "تعديل الدرس" : "Edit Lesson"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveLessonDropdown(activeLessonDropdown === (les._id || les.id) ? null : (les._id || les.id));
+                              }}
+                              className="w-8 h-8 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
+                              title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
                             >
-                              <FiEdit3 size={15} /> {isRTL ? "تعديل" : "Edit"}
+                              <FiMoreVertical size={16} />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' })}
-                              className="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/20"
-                              title={isRTL ? "حذف الدرس" : "Delete Lesson"}
-                            >
-                              <FiTrash2 size={15} /> {isRTL ? "حذف" : "Delete"}
-                            </button>
+
+                            {activeLessonDropdown === (les._id || les.id) && (
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-40" 
+                                  onClick={() => setActiveLessonDropdown(null)} 
+                                />
+
+                                <div className="absolute right-0 ltr:right-0 rtl:left-0 top-full mt-1 w-48 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 p-1.5 flex flex-col gap-1 text-start">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveLessonDropdown(null);
+                                      navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les._id || les.id}`);
+                                    }}
+                                    className="w-full px-3 py-2 rounded-xl hover:bg-blue-500/10 text-gray-300 hover:text-blue-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
+                                  >
+                                    <FiEdit3 size={15} className="text-blue-400" />
+                                    <span>{isRTL ? "تعديل الدرس" : "Edit Lesson"}</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveLessonDropdown(null);
+                                      handleTogglePublishLesson(les);
+                                    }}
+                                    className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${les.isPublished ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'}`}
+                                  >
+                                    {les.isPublished ? (
+                                      <>
+                                        <FiEyeOff size={15} className="text-amber-400" />
+                                        <span>{isRTL ? "تحويل إلى مسودة" : "Unpublish (Draft)"}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FiEye size={15} className="text-emerald-400" />
+                                        <span>{isRTL ? "نشر الدرس" : "Publish Lesson"}</span>
+                                      </>
+                                    )}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveLessonDropdown(null);
+                                      setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' });
+                                    }}
+                                    className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
+                                  >
+                                    <FiTrash2 size={15} className="text-rose-400" />
+                                    <span>{isRTL ? "حذف الدرس" : "Delete Lesson"}</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
 

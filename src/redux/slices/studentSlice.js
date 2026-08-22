@@ -571,7 +571,9 @@ const studentSlice = createSlice({
 
       // Subject lessons
       .addCase(fetchSubjectLessons.pending, (state) => {
-        state.isLoading = true;
+        if (!state.lessonsData) {
+          state.isLoading = true;
+        }
       })
       .addCase(fetchSubjectLessons.fulfilled, (state, action) => {
         state.isLoading = false;
