@@ -134,7 +134,7 @@ export default function Navbar({ activeSection, onNavClick }) {
         <div className="flex items-center gap-2.5 cursor-pointer select-none group shrink-0" onClick={scrollToTop}>
           <img src="/assets/images/logo.png" alt="FullMark" className="h-9 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform" />
           <span className={`hidden sm:inline text-xl font-black tracking-tight transition-colors ${isLight ? 'text-slate-900 group-hover:text-cyan-600' : 'text-white group-hover:text-cyan-400'}`}>
-            FullMark<span className="text-cyan-400 font-extrabold text-base">.ai</span>
+            FullMark<span className="text-cyan-400 font-extrabold text-base"></span>
           </span>
         </div>
 

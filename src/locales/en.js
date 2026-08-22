@@ -1,7 +1,7 @@
 const en = {
   // Navigation
   nav: {
-    brand: "FullMark.ai",
+    brand: "FullMark",
     home: "Home",
     teachers: "About Teachers",
     courses: "Chemistry Courses",
