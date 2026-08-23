@@ -7,6 +7,7 @@ const ar = {
     courses: "دورات الكيمياء",
     exams: "الاختبارات الذكية",
     lab: "المختبر الافتراضي",
+    downloadApp: "تحميل التطبيق",
     contact: "تواصل معنا",
     signIn: "تسجيل الدخول",
     createAccount: "إنشاء حساب",

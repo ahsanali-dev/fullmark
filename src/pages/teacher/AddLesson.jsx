@@ -219,19 +219,19 @@ const AddLesson = () => {
 
       toast.success(isEditing ? (isRTL ? 'تم تحديث الدرس بنجاح!' : 'Lesson updated successfully!') : (isRTL ? 'تم إنشاء الدرس بنجاح!' : 'Lesson created successfully!'), { id: loadingToast });
 
-      // If user picked a video file before saving, start Bunny upload now!
+      // If user picked a video file before saving, start upload now!
       if (pendingVideoFile && targetLessonId) {
-        const uploadToast = toast.loading(isRTL ? 'جاري بدء رفع الفيديو إلى Bunny Stream...' : 'Starting video upload to Bunny Stream...');
+        const uploadToast = toast.loading(isRTL ? 'جاري بدء رفع الفيديو...' : 'Starting video upload...');
         startBunnyDirectUpload({
           targetType: 'lesson',
           targetId: targetLessonId,
           title: lessonTitle,
           file: pendingVideoFile,
           onProgress: (pct) => {
-            toast.loading(isRTL ? `جاري رفع الفيديو إلى Bunny Stream... ${pct}%` : `Uploading video to Bunny Stream... ${pct}%`, { id: uploadToast });
+            toast.loading(isRTL ? `جاري رفع الفيديو... ${pct}%` : `Uploading video... ${pct}%`, { id: uploadToast });
           },
           onSuccess: () => {
-            toast.success(isRTL ? 'تم رفع الفيديو بنجاح إلى Bunny Stream!' : 'Video uploaded successfully to Bunny Stream!', { id: uploadToast });
+            toast.success(isRTL ? 'تم رفع الفيديو بنجاح!' : 'Video uploaded successfully!', { id: uploadToast });
             dispatch(fetchLessons(selectedSubjectId));
           },
           onError: (err) => {
@@ -524,18 +524,18 @@ const AddLesson = () => {
                       checked={isPublished}
                       onChange={() => setIsPublished(!isPublished)}
                     />
-                    <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500" />
+                    <div className="w-11 h-6 bg-slate-300 dark:bg-gray-800 border border-slate-400 dark:border-transparent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 after:shadow-md after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 peer-checked:border-transparent" />
                   </label>
                 </div>
 
                 {/* Require Previous Lesson Toggle */}
-                <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl">
+                <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-[#0e101a] border border-slate-300 dark:border-gray-800 rounded-2xl">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                       <FiLock size={18} />
                     </div>
                     <div className="flex flex-col text-start">
-                      <span className="text-sm font-extrabold text-white">{isRTL ? "اشتراط الدرس السابق" : "Require Previous Lesson"}</span>
+                      <span className="text-sm font-extrabold text-slate-900 dark:text-white">{isRTL ? "اشتراط الدرس السابق" : "Require Previous Lesson"}</span>
                       <span className="text-[10px] text-gray-500 font-bold mt-0.5">{isRTL ? "يجب على الطلاب إكمال الدرس السابق أولاً" : "Students must complete previous lesson first"}</span>
                     </div>
                   </div>
@@ -546,18 +546,18 @@ const AddLesson = () => {
                       checked={requirePrevious}
                       onChange={() => setRequirePrevious(!requirePrevious)}
                     />
-                    <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+                    <div className="w-11 h-6 bg-slate-300 dark:bg-gray-800 border border-slate-400 dark:border-transparent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 after:shadow-md after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:border-transparent" />
                   </label>
                 </div>
 
                 {/* Allow Question Retakes Toggle */}
-                <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl">
+                <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-[#0e101a] border border-slate-300 dark:border-gray-800 rounded-2xl">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                       <FiRefreshCw size={18} />
                     </div>
                     <div className="flex flex-col text-start">
-                      <span className="text-sm font-extrabold text-white">{isRTL ? "السماح بإعادة الأسئلة" : "Allow Question Retakes"}</span>
+                      <span className="text-sm font-extrabold text-slate-900 dark:text-white">{isRTL ? "السماح بإعادة الأسئلة" : "Allow Question Retakes"}</span>
                       <span className="text-[10px] text-gray-500 font-bold mt-0.5">{isRTL ? "يمكن للطلاب إعادة محاولة أسئلة الدرس" : "Students can retry lesson questions"}</span>
                     </div>
                   </div>
@@ -568,7 +568,7 @@ const AddLesson = () => {
                       checked={allowRetakes}
                       onChange={() => setAllowRetakes(!allowRetakes)}
                     />
-                    <div className="w-11 h-6 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500" />
+                    <div className="w-11 h-6 bg-slate-300 dark:bg-gray-800 border border-slate-400 dark:border-transparent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 after:shadow-md after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 peer-checked:border-transparent" />
                   </label>
                 </div>
               </div>

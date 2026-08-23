@@ -317,32 +317,48 @@ const CreateExam = () => {
                   <span className="text-sm font-black tracking-widest text-gray-500 uppercase px-1">
                     {isRTL ? "المادة" : "Subject"}
                   </span>
-                  {!selectedSubjectId && (
+                  {!selectedSubjectId && subjects.length > 0 && (
                     <span className="text-xs text-amber-400 font-bold px-1 animate-pulse">
                       {isRTL ? "⚠️ يرجى تحديد مادة للاختبار" : "⚠️ Please select a subject"}
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2.5">
-                  {subjects.map((sub) => {
-                    const subId = sub._id || sub.id;
-                    const isSelected = selectedSubjectId === subId;
-                    return (
-                      <button
-                        key={subId}
-                        type="button"
-                        onClick={() => setSelectedSubjectId(subId)}
-                        className={`px-5 py-3 rounded-2xl font-bold text-base border transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/10'
-                            : 'bg-[#0e101a] border-gray-800 text-gray-400 hover:border-gray-700'
-                        }`}
-                      >
-                        {sub.title || sub.name}
-                      </button>
-                    );
-                  })}
-                </div>
+                {subjects.length === 0 ? (
+                  <div className="p-6 rounded-2xl bg-[#0e101a] border border-gray-800/80 flex items-center gap-4 text-start">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                      <FiBookOpen size={20} />
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-extrabold text-white">
+                        {isRTL ? "لا توجد مواد مسندة" : "No Assigned Subjects"}
+                      </h5>
+                      <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                        {isRTL ? "لم يتم العثور على أي مواد مسندة لحسابك. يرجى التواصل مع مسؤول النظام لتعيين المواد." : "No assigned subjects found. Please contact the administrator to assign subjects to your account."}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2.5">
+                    {subjects.map((sub) => {
+                      const subId = sub._id || sub.id;
+                      const isSelected = selectedSubjectId === subId;
+                      return (
+                        <button
+                          key={subId}
+                          type="button"
+                          onClick={() => setSelectedSubjectId(subId)}
+                          className={`px-5 py-3 rounded-2xl font-bold text-base border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/10'
+                              : 'bg-[#0e101a] border-gray-800 text-gray-400 hover:border-gray-700'
+                          }`}
+                        >
+                          {sub.title || sub.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Difficulty Mix Selectors */}
@@ -629,10 +645,10 @@ const CreateExam = () => {
                     type="button"
                     onClick={() => setEnableTimer(!enableTimer)}
                     className={`w-12 h-6.5 rounded-full p-0.5 transition-colors focus:outline-none cursor-pointer flex items-center ${
-                      enableTimer ? 'bg-blue-600' : 'bg-gray-800'
+                      enableTimer ? 'bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.4)]' : 'bg-slate-300 dark:bg-gray-800 border border-slate-400 dark:border-transparent'
                     }`}
                   >
-                    <div className={`w-5.5 h-5.5 rounded-full bg-white transition-transform ${
+                    <div className={`w-5.5 h-5.5 rounded-full bg-white shadow-md transition-transform ${
                       enableTimer ? (isRTL ? '-translate-x-5.5' : 'translate-x-5.5') : 'translate-x-0'
                     }`} />
                   </button>
@@ -645,7 +661,7 @@ const CreateExam = () => {
                   <span className="text-sm font-black tracking-widest text-gray-500 uppercase px-1">
                     {isRTL ? "المدة (بالدقائق)" : "Duration (minutes)"}
                   </span>
-                  <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl max-w-sm">
+                  <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-[#0e101a] border border-slate-300 dark:border-gray-800 rounded-2xl max-w-sm">
                     <button
                       type="button"
                       onClick={() => setDuration(Math.max(10, duration - 5))}
@@ -654,7 +670,7 @@ const CreateExam = () => {
                       -
                     </button>
                     <div className="text-center select-none">
-                      <span className="text-2xl font-black text-white">{duration}</span>
+                      <span className="text-2xl font-black text-slate-900 dark:text-white">{duration}</span>
                       <p className="text-xs text-gray-500 font-bold mt-0.5">{isRTL ? "الحد الأدنى: 10 • الحد الأقصى: 180" : "min: 10 • max: 180"}</p>
                     </div>
                     <button
@@ -675,13 +691,13 @@ const CreateExam = () => {
                 </span>
                 
                 {/* Show Explanations Toggle */}
-                <div className="p-4 bg-[#0e101a] border border-gray-800 rounded-2xl flex items-center justify-between">
+                <div className="p-4 bg-slate-100 dark:bg-[#0e101a] border border-slate-300 dark:border-gray-800 rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
                       <FiHelpCircle size={18} />
                     </div>
                     <div className="text-start">
-                      <span className="text-sm font-black text-white block">{isRTL ? "إظهار الشروحات" : "Show Explanations"}</span>
+                      <span className="text-sm font-black text-slate-900 dark:text-white block">{isRTL ? "إظهار الشروحات" : "Show Explanations"}</span>
                       <span className="text-[10px] text-gray-500 font-semibold block mt-0.5">{isRTL ? "إظهار الشرح بعد الإجابات الخاطئة" : "Show explanation after wrong answers"}</span>
                     </div>
                   </div>
@@ -691,23 +707,23 @@ const CreateExam = () => {
                     type="button"
                     onClick={() => setShowExplanations(!showExplanations)}
                     className={`w-12 h-6.5 rounded-full p-0.5 transition-colors focus:outline-none cursor-pointer flex items-center ${
-                      showExplanations ? 'bg-blue-600' : 'bg-gray-800'
+                      showExplanations ? 'bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.4)]' : 'bg-slate-300 dark:bg-gray-800 border border-slate-400 dark:border-transparent'
                     }`}
                   >
-                    <div className={`w-5.5 h-5.5 rounded-full bg-white transition-transform ${
+                    <div className={`w-5.5 h-5.5 rounded-full bg-white shadow-md transition-transform ${
                       showExplanations ? (isRTL ? '-translate-x-5.5' : 'translate-x-5.5') : 'translate-x-0'
                     }`} />
                   </button>
                 </div>
 
                 {/* Allow Retake Toggle */}
-                <div className="p-4 bg-[#0e101a] border border-gray-800 rounded-2xl flex items-center justify-between mt-1">
+                <div className="p-4 bg-slate-100 dark:bg-[#0e101a] border border-slate-300 dark:border-gray-800 rounded-2xl flex items-center justify-between mt-1">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-500 shrink-0">
                       <FiSettings size={18} />
                     </div>
                     <div className="text-start">
-                      <span className="text-base font-black text-white block">{isRTL ? "السماح بإعادة الاختبار" : "Allow Retake"}</span>
+                      <span className="text-base font-black text-slate-900 dark:text-white block">{isRTL ? "السماح بإعادة الاختبار" : "Allow Retake"}</span>
                       <span className="text-xs text-gray-500 font-semibold block mt-0.5">{isRTL ? "يمكن للطلاب إعادة هذا الاختبار" : "Students can retake this exam"}</span>
                     </div>
                   </div>
@@ -717,10 +733,10 @@ const CreateExam = () => {
                     type="button"
                     onClick={() => setAllowRetake(!allowRetake)}
                     className={`w-12 h-6.5 rounded-full p-0.5 transition-colors focus:outline-none cursor-pointer flex items-center ${
-                      allowRetake ? 'bg-blue-600' : 'bg-gray-800'
+                      allowRetake ? 'bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.4)]' : 'bg-slate-300 dark:bg-gray-800 border border-slate-400 dark:border-transparent'
                     }`}
                   >
-                    <div className={`w-5.5 h-5.5 rounded-full bg-white transition-transform ${
+                    <div className={`w-5.5 h-5.5 rounded-full bg-white shadow-md transition-transform ${
                       allowRetake ? (isRTL ? '-translate-x-5.5' : 'translate-x-5.5') : 'translate-x-0'
                     }`} />
                   </button>

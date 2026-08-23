@@ -607,7 +607,7 @@ const Coupons = () => {
                         checked={enableBonusCourses}
                         onChange={() => setEnableBonusCourses(!enableBonusCourses)}
                       />
-                      <div className={`w-10 h-5 ${isLight ? 'bg-slate-300' : 'bg-gray-800'} peer-focus:outline-none rounded-full peer peer-checked:after:${isRTL ? '-translate-x-full' : 'translate-x-full'} peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:${isRTL ? 'right-[2px]' : 'left-[2px]'} after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500`} />
+                      <div className={`w-10 h-5 ${isLight ? 'bg-slate-300 border border-slate-400' : 'bg-gray-800'} peer-focus:outline-none rounded-full peer peer-checked:after:${isRTL ? '-translate-x-full' : 'translate-x-full'} peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:${isRTL ? 'right-[2px]' : 'left-[2px]'} after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:border-transparent`} />
                     </label>
                   </div>
                   

@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiGlobe, FiChevronDown, FiGrid, FiLogOut, FiUser, FiSun, FiMoon, FiMenu, FiX, FiHome, FiLayers, FiUserPlus } from 'react-icons/fi';
+import { FiGlobe, FiChevronDown, FiGrid, FiLogOut, FiUser, FiSun, FiMoon, FiMenu, FiX, FiHome, FiLayers, FiUserPlus, FiSmartphone } from 'react-icons/fi';
 import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { logoutUser, getMe } from '../../redux/slices/authSlice';
 import { useLanguage } from '../../context/LanguageContext';
+import AppDownloadModal from '../shared/AppDownloadModal';
 
 export default function Navbar({ activeSection, onNavClick }) {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { language, changeLanguage, t } = useLanguage();
+  const { language, changeLanguage, t, isRTL } = useLanguage();
 
   const { isAuthenticated, user, token } = useSelector((state) => state.auth);
 
@@ -20,6 +21,7 @@ export default function Navbar({ activeSection, onNavClick }) {
   const [langOpen, setLangOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   const langMenuRef = useRef(null);
@@ -129,7 +131,7 @@ export default function Navbar({ activeSection, onNavClick }) {
           : 'bg-[#080911]/85 border-gray-800/60 shadow-xl text-gray-100'
       }`}
     >
-      <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between px-3 sm:px-6 md:px-12 py-2.5 sm:py-3.5">
+      <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between px-6 md:px-12 lg:px-0 py-2.5 sm:py-3.5">
         {/* BRAND LOGO */}
         <div className="flex items-center gap-2.5 cursor-pointer select-none group shrink-0" onClick={scrollToTop}>
           <img src="/assets/images/logo.png" alt="FullMark" className="h-9 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform" />
@@ -166,6 +168,23 @@ export default function Navbar({ activeSection, onNavClick }) {
               <motion.span layoutId="activeNavLine" className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee]" />
             )}
           </span>
+
+          {/* Download App Link */}
+          <button
+            onClick={() => setDownloadModalOpen(true)}
+            className={`h-9.5 sm:h-10 flex items-center gap-1.5 px-3 sm:px-3.5 rounded-2xl border text-xs font-black cursor-pointer transition-all shadow-sm whitespace-nowrap ${
+              isLight
+                ? 'bg-cyan-50 border-cyan-300 text-cyan-700 hover:bg-cyan-100'
+                : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 shadow-[0_0_15px_rgba(34,211,238,0.15)]'
+            }`}
+          >
+            <FiSmartphone className="text-cyan-400 text-sm animate-pulse" />
+            <span>
+              {t('nav.downloadApp') && t('nav.downloadApp') !== 'nav.downloadApp'
+                ? t('nav.downloadApp')
+                : (isRTL ? "تحميل التطبيق" : "Download App")}
+            </span>
+          </button>
         </div>
 
         {/* RIGHT ACTION BUTTONS */}
@@ -174,7 +193,7 @@ export default function Navbar({ activeSection, onNavClick }) {
           {/* THEME TOGGLE BUTTON */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all shadow-sm shrink-0 ${
+            className={`w-9.5 h-9.5 sm:w-10 sm:h-10 rounded-2xl border flex items-center justify-center cursor-pointer transition-all shadow-sm shrink-0 ${
               isLight
                 ? 'bg-slate-100 border-slate-300 text-amber-500 hover:border-amber-400 hover:bg-amber-50'
                 : 'bg-gray-900/90 border-gray-700/80 text-yellow-400 hover:border-cyan-400/50 hover:bg-gray-800'
@@ -191,7 +210,7 @@ export default function Navbar({ activeSection, onNavClick }) {
                 setLangOpen(!langOpen);
                 setUserMenuOpen(false);
               }}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-black cursor-pointer transition-all shadow-sm whitespace-nowrap ${
+              className={`h-9.5 sm:h-10 flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 rounded-2xl border text-xs font-black cursor-pointer transition-all shadow-sm whitespace-nowrap ${
                 isLight
                   ? 'bg-slate-100 border-slate-300 text-slate-800 hover:border-cyan-500'
                   : 'bg-gray-900/90 border-gray-700/80 text-gray-200 hover:text-white hover:border-cyan-400/50'
@@ -236,13 +255,13 @@ export default function Navbar({ activeSection, onNavClick }) {
                   setUserMenuOpen(!userMenuOpen);
                   setLangOpen(false);
                 }}
-                className={`flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1.5 rounded-2xl border transition-all cursor-pointer shadow-md group whitespace-nowrap ${
+                className={`h-9.5 sm:h-10 flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 rounded-2xl border transition-all cursor-pointer shadow-md group whitespace-nowrap ${
                   isLight
                     ? 'bg-slate-100 border-slate-300 text-slate-800 hover:border-cyan-500'
                     : 'bg-gray-900/90 border-gray-700/80 text-gray-200 hover:text-white hover:border-cyan-500/50'
                 }`}
               >
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center font-black text-white text-xs shadow-sm shrink-0">
+                <div className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-purple-600 flex items-center justify-center font-black text-white text-xs shadow-sm shrink-0">
                   {user?.name ? user.name.substring(0, 2).toUpperCase() : <FiUser size={13} />}
                 </div>
                 <span className={`text-xs font-black max-w-[80px] sm:max-w-[120px] truncate ${isLight ? 'text-slate-800' : 'text-white'}`}>
@@ -321,7 +340,7 @@ export default function Navbar({ activeSection, onNavClick }) {
             <>
               <button
                 onClick={() => navigate('/login')}
-                className={`px-3 sm:px-4.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                className={`h-9.5 sm:h-10 px-3.5 sm:px-4.5 rounded-2xl border text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center ${
                   isLight
                     ? 'bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200'
                     : 'border-gray-700/80 bg-gray-900/60 hover:bg-gray-800 text-gray-200 hover:text-white'
@@ -332,7 +351,7 @@ export default function Navbar({ activeSection, onNavClick }) {
 
               <button
                 onClick={() => navigate('/register')}
-                className="hidden sm:inline-flex px-5 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-xs font-black shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                className="hidden sm:inline-flex h-9.5 sm:h-10 items-center justify-center px-5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white text-xs font-black shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 {t('nav.createAccount')}
               </button>
@@ -342,7 +361,7 @@ export default function Navbar({ activeSection, onNavClick }) {
           <button
             id="mobile-menu-btn"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center cursor-pointer transition-all shadow-sm shrink-0 ${
+            className={`lg:hidden w-9.5 h-9.5 sm:w-10 sm:h-10 rounded-2xl border flex items-center justify-center cursor-pointer transition-all shadow-sm shrink-0 ${
               isLight
                 ? 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
                 : 'bg-gray-900/90 border-gray-700/80 text-gray-200 hover:text-white hover:border-cyan-400/50 hover:bg-gray-800'
@@ -401,6 +420,20 @@ export default function Navbar({ activeSection, onNavClick }) {
                 <FiLayers className="text-base text-cyan-500" />
                 <span>{t('nav.lab')}</span>
               </button>
+
+              {/* Download App Mobile Menu Item */}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setDownloadModalOpen(true);
+                }}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer text-start ${
+                  isLight ? 'hover:bg-cyan-50 text-cyan-700' : 'hover:bg-cyan-500/15 text-cyan-400'
+                }`}
+              >
+                <FiSmartphone className="text-base text-cyan-400 animate-pulse" />
+                <span>{isRTL ? "تحميل التطبيق (Android / iOS)" : "Download App (Android / iOS)"}</span>
+              </button>
             </div>
 
             {/* Mobile Auth Buttons if Not Authenticated */}
@@ -421,6 +454,9 @@ export default function Navbar({ activeSection, onNavClick }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* App Download Modal */}
+      <AppDownloadModal isOpen={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} />
     </motion.nav>
   );
 }

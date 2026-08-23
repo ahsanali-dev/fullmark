@@ -284,7 +284,7 @@ export default function Landing() {
               </button>
 
               <button
-                onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 className={`w-full sm:w-auto px-7 py-4 rounded-2xl border font-extrabold text-base transition-all cursor-pointer flex items-center justify-center gap-2 ${
                   isLight
                     ? 'border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100'

@@ -295,7 +295,7 @@ const AddQuestion = () => {
               onChange={(e) => setSelectedSubjectId(e.target.value)}
               className={`w-full ${isRTL ? 'pr-12 pl-10' : 'pl-12 pr-10'} py-4 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 appearance-none cursor-pointer focus:ring-0 text-base`}
             >
-              <option value="" disabled>{isRTL ? "اختر المادة" : "Select Subject"}</option>
+              <option value="" disabled>{subjects.length === 0 ? (isRTL ? "لا توجد مواد متاحة" : "No Subjects Available") : (isRTL ? "اختر المادة" : "Select Subject")}</option>
               {subjects.map(s => {
                 const subId = s._id || s.id;
                 const subTitle = s.name || s.title;
@@ -306,6 +306,13 @@ const AddQuestion = () => {
             </select>
             <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none`} />
           </div>
+          {subjects.length === 0 && (
+            <div className="p-4 rounded-2xl bg-[#0e101a] border border-gray-800/80 flex items-center gap-3">
+              <span className="text-xs text-amber-400 font-bold">
+                {isRTL ? "⚠️ لا توجد مواد مسندة لحسابك. يرجى التواصل مع مسؤول النظام." : "⚠️ No assigned subjects found. Please contact your administrator."}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* 1. Difficulty Level Selector */}

@@ -34,10 +34,13 @@ import ConfirmationModal from '../../components/ui/ConfirmationModal';
 import { useLanguage } from '../../context/LanguageContext';
 
 /* ─── Toggle Switch ─────────────────────────────────────────── */
-const Toggle = ({ value, onChange, activeColor = 'bg-purple-500', isRTL = false }) => (
+const Toggle = ({ value, onChange, activeColor = 'bg-purple-500', isRTL = false, isLight = false }) => (
   <button
+    type="button"
     onClick={() => onChange(!value)}
-    className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${value ? activeColor : 'bg-gray-700'}`}
+    className={`relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${
+      value ? activeColor : (isLight ? 'bg-slate-300 border border-slate-400' : 'bg-gray-700')
+    }`}
   >
     <span
       className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300 ${
@@ -316,7 +319,7 @@ const ParentSettings = () => {
                     <span className="text-xs sm:text-sm text-gray-500 font-semibold mt-1 block">{isRTL ? "استلام تقارير الأبناء" : "Receive sibling reports"}</span>
                   </div>
                 </div>
-                <Toggle value={pushNotifs} onChange={setPushNotifs} activeColor="bg-purple-500" isRTL={isRTL} />
+                <Toggle value={pushNotifs} onChange={setPushNotifs} activeColor="bg-purple-500" isRTL={isRTL} isLight={!isDark} />
               </div>
 
               {/* Dark Mode */}
@@ -330,7 +333,7 @@ const ParentSettings = () => {
                     <p className="text-xs sm:text-sm text-gray-500 font-semibold mt-1">{isRTL ? "تبديل مظهر اللوحة" : "Switch dashboard theme"}</p>
                   </div>
                 </div>
-                <Toggle value={isDark} onChange={(val) => setTheme(val ? 'dark' : 'light')} activeColor="bg-yellow-500" isRTL={isRTL} />
+                <Toggle value={isDark} onChange={(val) => setTheme(val ? 'dark' : 'light')} activeColor="bg-yellow-500" isRTL={isRTL} isLight={!isDark} />
               </div>
 
               {/* Language Switcher Card */}

@@ -310,8 +310,9 @@ const TeacherSettings = () => {
               {/* Toggle Switch */}
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-800 justify-start'
-                  }`}
+                className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none flex items-center ${
+                  theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-slate-300 border border-slate-400 justify-start'
+                }`}
               >
                 <motion.div
                   layout

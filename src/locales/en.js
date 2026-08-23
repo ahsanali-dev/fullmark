@@ -7,6 +7,7 @@ const en = {
     courses: "Chemistry Courses",
     exams: "Smart Exams",
     lab: "3D Lab",
+    downloadApp: "Download App",
     contact: "Contact Us",
     signIn: "Sign In",
     createAccount: "Create Account",

@@ -131,7 +131,7 @@ const VideoUploader = ({
     setIsUploading(true);
     setIsPaused(false);
     setUploadProgress(0);
-    setUploadStatusText(isRTL ? 'جاري الحصول على تذكرة الرفع...' : 'Requesting Bunny upload ticket...');
+    setUploadStatusText(isRTL ? 'جاري تحضير الرفع...' : 'Preparing video upload...');
 
     try {
       const upload = await startBunnyDirectUpload({
@@ -153,13 +153,13 @@ const VideoUploader = ({
           setUploadProgress(100);
           setUploadStatusText(
             isRTL
-              ? 'اكتمال الرفع! يتم الآن ضغط ومعالجة الفيديو في الخلفية...'
-              : 'Upload completed! Video is encoding in the background...'
+              ? 'اكتمال الرفع! يتم الآن معالجة الفيديو في الخلفية...'
+              : 'Upload completed! Video is processing in the background...'
           );
           toast.success(
             isRTL
-              ? 'تم رفع الفيديو بنجاح! يتم ترميز الفيديو حالياً على Bunny Stream.'
-              : 'Video uploaded successfully! Bunny Stream is now encoding the video.'
+              ? 'تم رفع الفيديو بنجاح! يتم معالجة الفيديو حالياً.'
+              : 'Video uploaded successfully! Video is now processing.'
           );
           if (onUploadSuccess) onUploadSuccess(ticket);
         },
@@ -250,10 +250,10 @@ const VideoUploader = ({
           </div>
           <div>
             <h4 className="text-sm font-extrabold text-white">
-              {isRTL ? "مستضيف الفيديو الذكي (Bunny Stream)" : "Bunny Stream Video Host"}
+              {isRTL ? "رفع الفيديو" : "Video Uploader"}
             </h4>
             <p className="text-[11px] text-gray-400 font-semibold">
-              {isRTL ? "رفع مباشر بدون مساحة خادم، يدعم الاستئناف التلقائي" : "Direct resumable TUS upload to CDN"}
+              {isRTL ? "رفع مباشر عالي الجودة يدعم الاستئناف التلقائي" : "High-quality direct video upload"}
             </p>
           </div>
         </div>
@@ -278,8 +278,8 @@ const VideoUploader = ({
             <span className={`w-2 h-2 rounded-full shrink-0 ${videoReady ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
             <span className="truncate font-semibold text-gray-300">
               {videoReady 
-                ? (isRTL ? "الفيديو جاهز للمشاهدة على CDN" : "Video Ready for Playback on CDN")
-                : (isRTL ? "جاري الترميز في الخلفية... (videoReady: false)" : "Encoding in Background... (videoReady: false)")}
+                ? (isRTL ? "الفيديو جاهز للمشاهدة" : "Video Ready for Playback")
+                : (isRTL ? "جاري معالجة الفيديو في الخلفية..." : "Processing in Background...")}
             </span>
           </div>
           <button
@@ -340,7 +340,7 @@ const VideoUploader = ({
             <div className="min-w-0 text-start">
               <h5 className="text-sm font-extrabold text-white truncate">{selectedFile.name}</h5>
               <p className="text-xs text-purple-300 font-semibold">
-                {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB • {isRTL ? "جاهز للرفع إلى Bunny Stream عند الحفظ" : "Ready to upload to Bunny Stream upon saving"}
+                {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB • {isRTL ? "جاهز للرفع عند الحفظ" : "Ready to upload upon saving"}
               </p>
             </div>
           </div>
@@ -362,10 +362,10 @@ const VideoUploader = ({
             <FiUploadCloud />
           </div>
           <span className="text-sm font-extrabold text-white">
-            {isRTL ? "اختر ملف فيديو للرفع على Bunny Stream" : "Select video file to upload directly to Bunny Stream"}
+            {isRTL ? "اختر ملف فيديو للرفع" : "Select video file to upload"}
           </span>
           <span className="text-xs text-gray-500 font-semibold">
-            {isRTL ? "يدعم MP4, MOV, WebM بحجم غير محدود مع استئناف التنزيل" : "Supports MP4, MOV, WebM with resumable TUS protocol"}
+            {isRTL ? "يدعم صيغ MP4, MOV, WebM" : "Supports MP4, MOV, WebM video formats"}
           </span>
         </div>
       ) : null}
@@ -373,7 +373,7 @@ const VideoUploader = ({
       {isEncoding && (
         <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold flex items-center gap-2">
           <FiRefreshCw className="animate-spin" />
-          <span>{isRTL ? "الفيديو في مرحلة المعالجة والترميز على Bunny CDN (استغرق دقائق معدودة)." : "Video is currently encoding on Bunny CDN. Check back shortly."}</span>
+          <span>{isRTL ? "الفيديو في مرحلة المعالجة حالياً (يستغرق دقيقة أو دقيقتين)." : "Video is currently processing in the background. Check back shortly."}</span>
         </div>
       )}
 
@@ -391,8 +391,8 @@ const VideoUploader = ({
               </h3>
               <p className="text-xs text-gray-400 font-semibold leading-relaxed">
                 {isRTL
-                  ? "هل أنت تأكد من رغبتك في حذف هذا الفيديو نهائياً من Bunny Stream؟ لا يمكن التراجع عن هذا الإجراء."
-                  : "Are you sure you want to permanently delete this video from Bunny Stream? This action cannot be undone."}
+                  ? "هل أنت تأكد من رغبتك في حذف هذا الفيديو نهائياً؟ لا يمكن التراجع عن هذا الإجراء."
+                  : "Are you sure you want to permanently delete this video? This action cannot be undone."}
               </p>
             </div>
 

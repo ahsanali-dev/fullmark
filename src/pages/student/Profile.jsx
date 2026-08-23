@@ -528,7 +528,7 @@ const Profile = () => {
                 </div>
                 <button
                   onClick={() => setPushNotifications(!pushNotifications)}
-                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${pushNotifications ? 'bg-purple-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
+                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${pushNotifications ? 'bg-purple-600 justify-end' : (isLight ? 'bg-slate-300 border border-slate-400 justify-start' : 'bg-gray-800 border border-gray-700 justify-start')}`}
                 >
                   <div className="w-5 h-5 rounded-full bg-white shadow-md" />
                 </button>
@@ -543,7 +543,7 @@ const Profile = () => {
                 </div>
                 <button
                   onClick={() => setExamReminders(!examReminders)}
-                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${examReminders ? 'bg-blue-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
+                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${examReminders ? 'bg-blue-600 justify-end' : (isLight ? 'bg-slate-300 border border-slate-400 justify-start' : 'bg-gray-800 border border-gray-700 justify-start')}`}
                 >
                   <div className="w-5 h-5 rounded-full bg-white shadow-md" />
                 </button>
@@ -558,7 +558,7 @@ const Profile = () => {
                 </div>
                 <button
                   onClick={() => setResultAlerts(!resultAlerts)}
-                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${resultAlerts ? 'bg-emerald-500 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
+                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${resultAlerts ? 'bg-emerald-500 justify-end' : (isLight ? 'bg-slate-300 border border-slate-400 justify-start' : 'bg-gray-800 border border-gray-700 justify-start')}`}
                 >
                   <div className="w-5 h-5 rounded-full bg-white shadow-md" />
                 </button>
@@ -573,7 +573,7 @@ const Profile = () => {
                 </div>
                 <button
                   onClick={() => setSoundEffects(!soundEffects)}
-                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${soundEffects ? 'bg-gray-600 justify-end' : 'bg-gray-400 dark:bg-gray-800 justify-start'}`}
+                  className={`w-11 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${soundEffects ? 'bg-gray-600 justify-end' : (isLight ? 'bg-slate-300 border border-slate-400 justify-start' : 'bg-gray-800 border border-gray-700 justify-start')}`}
                 >
                   <div className="w-5 h-5 rounded-full bg-white shadow-md" />
                 </button>
@@ -603,7 +603,7 @@ const Profile = () => {
               </div>
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : 'bg-gray-300 dark:bg-gray-800 justify-start'}`}
+                className={`w-12 h-7 rounded-full p-1 cursor-pointer transition-all duration-300 flex items-center ${theme === 'dark' ? 'bg-yellow-500 justify-end' : (isLight ? 'bg-slate-300 border border-slate-400 justify-start' : 'bg-gray-800 border border-gray-700 justify-start')}`}
               >
                 <div className="w-5 h-5 rounded-full bg-white shadow-md" />
               </button>
