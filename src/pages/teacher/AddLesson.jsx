@@ -84,7 +84,7 @@ const AddLesson = () => {
   const [pendingVideoFile, setPendingVideoFile] = useState(null);
 
   // Settings Toggles
-  const [isPublished, setIsPublished] = useState(true);
+  const [isPublished, setIsPublished] = useState(false);
   const [requirePrevious, setRequirePrevious] = useState(false);
   const [allowRetakes, setAllowRetakes] = useState(true);
 
@@ -202,12 +202,18 @@ const AddLesson = () => {
       const savedLesson = res?.lesson || res;
       const targetLessonId = savedLesson?._id || savedLesson?.id || lessonId;
 
-      // Invoke lessons/:id/toggle-publish if publish status was changed or differs
-      if (targetLessonId && isEditing && existingLesson && (!!existingLesson.isPublished !== !!isPublished)) {
-        try {
-          await dispatch(toggleLessonPublish(targetLessonId)).unwrap();
-        } catch (pubErr) {
-          console.warn('Failed to invoke toggle-publish endpoint:', pubErr);
+      // Invoke lessons/:id/toggle-publish if publish status was changed or enabled on creation
+      if (targetLessonId) {
+        const shouldToggle = isEditing 
+          ? (existingLesson && (!!existingLesson.isPublished !== !!isPublished))
+          : (isPublished === true);
+
+        if (shouldToggle) {
+          try {
+            await dispatch(toggleLessonPublish(targetLessonId)).unwrap();
+          } catch (pubErr) {
+            console.warn('Failed to invoke toggle-publish endpoint:', pubErr);
+          }
         }
       }
 
