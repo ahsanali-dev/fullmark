@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   FiChevronLeft,
@@ -12,7 +12,8 @@ import {
   FiEye,
   FiRefreshCw,
   FiBookOpen,
-  FiPlus
+  FiPlus,
+  FiSave
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -26,51 +27,65 @@ import {
   fetchSubjectUnits,
   fetchLessons,
   createLesson,
-  updateLesson,
-  toggleLessonPublish
+  updateLesson
 } from '../../redux/slices/teacherSlice';
 import { useLanguage } from '../../context/LanguageContext';
+
+const formatSecondsToMMSS = (totalSeconds) => {
+  if (!totalSeconds || isNaN(totalSeconds)) return '';
+  const sec = Number(totalSeconds);
+  const minutes = Math.floor(sec / 60);
+  const remainingSeconds = sec % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+};
+
+const parseVideoLengthToSeconds = (lengthStr) => {
+  if (!lengthStr) return 0;
+  if (typeof lengthStr === 'number') return lengthStr;
+  const str = String(lengthStr).trim();
+  const parts = str.split(':');
+  if (parts.length === 2) {
+    const minutes = parseInt(parts[0], 10) || 0;
+    const seconds = parseInt(parts[1], 10) || 0;
+    return minutes * 60 + seconds;
+  }
+  if (parts.length === 3) {
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    const seconds = parseInt(parts[2], 10) || 0;
+    return hours * 3600 + minutes * 60 + seconds;
+  }
+  const val = parseInt(str, 10);
+  return isNaN(val) ? 0 : val;
+};
+
+const parseDurationToMinutes = (durStr) => {
+  if (typeof durStr === 'number') return durStr;
+  if (!durStr || typeof durStr !== 'string') return 0;
+  const match = durStr.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 0;
+};
 
 const AddLesson = () => {
   const navigate = useNavigate();
   const { subjectId, lessonId } = useParams();
-  const isEditing = !!lessonId;
+  const isEditing = Boolean(lessonId);
   const dispatch = useDispatch();
   const { t, isRTL } = useLanguage();
 
   const { subjects = [], units = [], lessons = [], isLoading } = useSelector((state) => state.teacher);
 
   const [selectedSubjectId, setSelectedSubjectId] = useState(() => {
-    if (subjectId === 'select') {
+    if (!subjectId || subjectId === 'select') {
       return '';
     }
     return subjectId;
   });
 
   const [selectedUnitId, setSelectedUnitId] = useState('');
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
-  useEffect(() => {
-    dispatch(fetchTeacherSubjects());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (selectedSubjectId) {
-      dispatch(fetchLessons(selectedSubjectId));
-      dispatch(fetchSubjectUnits(selectedSubjectId));
-    }
-  }, [dispatch, selectedSubjectId]);
-
-  // Set default subject if empty and subjects loaded
-  useEffect(() => {
-    if (!selectedSubjectId && subjects.length > 0 && subjectId === 'select') {
-      setSelectedSubjectId(subjects[0]?._id || subjects[0]?.id || '');
-    }
-  }, [subjects, selectedSubjectId, subjectId]);
-
-  const subject = subjects.find((sub) => (sub._id || sub.id) === selectedSubjectId) || { name: 'Unknown Subject' };
-  const existingLesson = isEditing ? lessons.find((l) => (l._id || l.id) === lessonId) : null;
-
-  // Accordion state - only one open at a time matching AddQuestion.jsx
+  // Accordion state
   const [activeAccordion, setActiveAccordion] = useState('basic'); // 'basic' | 'content' | 'settings' | ''
 
   // Form States
@@ -89,68 +104,91 @@ const AddLesson = () => {
   const [allowRetakes, setAllowRetakes] = useState(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const parseVideoLengthToSeconds = (lengthStr) => {
-    if (!lengthStr || typeof lengthStr !== 'string') return 0;
-    const parts = lengthStr.split(':');
-    if (parts.length === 2) {
-      const minutes = parseInt(parts[0], 10) || 0;
-      const seconds = parseInt(parts[1], 10) || 0;
-      return minutes * 60 + seconds;
-    }
-    const val = parseInt(lengthStr, 10);
-    return isNaN(val) ? 0 : val;
-  };
-
   const [isFormInitialized, setIsFormInitialized] = useState(false);
 
+  // Load teacher subjects on mount
+  useEffect(() => {
+    dispatch(fetchTeacherSubjects());
+  }, [dispatch]);
+
+  // Load lessons and units when subject is known
+  useEffect(() => {
+    if (selectedSubjectId) {
+      setHasLoadedData(false);
+      Promise.all([
+        dispatch(fetchLessons(selectedSubjectId)).unwrap().catch(() => {}),
+        dispatch(fetchSubjectUnits(selectedSubjectId)).unwrap().catch(() => {})
+      ]).finally(() => {
+        setHasLoadedData(true);
+      });
+    }
+  }, [dispatch, selectedSubjectId]);
+
+  // Set default subject for new lessons if subjectId is 'select' and subjects load
+  useEffect(() => {
+    if (!isEditing && !selectedSubjectId && subjects.length > 0 && subjectId === 'select') {
+      setSelectedSubjectId(subjects[0]?._id || subjects[0]?.id || '');
+    }
+  }, [subjects, selectedSubjectId, subjectId, isEditing]);
+
+  const subject = subjects.find((sub) => (sub._id || sub.id) === selectedSubjectId) || { name: 'Unknown Subject' };
+  const existingLesson = isEditing ? lessons.find((l) => (l._id || l.id) === lessonId) : null;
+
+  // Reset initialization flag if lessonId changes
   useEffect(() => {
     setIsFormInitialized(false);
   }, [lessonId]);
 
-  // Sync form states when existingLesson is first loaded
+  // Sync form states when existingLesson is found
   useEffect(() => {
     if (existingLesson && !isFormInitialized) {
-      if (existingLesson.subject && !selectedSubjectId) {
-        setSelectedSubjectId(existingLesson.subject?._id || existingLesson.subject);
+      const lessonSubId = existingLesson.subject?._id || existingLesson.subject || existingLesson.subjectId;
+      if (lessonSubId && (!selectedSubjectId || selectedSubjectId === 'select')) {
+        setSelectedSubjectId(lessonSubId);
       }
       setLessonTitle(existingLesson.title || '');
       setLessonDescription(existingLesson.description || '');
-      setLessonDuration(existingLesson.duration !== undefined && existingLesson.duration !== null ? String(existingLesson.duration) : '');
+      setLessonDuration(
+        existingLesson.duration !== undefined && existingLesson.duration !== null
+          ? String(existingLesson.duration)
+          : ''
+      );
       setLessonOrder(existingLesson.order || 1);
-      setSelectedUnitId(existingLesson.unit?._id || existingLesson.unit || '');
+      setSelectedUnitId(existingLesson.unit?._id || existingLesson.unit || existingLesson.unitId || '');
       setExplanationVideoUrl(existingLesson.videoUrl || '');
-      setVideoLength(existingLesson.videoLength || '');
+      
+      const formattedLength = existingLesson.videoLength
+        ? existingLesson.videoLength
+        : (existingLesson.videoDuration ? formatSecondsToMMSS(existingLesson.videoDuration) : '');
+      setVideoLength(formattedLength);
+      
       setThumbnailUrl(existingLesson.thumbnailUrl || '');
-      setIsPublished(existingLesson.isPublished !== false);
-      setRequirePrevious(!!existingLesson.requirePrevious);
+      setIsPublished(Boolean(existingLesson.isPublished));
+      setRequirePrevious(Boolean(existingLesson.requirePrevious));
       setAllowRetakes(existingLesson.allowRetakes !== false);
       setIsFormInitialized(true);
     }
   }, [existingLesson, isFormInitialized, selectedSubjectId]);
 
-  // Set default order for new lesson
+  // Set default order for newly created lesson
   useEffect(() => {
-    if (!isEditing && selectedSubjectId) {
+    if (!isEditing && selectedSubjectId && lessons.length >= 0) {
       const subjectLessons = lessons.filter(l => (l.subject?._id || l.subject || l.subjectId) === selectedSubjectId);
       setLessonOrder(subjectLessons.length + 1);
     }
   }, [isEditing, selectedSubjectId, lessons]);
 
-  // Handle errors or missing lessons on mount
+  // Only handle missing lesson after data has been loaded and verified
   useEffect(() => {
-    if (isEditing && !isLoading && lessons.length > 0 && !existingLesson) {
-      toast.error(isRTL ? 'الدرس غير موجود' : 'Lesson not found');
-      navigate(subjectId === 'select' ? '/teacher/subjects' : `/teacher/subjects/${subjectId}`);
+    if (isEditing && hasLoadedData && !isLoading && !existingLesson && lessons.length > 0) {
+      // Check if current loaded lessons belong to the right subject before declaring not found
+      const matchInLessons = lessons.some(l => (l._id || l.id) === lessonId);
+      if (!matchInLessons) {
+        toast.error(isRTL ? 'الدرس غير موجود' : 'Lesson not found');
+        navigate(selectedSubjectId ? `/teacher/subjects/${selectedSubjectId}` : '/teacher/subjects');
+      }
     }
-  }, [isEditing, existingLesson, subjectId, navigate, isLoading, lessons]);
-
-  const parseDurationToMinutes = (durStr) => {
-    if (typeof durStr === 'number') return durStr;
-    if (!durStr || typeof durStr !== 'string') return 0;
-    const val = parseInt(durStr, 10);
-    return isNaN(val) ? 0 : val;
-  };
+  }, [isEditing, hasLoadedData, isLoading, existingLesson, lessons, isRTL, navigate, selectedSubjectId, lessonId]);
 
   // Handle Form Submission
   const handleSaveLesson = async (e) => {
@@ -178,49 +216,47 @@ const AddLesson = () => {
       subjectId: selectedSubjectId,
       unitId: selectedUnitId || null,
       unit: selectedUnitId || null,
-      title: lessonTitle,
-      description: lessonDescription,
+      title: lessonTitle.trim(),
+      description: lessonDescription.trim(),
       duration: parseDurationToMinutes(lessonDuration),
-      order: Number(lessonOrder),
-      videoLength,
+      order: Number(lessonOrder) || 1,
+      videoLength: videoLength.trim(),
       videoDuration: parseVideoLengthToSeconds(videoLength),
-      videoUrl: explanationVideoUrl,
-      thumbnailUrl,
-      isPublished,
-      requirePrevious,
-      allowRetakes
+      videoUrl: explanationVideoUrl.trim(),
+      thumbnailUrl: thumbnailUrl.trim(),
+      isPublished: Boolean(isPublished),
+      requirePrevious: Boolean(requirePrevious),
+      allowRetakes: Boolean(allowRetakes)
     };
 
-    const loadingToast = toast.loading(isEditing ? (isRTL ? 'جاري تحديث الدرس...' : 'Updating lesson...') : (isRTL ? 'جاري إنشاء الدرس...' : 'Creating lesson...'));
+    const loadingToast = toast.loading(
+      isEditing
+        ? (isRTL ? 'جاري تحديث الدرس...' : 'Updating lesson...')
+        : (isRTL ? 'جاري إنشاء الدرس...' : 'Creating lesson...')
+    );
+
     try {
-      // Create or update lesson details
-      const action = isEditing
-        ? dispatch(updateLesson({ id: lessonId, lessonData: payload }))
-        : dispatch(createLesson(payload));
-      
-      const res = await action.unwrap();
-      const savedLesson = res?.lesson || res;
-      const targetLessonId = savedLesson?._id || savedLesson?.id || lessonId;
+      let targetLessonId = lessonId;
 
-      // Invoke lessons/:id/toggle-publish if publish status was changed or enabled on creation
-      if (targetLessonId) {
-        const shouldToggle = isEditing 
-          ? (existingLesson && (!!existingLesson.isPublished !== !!isPublished))
-          : (isPublished === true);
-
-        if (shouldToggle) {
-          try {
-            await dispatch(toggleLessonPublish(targetLessonId)).unwrap();
-          } catch (pubErr) {
-            console.warn('Failed to invoke toggle-publish endpoint:', pubErr);
-          }
-        }
+      if (isEditing) {
+        const res = await dispatch(updateLesson({ id: lessonId, lessonData: payload })).unwrap();
+        const updated = res?.lesson || res;
+        targetLessonId = updated?._id || updated?.id || lessonId;
+      } else {
+        const res = await dispatch(createLesson(payload)).unwrap();
+        const created = res?.lesson || res;
+        targetLessonId = created?._id || created?.id;
       }
 
-      toast.success(isEditing ? (isRTL ? 'تم تحديث الدرس بنجاح!' : 'Lesson updated successfully!') : (isRTL ? 'تم إنشاء الدرس بنجاح!' : 'Lesson created successfully!'), { id: loadingToast });
+      toast.success(
+        isEditing
+          ? (isRTL ? 'تم تحديث الدرس بنجاح!' : 'Lesson updated successfully!')
+          : (isRTL ? 'تم إنشاء الدرس بنجاح!' : 'Lesson created successfully!'),
+        { id: loadingToast }
+      );
 
-      // If user picked a video file before saving, start upload now!
-      if (pendingVideoFile && targetLessonId) {
+      // If user picked a video file before creating a new lesson, start upload now
+      if (!isEditing && pendingVideoFile && targetLessonId) {
         const uploadToast = toast.loading(isRTL ? 'جاري بدء رفع الفيديو...' : 'Starting video upload...');
         startBunnyDirectUpload({
           targetType: 'lesson',
@@ -232,7 +268,9 @@ const AddLesson = () => {
           },
           onSuccess: () => {
             toast.success(isRTL ? 'تم رفع الفيديو بنجاح!' : 'Video uploaded successfully!', { id: uploadToast });
-            dispatch(fetchLessons(selectedSubjectId));
+            if (selectedSubjectId) {
+              dispatch(fetchLessons(selectedSubjectId));
+            }
           },
           onError: (err) => {
             toast.error((isRTL ? 'فشل رفع الفيديو: ' : 'Video upload failed: ') + (err.message || ''), { id: uploadToast });
@@ -251,9 +289,13 @@ const AddLesson = () => {
   return (
     <DashboardLayout
       role="teacher"
-      activeTab={subjectId === 'select' ? 'subjects' : 'subjects'}
+      activeTab="subjects"
       title={isEditing ? (isRTL ? 'تعديل الدرس' : 'Edit Lesson') : (isRTL ? 'إضافة درس' : 'Add Lesson')}
-      subtitle={subjectId === 'select' ? (isRTL ? 'اختر المادة والتفاصيل' : 'Choose subject and details') : `${isRTL ? 'المادة' : 'Subject'}: ${subject.name || subject.title}`}
+      subtitle={
+        selectedSubjectId
+          ? `${isRTL ? 'المادة' : 'Subject'}: ${subject.name || subject.title || ''}`
+          : (isRTL ? 'اختر المادة والتفاصيل' : 'Choose subject and details')
+      }
     >
       <div className="w-full max-w-full p-6 md:p-8 pb-32 text-start flex flex-col gap-6 animate-fade-in">
 
@@ -263,7 +305,7 @@ const AddLesson = () => {
             <button
               type="button"
               onClick={() => {
-                const targetId = (subjectId === 'select' ? selectedSubjectId : subjectId) || '';
+                const targetId = (subjectId === 'select' ? selectedSubjectId : subjectId) || selectedSubjectId;
                 navigate(targetId ? `/teacher/subjects/${targetId}` : '/teacher/subjects');
               }}
               className={`w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer ${isRTL ? 'ml-3' : 'mr-3'}`}
@@ -273,12 +315,12 @@ const AddLesson = () => {
           </div>
 
           {/* Status Indicator */}
-          <div className={`px-4.5 py-1.5 rounded-full text-sm font-black border flex items-center gap-1.5 ${isPublished
-            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-            : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-            }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isPublished ? 'bg-emerald-400' : 'bg-amber-400'
-              }`} />
+          <div className={`px-4.5 py-1.5 rounded-full text-sm font-black border flex items-center gap-1.5 ${
+            isPublished
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isPublished ? 'bg-emerald-400' : 'bg-amber-400'}`} />
             <span>{isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}</span>
           </div>
         </div>
@@ -378,11 +420,11 @@ const AddLesson = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Duration */}
                   <Input
-                    label={isRTL ? "المدة" : "Duration"}
+                    label={isRTL ? "المدة (بالدقائق)" : "Duration (minutes)"}
                     type="text"
                     value={lessonDuration}
                     onChange={(e) => setLessonDuration(e.target.value)}
-                    placeholder={lessonDuration ? "" : (isRTL ? "مثال: 45 دقيقة" : "e.g. 45 min")}
+                    placeholder={lessonDuration ? "" : (isRTL ? "مثال: 45" : "e.g. 45")}
                     icon={FiClock}
                     roleColor="teacher"
                   />
@@ -443,11 +485,18 @@ const AddLesson = () => {
                   selectedFile={pendingVideoFile}
                   onFileSelect={(file) => setPendingVideoFile(file)}
                   onUploadSuccess={(ticket) => {
-                    dispatch(fetchLessons(selectedSubjectId));
+                    if (ticket?.playbackUrl || ticket?.directUrl || ticket?.url) {
+                      setExplanationVideoUrl(ticket.playbackUrl || ticket.directUrl || ticket.url);
+                    }
+                    if (selectedSubjectId) {
+                      dispatch(fetchLessons(selectedSubjectId));
+                    }
                   }}
                   onDeleteSuccess={() => {
                     setExplanationVideoUrl('');
-                    dispatch(fetchLessons(selectedSubjectId));
+                    if (selectedSubjectId) {
+                      dispatch(fetchLessons(selectedSubjectId));
+                    }
                   }}
                 />
 
@@ -580,7 +629,7 @@ const AddLesson = () => {
             type="submit"
             disabled={isSubmitting}
             roleColor="teacher"
-            icon={FiPlus}
+            icon={isEditing ? FiSave : FiPlus}
             className="w-full mt-6 !rounded-2xl text-base"
           >
             {isEditing ? (isRTL ? 'حفظ التغييرات' : 'Save Changes') : (isRTL ? 'إنشاء الدرس' : 'Create Lesson')}
