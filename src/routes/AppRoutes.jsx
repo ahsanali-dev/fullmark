@@ -4,6 +4,8 @@ import PublicRoute from './PublicRoute';
 
 import Landing from '../pages/Landing';
 import BoyleLaw from '../pages/BoyleLaw';
+import TermsAndConditions from '../pages/TermsAndConditions';
+import PrivacyPolicy from '../pages/PrivacyPolicy';
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import ForgotPassword from '../pages/auth/ForgotPassword';
@@ -57,6 +59,14 @@ const router = createBrowserRouter([
   {
     path: '/boyle-law',
     element: <BoyleLaw />,
+  },
+  {
+    path: '/tnc',
+    element: <TermsAndConditions />,
+  },
+  {
+    path: '/pp',
+    element: <PrivacyPolicy />,
   },
   
   // Public routes (for unauthenticated users only)

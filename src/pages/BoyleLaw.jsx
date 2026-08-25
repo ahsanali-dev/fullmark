@@ -1011,6 +1011,9 @@ export default function BoyleLaw() {
         </div>
 
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

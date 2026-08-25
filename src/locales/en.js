@@ -143,6 +143,26 @@ const en = {
     themeToggle: "Toggle Theme"
   },
 
+  // Footer Section
+  footer: {
+    brandDesc: "Empowering classrooms with AI-assisted assessment parsing, dynamic test banks, and comprehensive real-time dashboards for admins, teachers, and students.",
+    platform: "Platform",
+    features: "Features",
+    portals: "Portals",
+    stats: "Stats",
+    loginPanel: "Login Panel",
+    resources: "Resources",
+    termsAndConditions: "Terms & Conditions",
+    privacyPolicy: "Privacy Policy",
+    documentation: "Documentation",
+    helpCenter: "Help Center",
+    stayUpdated: "Stay Updated",
+    subscribeDesc: "Subscribe to get the latest updates on AI parsing enhancements and feature releases.",
+    emailPlaceholder: "Enter email address",
+    rights: "© 2026 FullMark. Smart Digital Assessment Ecosystem. All Rights Reserved.",
+    madeWith: "Made with ❤️ ZZ Solutions."
+  },
+
   // Admin Module
   admin: {
     dashboard: {
@@ -806,6 +826,191 @@ const en = {
     parent: "Parent",
     admin: "Admin",
     user: "User"
+  },
+
+  // Terms & Conditions
+  tnc: {
+    backHome: "Back to Home",
+    printDocument: "Print Document",
+    badge: "Legal Agreement & Terms",
+    title: "Terms & Conditions",
+    subtitle: "Please read these terms carefully before accessing FullMark. This agreement governs your use of our platform, AI chemistry services, smart exams, and digital content.",
+    lastUpdated: "Last Updated: August 2026",
+    version: "Version: v2.4 (Active)",
+    searchPlaceholder: "Search inside terms...",
+    allSections: "All Sections",
+    noResults: "No sections matched your search query",
+    helpTitle: "Have Questions Regarding Our Terms?",
+    helpDesc: "Our legal compliance and user support team is available 24/7 to address any inquiries.",
+    contactSupport: "Contact Support Desk",
+    sections: {
+      acceptance: {
+        title: "1. Acceptance of Terms & Eligibility",
+        badge: "Mandatory",
+        bullets: [
+          "By accessing or using FullMark, you agree to be bound by these Terms and Conditions and all applicable laws and regulations.",
+          "If you are under 18 years of age, you must use the platform under the supervision and consent of a parent or legal guardian.",
+          "If you do not agree with any part of these terms, you are prohibited from using or accessing this platform."
+        ]
+      },
+      account: {
+        title: "2. User Accounts & Security",
+        badge: "Security",
+        bullets: [
+          "Users are solely responsible for maintaining the confidentiality of their account credentials and passwords.",
+          "You must provide accurate, current, and complete information during the registration process.",
+          "Account sharing or sub-licensing access to third parties without prior written consent is strictly prohibited.",
+          "FullMark reserves the right to suspend or terminate accounts that violate security protocols or exhibit suspicious activity."
+        ]
+      },
+      platformServices: {
+        title: "3. Platform Services & Academic Integrity",
+        badge: "Academic",
+        bullets: [
+          "FullMark provides interactive chemistry learning tools, question banks, AI test parsing, 3D lab simulations, and performance analytics.",
+          "All contents and examinations are for personal, non-commercial academic enrichment only.",
+          "Using platform features for academic dishonesty, automated cheating, or result manipulation is strictly forbidden.",
+          "Educators warrant that any uploaded test PDFs or question sets do not infringe on third-party copyrights or publishing rights."
+        ]
+      },
+      intellectualProperty: {
+        title: "4. Intellectual Property & Copyright",
+        badge: "Intellectual Property",
+        bullets: [
+          "All visual assets, proprietary code, graphics, 3D lab modules, branding, and text are the exclusive property of FullMark.",
+          "You may not copy, reproduce, modify, distribute, reverse engineer, or sell any platform component without express written consent.",
+          "User-submitted feedback and materials remain the user’s property, while granting FullMark a non-exclusive license for service operations."
+        ]
+      },
+      financialTerms: {
+        title: "5. Subscriptions, Prepaid Coupons & Payments",
+        badge: "Payments",
+        bullets: [
+          "Certain premium courses and modules require paid active access or valid prepaid coupon redemption.",
+          "Prepaid coupon codes are single-use tokens, non-transferable once activated, and bound by specified expiry limits.",
+          "All course activations and purchases are non-refundable except where mandated by law or platform administrative review.",
+          "FullMark reserves the right to modify subscription plans, coupon pricing, and module access terms with prior notice."
+        ]
+      },
+      prohibitedConduct: {
+        title: "6. Prohibited Conduct & Fair Use",
+        badge: "Code of Conduct",
+        bullets: [
+          "Attempting to breach platform security, reverse engineer services, or conduct denial-of-service (DDoS) attacks.",
+          "Employing automated scrapers, bots, or data extraction scripts on question banks or user profiles.",
+          "Distributing spam, abusive language, or unauthorized broadcasts via the platform messaging systems.",
+          "Impersonating another student, educator, or platform administrator."
+        ]
+      },
+      liability: {
+        title: "7. Disclaimer & Limitation of Liability",
+        badge: "Disclaimer",
+        bullets: [
+          "Platform services and AI auto-parsing are provided on an \"AS IS\" and \"AS AVAILABLE\" basis without warranties of any kind.",
+          "While we strive for maximum accuracy, FullMark does not guarantee 100% error-free parsing of non-standard PDF tests.",
+          "In no event shall FullMark be liable for indirect, incidental, or consequential damages resulting from technical interruptions."
+        ]
+      },
+      contact: {
+        title: "8. Contact & Legal Inquiries",
+        badge: "Support",
+        bullets: [
+          "For questions regarding these Terms and Conditions or legal compliance, contact our support team at:",
+          "support@fullmark.edu.ai or through the dedicated help desk portal."
+        ]
+      }
+    }
+  },
+
+  // Privacy Policy
+  pp: {
+    backHome: "Back to Home",
+    printDocument: "Print Document",
+    badge: "Data Protection & Privacy Policy",
+    title: "Privacy Policy",
+    subtitle: "FullMark is committed to upholding rigorous security and privacy standards. This document details how we collect, handle, encrypt, and protect user data across all platform portals.",
+    lastUpdated: "Last Updated: August 2026",
+    securityStandard: "Security Standard: AES-256 SSL",
+    searchPlaceholder: "Search inside privacy policy...",
+    allTopics: "All Topics",
+    noResults: "No topics matched your search query",
+    helpTitle: "Have Privacy Concerns or Data Requests?",
+    helpDesc: "Our Data Protection Team is ready to assist with data access, deletion, or privacy verification inquiries.",
+    contactOfficer: "Contact Privacy Officer",
+    sections: {
+      collection: {
+        title: "1. Information We Collect",
+        badge: "Collection",
+        bullets: [
+          "Account Information: Full name, email address, contact phone number, and account role (Student, Educator, Parent, Admin).",
+          "Academic Performance Metrics: Exam scores, AI-derived weakness points, lesson completion rates, and study duration logs.",
+          "Technical Diagnostics: IP address, device specifications, browser type, and system event logs for security auditing."
+        ]
+      },
+      usage: {
+        title: "2. How We Use Your Information & AI Models",
+        badge: "Usage & AI",
+        bullets: [
+          "To deliver personalized chemistry learning modules and pinpoint weakness points via Spaced Repetition (SRS) algorithms.",
+          "To enable teachers to parse PDF exam papers automatically using specialized AI models.",
+          "To generate encrypted parent progress reports highlighting academic achievements and revision needs.",
+          "To safeguard platform infrastructure and enforce user security standards."
+        ]
+      },
+      parentalPrivacy: {
+        title: "3. Student & Parent Data Linkage Privacy",
+        badge: "Parent Control",
+        bullets: [
+          "Student accounts are linked to parent portals exclusively via secure, student-generated pairing passcodes.",
+          "Parents can access only academic scores, test history, and analytical progress reports of their linked children.",
+          "Student profiles and academic scores are strictly isolated and never rendered publicly to other platform users."
+        ]
+      },
+      parsingSecurity: {
+        title: "4. PDF Exam Parsing & File Security",
+        badge: "Encryption",
+        bullets: [
+          "All PDF test documents uploaded by educators are processed and stored using enterprise-grade SSL/TLS encryption.",
+          "AI parsing routines analyze questions within isolated environments without training external commercial LLMs on your data.",
+          "Question banks and custom exams remain protected within encrypted data vaults accessible only by authorized creators."
+        ]
+      },
+      sharing: {
+        title: "5. Information Sharing & Third Parties",
+        badge: "No Data Selling",
+        bullets: [
+          "FullMark strictly DOES NOT sell, rent, or trade your personal data to advertisers or third-party brokers.",
+          "Aggregated, anonymized learning statistics may be utilized for academic research to enhance STEM learning techniques.",
+          "Data disclosure occurs only when legally required by authorized court orders or law enforcement mandates."
+        ]
+      },
+      rights: {
+        title: "6. User Rights & Data Control",
+        badge: "Your Rights",
+        bullets: [
+          "Right to Access & Edit: Review and update your personal credentials at any time from your account settings.",
+          "Right to Erasure: Request permanent account deletion and removal of associated learning logs.",
+          "Data Exportability: Export your complete exam history, performance scores, and reports into Excel or PDF formats."
+        ]
+      },
+      cookies: {
+        title: "7. Cookies & Local Storage Policy",
+        badge: "Cookies",
+        bullets: [
+          "We utilize essential LocalStorage keys and session tokens solely for maintaining user authentication, theme modes, and language settings.",
+          "No third-party cross-site advertising cookies are used on FullMark platform pages."
+        ]
+      },
+      updates: {
+        title: "8. Privacy Policy Updates & Contact",
+        badge: "Updates",
+        bullets: [
+          "We may revise this Privacy Policy periodically to align with enhanced security standards or legal guidelines.",
+          "Users will be notified of significant policy updates through system broadcasts or email alerts.",
+          "For privacy concerns or data protection inquiries, contact our Data Privacy Officer at: privacy@fullmark.edu.ai"
+        ]
+      }
+    }
   }
 };
 

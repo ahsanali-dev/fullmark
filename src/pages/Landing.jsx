@@ -372,6 +372,9 @@ export default function Landing() {
 
       </section>
 
+      {/* Footer */}
+      <Footer />
+
     </div>
   );
 }
