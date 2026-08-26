@@ -20,13 +20,13 @@ export default function AppDownloadModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const ANDROID_DOWNLOAD_URL = 'https://bit.ly/4cBnExS';
+  const ANDROID_DOWNLOAD_URL = 'https://play.google.com/store/apps/details?id=com.app.fullmark';
 
   const handleAndroidDownload = () => {
     setSelectedPlatform('android');
-    toast.success(isRTL ? 'جاري بدء تحميل تطبيق الأندرويد...' : 'Starting Android App download...');
+    toast.success(isRTL ? 'جاري توجيهك إلى متجر بلاي...' : 'Redirecting to Play Store...');
     setTimeout(() => {
-      window.location.href = ANDROID_DOWNLOAD_URL;
+      window.open(ANDROID_DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
     }, 400);
   };
 
@@ -36,7 +36,7 @@ export default function AppDownloadModal({ isOpen, onClose }) {
 
   const modalContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/60 dark:bg-black/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-6 bg-black/60 dark:bg-black/80 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -107,7 +107,7 @@ export default function AppDownloadModal({ isOpen, onClose }) {
                     <FaAndroid />
                   </div>
                   <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[9px] sm:text-[10px] font-black uppercase tracking-wider">
-                    {isRTL ? "تحميل مباشر" : "Direct APK"}
+                    {isRTL ? "متجر بلاي" : "Google Play"}
                   </span>
                 </div>
 
@@ -115,12 +115,12 @@ export default function AppDownloadModal({ isOpen, onClose }) {
                   <h4 className={`text-sm sm:text-base font-extrabold group-hover:text-emerald-500 transition-colors ${
                     isLight ? 'text-slate-900' : 'text-white'
                   }`}>
-                    Android
+                    Google Play Store
                   </h4>
                   <p className={`text-[11px] sm:text-xs font-medium mt-0.5 leading-snug ${
                     isLight ? 'text-slate-600' : 'text-gray-400'
                   }`}>
-                    {isRTL ? "تطبيق أندرويد جاهز للتحميل المباشر والتثبيت." : "Ready for direct APK download and installation."}
+                    {isRTL ? "تطبيق أندرويد متوفر رسمياً على متجر Google Play." : "Official Android app on Google Play Store."}
                   </p>
                 </div>
 
@@ -128,7 +128,7 @@ export default function AppDownloadModal({ isOpen, onClose }) {
                   isLight ? 'border-slate-200' : 'border-gray-800/80'
                 }`}>
                   <FiDownload size={14} />
-                  <span>{isRTL ? "تحميل الآن (APK)" : "Download Now"}</span>
+                  <span>{isRTL ? "فتح في المتجر" : "Open Play Store"}</span>
                 </div>
               </div>
 

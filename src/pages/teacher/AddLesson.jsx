@@ -34,8 +34,12 @@ import { useLanguage } from '../../context/LanguageContext';
 const formatSecondsToMMSS = (totalSeconds) => {
   if (!totalSeconds || isNaN(totalSeconds)) return '';
   const sec = Number(totalSeconds);
-  const minutes = Math.floor(sec / 60);
+  const hours = Math.floor(sec / 3600);
+  const minutes = Math.floor((sec % 3600) / 60);
   const remainingSeconds = sec % 60;
+  if (hours > 0) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  }
   return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
 };
 
@@ -85,11 +89,20 @@ const AddLesson = () => {
   const [selectedUnitId, setSelectedUnitId] = useState('');
   const [hasLoadedData, setHasLoadedData] = useState(false);
 
-  // Accordion state
-  const [activeAccordion, setActiveAccordion] = useState('basic'); // 'basic' | 'content' | 'settings' | ''
+  // Accordion section states (all open by default in edit/add mode for fast access)
+  const [openSections, setOpenSections] = useState({
+    basic: true,
+    content: true,
+    settings: true
+  });
+
+  const toggleSection = (sec) => {
+    setOpenSections((prev) => ({ ...prev, [sec]: !prev[sec] }));
+  };
 
   // Form States
   const [lessonTitle, setLessonTitle] = useState('');
+  const [lessonTitleAr, setLessonTitleAr] = useState('');
   const [lessonDescription, setLessonDescription] = useState('');
   const [lessonDuration, setLessonDuration] = useState('');
   const [lessonOrder, setLessonOrder] = useState(1);
@@ -100,6 +113,7 @@ const AddLesson = () => {
 
   // Settings Toggles
   const [isPublished, setIsPublished] = useState(false);
+  const [isFree, setIsFree] = useState(false);
   const [requirePrevious, setRequirePrevious] = useState(false);
   const [allowRetakes, setAllowRetakes] = useState(true);
 
@@ -147,6 +161,7 @@ const AddLesson = () => {
         setSelectedSubjectId(lessonSubId);
       }
       setLessonTitle(existingLesson.title || '');
+      setLessonTitleAr(existingLesson.titleAr || '');
       setLessonDescription(existingLesson.description || '');
       setLessonDuration(
         existingLesson.duration !== undefined && existingLesson.duration !== null
@@ -155,7 +170,7 @@ const AddLesson = () => {
       );
       setLessonOrder(existingLesson.order || 1);
       setSelectedUnitId(existingLesson.unit?._id || existingLesson.unit || existingLesson.unitId || '');
-      setExplanationVideoUrl(existingLesson.videoUrl || '');
+      setExplanationVideoUrl(existingLesson.videoUrl || existingLesson.videoPreviewUrl || '');
       
       const formattedLength = existingLesson.videoLength
         ? existingLesson.videoLength
@@ -164,6 +179,7 @@ const AddLesson = () => {
       
       setThumbnailUrl(existingLesson.thumbnailUrl || '');
       setIsPublished(Boolean(existingLesson.isPublished));
+      setIsFree(Boolean(existingLesson.isFree));
       setRequirePrevious(Boolean(existingLesson.requirePrevious));
       setAllowRetakes(existingLesson.allowRetakes !== false);
       setIsFormInitialized(true);
@@ -200,12 +216,12 @@ const AddLesson = () => {
     }
     if (!lessonTitle.trim()) {
       toast.error(isRTL ? 'عنوان الدرس مطلوب' : 'Lesson title is required');
-      setActiveAccordion('basic');
+      setOpenSections(prev => ({ ...prev, basic: true }));
       return;
     }
     if (!lessonDuration.trim()) {
       toast.error(isRTL ? 'مدة الدرس مطلوبة' : 'Lesson duration is required');
-      setActiveAccordion('basic');
+      setOpenSections(prev => ({ ...prev, basic: true }));
       return;
     }
 
@@ -217,6 +233,7 @@ const AddLesson = () => {
       unitId: selectedUnitId || null,
       unit: selectedUnitId || null,
       title: lessonTitle.trim(),
+      titleAr: lessonTitleAr.trim() || null,
       description: lessonDescription.trim(),
       duration: parseDurationToMinutes(lessonDuration),
       order: Number(lessonOrder) || 1,
@@ -225,6 +242,7 @@ const AddLesson = () => {
       videoUrl: explanationVideoUrl.trim(),
       thumbnailUrl: thumbnailUrl.trim(),
       isPublished: Boolean(isPublished),
+      isFree: Boolean(isFree),
       requirePrevious: Boolean(requirePrevious),
       allowRetakes: Boolean(allowRetakes)
     };
@@ -360,7 +378,7 @@ const AddLesson = () => {
           {/* ACCORDION A: BASIC INFORMATION */}
           <div className="flex flex-col">
             <div
-              onClick={() => setActiveAccordion(activeAccordion === 'basic' ? '' : 'basic')}
+              onClick={() => toggleSection('basic')}
               className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all"
             >
               <div className="flex items-center gap-3">
@@ -369,21 +387,33 @@ const AddLesson = () => {
                 </div>
                 <span className="text-base font-extrabold text-white">{isRTL ? "المعلومات الأساسية" : "Basic Information"}</span>
               </div>
-              <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${activeAccordion === 'basic' ? 'rotate-180' : ''}`} />
+              <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${openSections.basic ? 'rotate-180' : ''}`} />
             </div>
 
-            {activeAccordion === 'basic' && (
+            {openSections.basic && (
               <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-start">
-                {/* Lesson Title */}
-                <Input
-                  label={isRTL ? "عنوان الدرس" : "Lesson Title"}
-                  type="text"
-                  value={lessonTitle}
-                  onChange={(e) => setLessonTitle(e.target.value)}
-                  placeholder={lessonTitle ? "" : (isRTL ? "مثال: مقدمة في الفيزياء" : "e.g. Introduction to Physics")}
-                  icon={FiType}
-                  roleColor="teacher"
-                />
+                {/* Lesson Titles */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label={isRTL ? "عنوان الدرس (الإنجليزية)" : "Lesson Title"}
+                    type="text"
+                    value={lessonTitle}
+                    onChange={(e) => setLessonTitle(e.target.value)}
+                    placeholder={lessonTitle ? "" : (isRTL ? "مثال: مقدمة في الفيزياء" : "e.g. Introduction to Physics")}
+                    icon={FiType}
+                    roleColor="teacher"
+                  />
+
+                  <Input
+                    label={isRTL ? "عنوان الدرس (بالعربية)" : "Arabic Lesson Title"}
+                    type="text"
+                    value={lessonTitleAr}
+                    onChange={(e) => setLessonTitleAr(e.target.value)}
+                    placeholder={lessonTitleAr ? "" : "مثال: تأسيس هام وشامل جداً"}
+                    icon={FiType}
+                    roleColor="teacher"
+                  />
+                </div>
 
                 {/* Unit Selector */}
                 <div className="flex flex-col gap-1 text-start">
@@ -418,7 +448,6 @@ const AddLesson = () => {
 
                 {/* Duration and Order Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Duration */}
                   <Input
                     label={isRTL ? "المدة (بالدقائق)" : "Duration (minutes)"}
                     type="text"
@@ -461,7 +490,7 @@ const AddLesson = () => {
           {/* ACCORDION B: LESSON CONTENT */}
           <div className="flex flex-col">
             <div
-              onClick={() => setActiveAccordion(activeAccordion === 'content' ? '' : 'content')}
+              onClick={() => toggleSection('content')}
               className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all"
             >
               <div className="flex items-center gap-3">
@@ -470,10 +499,10 @@ const AddLesson = () => {
                 </div>
                 <span className="text-base font-extrabold text-white">{isRTL ? "محتوى الدرس" : "Lesson Content"}</span>
               </div>
-              <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${activeAccordion === 'content' ? 'rotate-180' : ''}`} />
+              <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${openSections.content ? 'rotate-180' : ''}`} />
             </div>
 
-            {activeAccordion === 'content' && (
+            {openSections.content && (
               <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-5 animate-fade-in text-start">
                 {/* Bunny Direct Video Uploader */}
                 <VideoUploader
@@ -481,7 +510,15 @@ const AddLesson = () => {
                   targetId={lessonId || null}
                   title={lessonTitle}
                   currentVideoUrl={explanationVideoUrl}
-                  videoReady={existingLesson?.videoReady !== false}
+                  videoPreviewUrl={existingLesson?.videoPreviewUrl || null}
+                  videoId={existingLesson?.videoId || null}
+                  hasVideo={Boolean(
+                    explanationVideoUrl ||
+                    existingLesson?.videoPreviewUrl ||
+                    existingLesson?.videoId ||
+                    (existingLesson?.videoStatus === 'ready' || existingLesson?.videoStatus === 'processing')
+                  )}
+                  videoReady={existingLesson ? (existingLesson.videoStatus === 'ready' || existingLesson.videoReady !== false) : true}
                   selectedFile={pendingVideoFile}
                   onFileSelect={(file) => setPendingVideoFile(file)}
                   onUploadSuccess={(ticket) => {
@@ -500,7 +537,6 @@ const AddLesson = () => {
                   }}
                 />
 
-                {/* Manual Explanation Video URL / Fallback */}
                 <Input
                   label={isRTL ? "رابط فيديو خارجي (YouTube أو رابط مباشر)" : "External Video URL (YouTube or direct link)"}
                   type="text"
@@ -512,7 +548,6 @@ const AddLesson = () => {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Video Length (mm:ss) */}
                   <Input
                     label={isRTL ? "طول الفيديو (دقيقة:ثانية)" : "Video Length (mm:ss)"}
                     type="text"
@@ -523,7 +558,6 @@ const AddLesson = () => {
                     roleColor="teacher"
                   />
 
-                  {/* Thumbnail URL */}
                   <Input
                     label={isRTL ? "رابط الصورة المصغرة (اختياري)" : "Thumbnail URL (optional)"}
                     type="text"
@@ -541,7 +575,7 @@ const AddLesson = () => {
           {/* ACCORDION C: SETTINGS */}
           <div className="flex flex-col">
             <div
-              onClick={() => setActiveAccordion(activeAccordion === 'settings' ? '' : 'settings')}
+              onClick={() => toggleSection('settings')}
               className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800/80 rounded-2xl cursor-pointer hover:bg-[#121424] transition-all"
             >
               <div className="flex items-center gap-3">
@@ -550,12 +584,11 @@ const AddLesson = () => {
                 </div>
                 <span className="text-base font-extrabold text-white">{isRTL ? "الإعدادات" : "Settings"}</span>
               </div>
-              <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${activeAccordion === 'settings' ? 'rotate-180' : ''}`} />
+              <FiChevronDown className={`text-gray-500 transition-transform duration-300 ${openSections.settings ? 'rotate-180' : ''}`} />
             </div>
 
-            {activeAccordion === 'settings' && (
+            {openSections.settings && (
               <div className="p-5 bg-[#0e101a]/50 border-x border-b border-gray-800/80 rounded-b-2xl -mt-2.5 flex flex-col gap-4 animate-fade-in text-start">
-                {/* Publish Lesson Toggle */}
                 <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
@@ -577,14 +610,40 @@ const AddLesson = () => {
                   </label>
                 </div>
 
-                {/* Require Previous Lesson Toggle */}
-                <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-[#0e101a] border border-slate-300 dark:border-gray-800 rounded-2xl">
+                {/* Free Lesson Toggle */}
+                <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
                       <FiLock size={18} />
                     </div>
                     <div className="flex flex-col text-start">
-                      <span className="text-sm font-extrabold text-slate-900 dark:text-white">{isRTL ? "اشتراط الدرس السابق" : "Require Previous Lesson"}</span>
+                      <span className="text-sm font-extrabold text-white">
+                        {isRTL ? "درس مجاني (معاينة)" : "Free Lesson (Preview)"}
+                      </span>
+                      <span className="text-[10px] text-gray-500 font-bold mt-0.5">
+                        {isRTL ? "السماح للطلاب بمشاهدة هذا الدرس بدون اشتراك" : "Allow students to watch this lesson without subscription"}
+                      </span>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={isFree}
+                      onChange={() => setIsFree(!isFree)}
+                    />
+                    <div className="w-11 h-6 bg-gray-800 border border-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 after:shadow-md after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500 peer-checked:border-transparent" />
+                  </label>
+                </div>
+
+                {/* Require Previous Lesson Toggle */}
+                <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                      <FiLock size={18} />
+                    </div>
+                    <div className="flex flex-col text-start">
+                      <span className="text-sm font-extrabold text-white">{isRTL ? "اشتراط الدرس السابق" : "Require Previous Lesson"}</span>
                       <span className="text-[10px] text-gray-500 font-bold mt-0.5">{isRTL ? "يجب على الطلاب إكمال الدرس السابق أولاً" : "Students must complete previous lesson first"}</span>
                     </div>
                   </div>
@@ -595,18 +654,18 @@ const AddLesson = () => {
                       checked={requirePrevious}
                       onChange={() => setRequirePrevious(!requirePrevious)}
                     />
-                    <div className="w-11 h-6 bg-slate-300 dark:bg-gray-800 border border-slate-400 dark:border-transparent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 after:shadow-md after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:border-transparent" />
+                    <div className="w-11 h-6 bg-gray-800 border border-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 after:shadow-md after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:border-transparent" />
                   </label>
                 </div>
 
                 {/* Allow Question Retakes Toggle */}
-                <div className="flex items-center justify-between p-4 bg-slate-100 dark:bg-[#0e101a] border border-slate-300 dark:border-gray-800 rounded-2xl">
+                <div className="flex items-center justify-between p-4 bg-[#0e101a] border border-gray-800 rounded-2xl">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
                       <FiRefreshCw size={18} />
                     </div>
                     <div className="flex flex-col text-start">
-                      <span className="text-sm font-extrabold text-slate-900 dark:text-white">{isRTL ? "السماح بإعادة الأسئلة" : "Allow Question Retakes"}</span>
+                      <span className="text-sm font-extrabold text-white">{isRTL ? "السماح بإعادة الأسئلة" : "Allow Question Retakes"}</span>
                       <span className="text-[10px] text-gray-500 font-bold mt-0.5">{isRTL ? "يمكن للطلاب إعادة محاولة أسئلة الدرس" : "Students can retry lesson questions"}</span>
                     </div>
                   </div>
@@ -617,7 +676,7 @@ const AddLesson = () => {
                       checked={allowRetakes}
                       onChange={() => setAllowRetakes(!allowRetakes)}
                     />
-                    <div className="w-11 h-6 bg-slate-300 dark:bg-gray-800 border border-slate-400 dark:border-transparent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 after:shadow-md after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 peer-checked:border-transparent" />
+                    <div className="w-11 h-6 bg-gray-800 border border-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-200 after:shadow-md after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 peer-checked:border-transparent" />
                   </label>
                 </div>
               </div>

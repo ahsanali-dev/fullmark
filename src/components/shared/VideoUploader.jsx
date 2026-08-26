@@ -15,6 +15,7 @@ import {
 import toast from 'react-hot-toast';
 import apiEndpoints from '../../redux/apiEndpoint';
 import { useLanguage } from '../../context/LanguageContext';
+import VideoPlayer from './VideoPlayer';
 
 export const startBunnyDirectUpload = async ({
   targetType,
@@ -82,6 +83,9 @@ const VideoUploader = ({
   targetId = null,
   title = 'Untitled Video',
   currentVideoUrl = null,
+  videoPreviewUrl = null,
+  videoId = null,
+  hasVideo: hasVideoProp = undefined,
   videoReady = true,
   onUploadSuccess = null,
   onDeleteSuccess = null,
@@ -101,6 +105,10 @@ const VideoUploader = ({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const tusUploadRef = useRef(null);
+
+  const hasExistingVideo = hasVideoProp !== undefined 
+    ? Boolean(hasVideoProp) 
+    : Boolean(currentVideoUrl || videoPreviewUrl || videoId);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -258,7 +266,7 @@ const VideoUploader = ({
           </div>
         </div>
 
-        {currentVideoUrl && !isUploading && (
+        {hasExistingVideo && !isUploading && (
           <button
             type="button"
             onClick={handleDeleteClick}
@@ -271,24 +279,35 @@ const VideoUploader = ({
         )}
       </div>
 
-      {/* Existing video status info */}
-      {currentVideoUrl && !isUploading && (
-        <div className="flex items-center justify-between p-3.5 rounded-xl bg-gray-900/60 border border-gray-800 text-xs">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className={`w-2 h-2 rounded-full shrink-0 ${videoReady ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-            <span className="truncate font-semibold text-gray-300">
-              {videoReady 
-                ? (isRTL ? "الفيديو جاهز للمشاهدة" : "Video Ready for Playback")
-                : (isRTL ? "جاري معالجة الفيديو في الخلفية..." : "Processing in Background...")}
-            </span>
+      {/* Existing video preview player & status info */}
+      {hasExistingVideo && !isUploading && (
+        <div className="flex flex-col gap-3">
+          <VideoPlayer
+            videoUrl={currentVideoUrl || videoPreviewUrl}
+            videoReady={videoReady}
+            targetType={targetType}
+            targetId={targetId}
+            title={title}
+            className="w-full rounded-2xl max-h-[360px]"
+          />
+
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-gray-900/60 border border-gray-800 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${videoReady ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
+              <span className="truncate font-semibold text-gray-300">
+                {videoReady 
+                  ? (isRTL ? "الفيديو جاهز للمشاهدة" : "Video Ready for Playback")
+                  : (isRTL ? "جاري معالجة الفيديو في الخلفية..." : "Processing in Background...")}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="px-3 py-1.5 rounded-lg bg-blue-600/10 border border-blue-500/30 text-blue-400 font-extrabold hover:bg-blue-600/20 transition-all shrink-0 cursor-pointer"
+            >
+              {isRTL ? "استبدال الفيديو" : "Replace Video"}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="px-3 py-1.5 rounded-lg bg-blue-600/10 border border-blue-500/30 text-blue-400 font-extrabold hover:bg-blue-600/20 transition-all shrink-0 cursor-pointer"
-          >
-            {isRTL ? "استبدال الفيديو" : "Replace Video"}
-          </button>
         </div>
       )}
 
@@ -353,7 +372,7 @@ const VideoUploader = ({
             <FiX size={16} />
           </button>
         </div>
-      ) : !currentVideoUrl ? (
+      ) : !hasExistingVideo ? (
         <div
           onClick={() => fileInputRef.current?.click()}
           className="w-full py-8 px-4 rounded-2xl border-2 border-dashed border-gray-800 hover:border-purple-500/50 bg-[#0c0d19]/40 hover:bg-purple-500/5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all text-center group"

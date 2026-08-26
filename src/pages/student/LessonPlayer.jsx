@@ -177,9 +177,9 @@ const LessonPlayer = () => {
     >
       <div className="flex flex-col gap-6 text-start p-4 sm:p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
         {/* Main Video / Slide Player Display */}
-        {(lesson.videoUrl || lesson.videoId || lesson.videoStatus || lesson.videoReady === false) ? (
+        {(lesson.videoUrl || lesson.videoPreviewUrl || lesson.videoId || lesson.videoStatus || lesson.videoReady === false) ? (
           <VideoPlayer
-            videoUrl={lesson.videoUrl}
+            videoUrl={lesson.videoUrl || lesson.videoPreviewUrl}
             videoReady={lesson.videoReady !== false}
             thumbnailUrl={lesson.thumbnailUrl}
             title={lesson.title}
@@ -191,7 +191,7 @@ const LessonPlayer = () => {
             onRefreshUrl={async () => {
               const res = await dispatch(fetchSubjectLessons(courseId)).unwrap();
               const found = res?.lessons?.find(l => (l._id || l.id) === (lesson._id || lesson.id));
-              return found?.videoUrl || null;
+              return found?.videoUrl || found?.videoPreviewUrl || null;
             }}
             className="sm:rounded-[2.5rem]"
           />
