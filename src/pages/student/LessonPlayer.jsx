@@ -187,13 +187,19 @@ const LessonPlayer = () => {
       <div className="flex flex-col gap-6 text-start p-4 sm:p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
         {/* Media Tabs (shown when BOTH video and animation exist) */}
         {hasVideo && hasAnimation && (
-          <div className="grid grid-cols-2 sm:flex sm:w-fit items-center gap-1.5 p-1.5 rounded-2xl bg-[#090a14] border border-gray-800/90 w-full shadow-lg">
+          <div className={`grid grid-cols-2 sm:flex sm:w-fit items-center gap-1.5 p-1.5 rounded-2xl w-full transition-all ${
+            isLight
+              ? 'bg-slate-200/80 border border-slate-300 shadow-sm'
+              : 'bg-[#090a14] border border-gray-800/90 shadow-lg'
+          }`}>
             <button
               type="button"
               onClick={() => setActiveMediaTab('video')}
               className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 activeMediaTab === 'video'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
+                  : isLight
+                  ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/60'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800/40'
               }`}
             >
@@ -205,6 +211,8 @@ const LessonPlayer = () => {
               className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 activeMediaTab === 'animation'
                   ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20'
+                  : isLight
+                  ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/60'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800/40'
               }`}
             >
