@@ -13,7 +13,12 @@ import {
   FiRefreshCw,
   FiBookOpen,
   FiPlus,
-  FiSave
+  FiSave,
+  FiLayers,
+  FiUploadCloud,
+  FiTrash2,
+  FiCode,
+  FiX
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -21,13 +26,15 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import VideoUploader, { startBunnyDirectUpload } from '../../components/shared/VideoUploader';
+import LessonAnimationPlayer from '../../components/shared/LessonAnimationPlayer';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchTeacherSubjects,
   fetchSubjectUnits,
   fetchLessons,
   createLesson,
-  updateLesson
+  updateLesson,
+  uploadAnimationHtml
 } from '../../redux/slices/teacherSlice';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -111,6 +118,14 @@ const AddLesson = () => {
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [pendingVideoFile, setPendingVideoFile] = useState(null);
 
+  // Animation States
+  const [animationUrl, setAnimationUrl] = useState(null);
+  const [animationTitle, setAnimationTitle] = useState('');
+  const [animationTitleAr, setAnimationTitleAr] = useState('');
+  const [pendingAnimationFile, setPendingAnimationFile] = useState(null);
+  const [animationPreviewBlob, setAnimationPreviewBlob] = useState(null);
+  const [showAnimationPreview, setShowAnimationPreview] = useState(false);
+
   // Settings Toggles
   const [isPublished, setIsPublished] = useState(false);
   const [isFree, setIsFree] = useState(false);
@@ -178,6 +193,9 @@ const AddLesson = () => {
       setVideoLength(formattedLength);
       
       setThumbnailUrl(existingLesson.thumbnailUrl || '');
+      setAnimationUrl(existingLesson.animationUrl || null);
+      setAnimationTitle(existingLesson.animationTitle || '');
+      setAnimationTitleAr(existingLesson.animationTitleAr || '');
       setIsPublished(Boolean(existingLesson.isPublished));
       setIsFree(Boolean(existingLesson.isFree));
       setRequirePrevious(Boolean(existingLesson.requirePrevious));
@@ -206,6 +224,45 @@ const AddLesson = () => {
     }
   }, [isEditing, hasLoadedData, isLoading, existingLesson, lessons, isRTL, navigate, selectedSubjectId, lessonId]);
 
+  // Animation Handlers
+  const handleAnimationFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.slice(((file.name.lastIndexOf('.') - 1) >>> 0) + 2).toLowerCase();
+    if (ext !== 'html' && ext !== 'htm') {
+      toast.error(isRTL ? 'يُسمح فقط بملفات الرسوم التفاعلية بصيغة .html أو .htm' : 'Only .html or .htm animation files are allowed');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isRTL ? 'حجم ملف الرسوم يجب أن يكون أقل من 10 ميجابايت' : 'Animation file size must be less than 10 MB');
+      return;
+    }
+
+    setPendingAnimationFile(file);
+    if (animationPreviewBlob) URL.revokeObjectURL(animationPreviewBlob);
+    setAnimationPreviewBlob(URL.createObjectURL(file));
+    if (!animationTitle) {
+      const baseName = file.name.replace(/\.[^/.]+$/, "");
+      setAnimationTitle(baseName);
+    }
+    toast.success(isRTL ? `تم اختيار الملف: ${file.name}` : `Selected file: ${file.name}`);
+  };
+
+  const handleRemoveAnimation = () => {
+    setAnimationUrl(null);
+    setPendingAnimationFile(null);
+    if (animationPreviewBlob) {
+      URL.revokeObjectURL(animationPreviewBlob);
+      setAnimationPreviewBlob(null);
+    }
+    setAnimationTitle('');
+    setAnimationTitleAr('');
+    setShowAnimationPreview(false);
+    toast.success(isRTL ? 'تم إزالة الرسوم التفاعلية' : 'Animation removed');
+  };
+
   // Handle Form Submission
   const handleSaveLesson = async (e) => {
     e.preventDefault();
@@ -227,6 +284,22 @@ const AddLesson = () => {
 
     setIsSubmitting(true);
 
+    let finalAnimationUrl = animationUrl;
+
+    // Step 1: If an animation file is selected, upload it FIRST before saving the lesson
+    if (pendingAnimationFile) {
+      const animToast = toast.loading(isRTL ? 'جاري رفع ملف الرسوم التفاعلية (.html)...' : 'Uploading HTML animation file...');
+      try {
+        const animRes = await dispatch(uploadAnimationHtml(pendingAnimationFile)).unwrap();
+        finalAnimationUrl = animRes?.url || animRes;
+        toast.success(isRTL ? 'تم رفع ملف الرسوم التفاعلية بنجاح!' : 'Animation file uploaded successfully!', { id: animToast });
+      } catch (animErr) {
+        toast.error((isRTL ? 'فشل رفع ملف الرسوم التفاعلية: ' : 'Failed to upload HTML animation: ') + (animErr || ''), { id: animToast });
+        setIsSubmitting(false);
+        return; // ABORT THE WHOLE SAVE IF ANIMATION UPLOAD FAILS!
+      }
+    }
+
     const payload = {
       subject: selectedSubjectId,
       subjectId: selectedSubjectId,
@@ -241,6 +314,9 @@ const AddLesson = () => {
       videoDuration: parseVideoLengthToSeconds(videoLength),
       videoUrl: explanationVideoUrl.trim(),
       thumbnailUrl: thumbnailUrl.trim(),
+      animationUrl: finalAnimationUrl || null,
+      animationTitle: animationTitle.trim() || null,
+      animationTitleAr: animationTitleAr.trim() || null,
       isPublished: Boolean(isPublished),
       isFree: Boolean(isFree),
       requirePrevious: Boolean(requirePrevious),
@@ -567,6 +643,134 @@ const AddLesson = () => {
                     icon={FiImage}
                     roleColor="teacher"
                   />
+                </div>
+
+                {/* --- HTML ANIMATION UPLOADER & FIELDS --- */}
+                <div className="mt-4 p-5 rounded-2xl bg-[#080911]/80 border border-purple-500/20 flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center">
+                        <FiLayers size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-white">
+                          {isRTL ? "رسوم متحركة تفاعلية HTML (اختياري)" : "Interactive HTML Animation (Optional)"}
+                        </h4>
+                        <p className="text-[11px] font-semibold text-gray-400">
+                          {isRTL ? "قم برفع ملف .html يحتوي على شريحة أو محاكاة تفاعلية تعرض للطالب" : "Upload a self-contained .html file (e.g. simulation/canvas) rendered via iframe"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* File Selection Box */}
+                  {animationUrl || pendingAnimationFile ? (
+                    <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center text-lg shrink-0">
+                          <FiCode />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs font-black text-white truncate block">
+                            {pendingAnimationFile ? pendingAnimationFile.name : (animationUrl.split('/').pop() || animationUrl)}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-400">
+                            {pendingAnimationFile ? (isRTL ? "جاهز للرفع عند الحفظ" : "Ready to upload on save") : (isRTL ? "تم الرفع مسبقاً" : "Uploaded")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setShowAnimationPreview(true)}
+                          className="px-3 py-1.5 rounded-lg bg-purple-600/80 hover:bg-purple-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <FiEye size={14} /> {isRTL ? "معاينة" : "Preview"}
+                        </button>
+                        <label className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-gray-700">
+                          <FiRefreshCw size={14} /> {isRTL ? "استبدال" : "Replace"}
+                          <input
+                            type="file"
+                            accept=".html,.htm"
+                            className="hidden"
+                            onChange={handleAnimationFileSelect}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleRemoveAnimation}
+                          className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-red-500/20"
+                        >
+                          <FiTrash2 size={14} /> {isRTL ? "إزالة" : "Remove"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="border-2 border-dashed border-purple-500/30 hover:border-purple-500/60 rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group bg-purple-950/10 hover:bg-purple-950/20">
+                      <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                        <FiUploadCloud />
+                      </div>
+                      <span className="text-xs font-extrabold text-white">
+                        {isRTL ? "اضغط لاختيار ملف .html للرسوم التفاعلية" : "Click to select a .html animation file"}
+                      </span>
+                      <span className="text-[11px] font-semibold text-gray-500">
+                        {isRTL ? "يُقبل فقط صيغة HTML (أقل من 10 ميجابايت)" : "Accepts HTML format only (max 10MB)"}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".html,.htm"
+                        className="hidden"
+                        onChange={handleAnimationFileSelect}
+                      />
+                    </label>
+                  )}
+
+                  {/* Animation Titles Input Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                    <Input
+                      label={isRTL ? "عنوان الرسوم التفاعلية (بالإنجليزي)" : "Animation Title (English)"}
+                      type="text"
+                      value={animationTitle}
+                      onChange={(e) => setAnimationTitle(e.target.value)}
+                      placeholder={animationTitle ? "" : "e.g. Boyle's Law 3D Simulation"}
+                      icon={FiType}
+                      roleColor="teacher"
+                    />
+                    <Input
+                      label={isRTL ? "عنوان الرسوم التفاعلية (بالعربي)" : "Animation Title (Arabic)"}
+                      type="text"
+                      value={animationTitleAr}
+                      onChange={(e) => setAnimationTitleAr(e.target.value)}
+                      placeholder={animationTitleAr ? "" : "مثال: محاكاة قانون بويل الثلاثية الأبعاد"}
+                      icon={FiType}
+                      roleColor="teacher"
+                    />
+                  </div>
+
+                  {/* Inline Preview Toggle */}
+                  {showAnimationPreview && (animationUrl || animationPreviewBlob) && (
+                    <div className="mt-3 p-4 rounded-2xl bg-[#05060b] border border-purple-500/30 flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-purple-400 flex items-center gap-1.5">
+                          <FiEye /> {isRTL ? "معاينة الرسوم التفاعلية قبل النشر:" : "Interactive Animation Preview:"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowAnimationPreview(false)}
+                          className="text-gray-400 hover:text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <FiX /> {isRTL ? "إغلاق المعاينة" : "Close Preview"}
+                        </button>
+                      </div>
+                      <LessonAnimationPlayer
+                        animationUrl={animationUrl}
+                        animationTitle={animationTitle}
+                        animationTitleAr={animationTitleAr}
+                        previewBlobUrl={animationPreviewBlob}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}

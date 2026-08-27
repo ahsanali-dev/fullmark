@@ -32,6 +32,27 @@ export const uploadQuestionImage = createAsyncThunk(
   }
 );
 
+export const uploadAnimationHtml = createAsyncThunk(
+  'teacher/uploadAnimationHtml',
+  async (file, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const formData = new FormData();
+      formData.append('animation', file);
+      const response = await axios.post(apiEndpoints.common.uploadAnimationHtml, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data?.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to upload HTML animation';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 export const uploadLessonPdf = createAsyncThunk(
   'teacher/uploadLessonPdf',
   async ({ lessonId, file }, thunkAPI) => {

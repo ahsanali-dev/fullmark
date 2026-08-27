@@ -19,7 +19,8 @@ import {
   FiVideoOff,
   FiMoreVertical,
   FiEye,
-  FiEyeOff
+  FiEyeOff,
+  FiLayers
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -622,9 +623,16 @@ const SubjectDetails = () => {
                       >
                         <div className="flex items-start justify-between gap-3 min-w-0">
                           <div className="flex flex-col text-start min-w-0 flex-1">
-                            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider truncate">
-                              {isRTL ? "الوحدة" : "Module"} {les.order || 1} {lessonUnit ? `• ${lessonUnit.title}` : ''}
-                            </span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider truncate">
+                                {isRTL ? "الوحدة" : "Module"} {les.order || 1} {lessonUnit ? `• ${lessonUnit.title}` : ''}
+                              </span>
+                              {les.animationUrl && (
+                                <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1">
+                                  <FiLayers size={10} /> {isRTL ? "رسوم تفاعلية" : "Interactive HTML"}
+                                </span>
+                              )}
+                            </div>
                             <h4 className="text-base font-extrabold text-white mt-1 group-hover:text-blue-400 transition-colors line-clamp-2 break-words break-all" title={les.title}>
                               {les.title}
                             </h4>

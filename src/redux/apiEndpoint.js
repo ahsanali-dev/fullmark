@@ -129,6 +129,7 @@ export const apiEndpoints = {
     uploadLessonPdf: `${BASE_URL}/upload/lesson-pdf`,
     deleteLessonPdf: (lessonId) => `${BASE_URL}/upload/lesson-pdf/${lessonId}`,
     uploadQuestionImage: `${BASE_URL}/upload/question-image`,
+    uploadAnimationHtml: `${BASE_URL}/upload/animation-html`,
 
     leaderboardOverall: `${BASE_URL}/leaderboard/overall`,
     leaderboardSubject: (subjectId) => `${BASE_URL}/leaderboard/subject/${subjectId}`,

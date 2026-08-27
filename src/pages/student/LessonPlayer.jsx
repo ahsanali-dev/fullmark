@@ -7,7 +7,8 @@ import {
   FiTv,
   FiFileText,
   FiPlay,
-  FiPause
+  FiPause,
+  FiLayers
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -17,6 +18,7 @@ import { getImageUrl } from '../../utils/imageUrl';
 import { useLanguage } from '../../context/LanguageContext';
 
 import VideoPlayer from '../../components/shared/VideoPlayer';
+import LessonAnimationPlayer from '../../components/shared/LessonAnimationPlayer';
 
 const LessonPlayer = () => {
   const { courseId, lessonId } = useParams();
@@ -28,6 +30,7 @@ const LessonPlayer = () => {
   
   const [lesson, setLesson] = useState(null);
   const [localProgress, setLocalProgress] = useState(null);
+  const [activeMediaTab, setActiveMediaTab] = useState('video');
   const [isSimulating, setIsSimulating] = useState(false);
   const videoRef = useRef(null);
   const simulationInterval = useRef(null);
@@ -57,6 +60,9 @@ const LessonPlayer = () => {
       const found = lessonsData.lessons.find(l => (l._id || l.id) === lessonId);
       if (found) {
         setLesson(found);
+        if (found.animationUrl && !found.videoUrl && !found.videoPreviewUrl) {
+          setActiveMediaTab('animation');
+        }
       }
     }
   }, [lessonId, lessonsData]);
@@ -166,6 +172,9 @@ const LessonPlayer = () => {
   const progress = localProgress?.progressPercent ?? (lesson.progressPercent || 0);
   const isCompleted = localProgress?.isCompleted ?? (lesson.isCompleted || false);
 
+  const hasVideo = Boolean(lesson.videoUrl || lesson.videoPreviewUrl || lesson.videoId || (lesson.videoStatus === 'ready' || lesson.videoStatus === 'processing') || lesson.videoReady === false);
+  const hasAnimation = Boolean(lesson.animationUrl);
+
   return (
     <DashboardLayout
       role="student"
@@ -176,8 +185,36 @@ const LessonPlayer = () => {
       onBackClick={() => navigate(`/student/courses/${courseId}/lessons`)}
     >
       <div className="flex flex-col gap-6 text-start p-4 sm:p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
-        {/* Main Video / Slide Player Display */}
-        {(lesson.videoUrl || lesson.videoPreviewUrl || lesson.videoId || lesson.videoStatus || lesson.videoReady === false) ? (
+        {/* Media Tabs (shown when BOTH video and animation exist) */}
+        {hasVideo && hasAnimation && (
+          <div className="grid grid-cols-2 sm:flex sm:w-fit items-center gap-1.5 p-1.5 rounded-2xl bg-[#090a14] border border-gray-800/90 w-full shadow-lg">
+            <button
+              type="button"
+              onClick={() => setActiveMediaTab('video')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                activeMediaTab === 'video'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800/40'
+              }`}
+            >
+              <FiPlay className="text-sm shrink-0" /> <span className="truncate">{isRTL ? 'فيديو الشرح' : 'Video Lesson'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMediaTab('animation')}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                activeMediaTab === 'animation'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/20'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800/40'
+              }`}
+            >
+              <FiLayers className="text-sm shrink-0" /> <span className="truncate">{isRTL ? 'الرسوم التفاعلية' : 'Interactive Animation'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Main Video / Animation Player Display */}
+        {hasVideo && (activeMediaTab === 'video' || !hasAnimation) ? (
           <VideoPlayer
             videoUrl={lesson.videoUrl || lesson.videoPreviewUrl}
             videoReady={lesson.videoReady !== false}
@@ -193,6 +230,13 @@ const LessonPlayer = () => {
               const found = res?.lessons?.find(l => (l._id || l.id) === (lesson._id || lesson.id));
               return found?.videoUrl || found?.videoPreviewUrl || null;
             }}
+            className="sm:rounded-[2.5rem]"
+          />
+        ) : hasAnimation ? (
+          <LessonAnimationPlayer
+            animationUrl={lesson.animationUrl}
+            animationTitle={lesson.animationTitle}
+            animationTitleAr={lesson.animationTitleAr}
             className="sm:rounded-[2.5rem]"
           />
         ) : (

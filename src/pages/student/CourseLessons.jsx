@@ -7,7 +7,8 @@ import {
   FiChevronDown, 
   FiChevronRight, 
   FiFolder,
-  FiBookOpen
+  FiBookOpen,
+  FiLayers
 } from 'react-icons/fi';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';
@@ -106,9 +107,16 @@ const CourseLessons = () => {
           </div>
           
           <div className="flex flex-col items-start text-start">
-            <span className="text-xs font-bold text-blue-500 dark:text-blue-400 uppercase tracking-wider">
-              {t('student.courseLessons.lessonNum')} {lesson.order || 1}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-blue-500 dark:text-blue-400 uppercase tracking-wider">
+                {t('student.courseLessons.lessonNum')} {lesson.order || 1}
+              </span>
+              {lesson.animationUrl && (
+                <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1">
+                  <FiLayers size={10} /> {isRTL ? "رسوم تفاعلية" : "Interactive HTML"}
+                </span>
+              )}
+            </div>
             <h5 className={`text-base font-bold mt-0.5 leading-snug ${isLight ? 'text-slate-900' : 'text-white'}`}>
               {(isRTL && lesson.titleAr) ? lesson.titleAr : lesson.title}
             </h5>
