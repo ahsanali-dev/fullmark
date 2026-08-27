@@ -15,6 +15,18 @@ const LessonAnimationPlayer = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef(null);
 
+  const [isLight, setIsLight] = useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+  });
+
+  React.useEffect(() => {
+    const handleThemeChange = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
   if (!animationUrl && !previewBlobUrl) {
     return null;
   }
@@ -43,15 +55,21 @@ const LessonAnimationPlayer = ({
   return (
     <div
       ref={containerRef}
-      className={`w-full rounded-3xl bg-[#080911] border border-gray-800/80 shadow-2xl overflow-hidden flex flex-col relative ${className}`}
+      className={`w-full rounded-3xl overflow-hidden flex flex-col relative border ${
+        isLight ? 'bg-white border-slate-300 shadow-md' : 'bg-[#080911] border-gray-800/80 shadow-2xl'
+      } ${className}`}
     >
       {/* Header bar */}
-      <div className="flex items-center justify-between px-5 py-3 bg-[#0d0f1e] border-b border-gray-800/60 z-10">
+      <div className={`flex items-center justify-between px-5 py-3 border-b z-10 ${
+        isLight ? 'bg-slate-100 border-slate-200' : 'bg-[#0d0f1e] border-gray-800/60'
+      }`}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+            isLight ? 'bg-purple-100 border border-purple-300 text-purple-700' : 'bg-purple-500/10 border border-purple-500/20 text-purple-400'
+          }`}>
             <FiLayers size={16} />
           </div>
-          <span className="text-xs md:text-sm font-extrabold text-white truncate" title={title}>
+          <span className={`text-xs md:text-sm font-extrabold truncate ${isLight ? 'text-slate-900' : 'text-white'}`} title={title}>
             {title}
           </span>
         </div>
@@ -61,7 +79,11 @@ const LessonAnimationPlayer = ({
             href={src}
             target="_blank"
             rel="noreferrer"
-            className="p-2 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
+            className={`p-2 rounded-xl transition-all cursor-pointer border flex items-center justify-center ${
+              isLight
+                ? 'bg-white hover:bg-slate-200 text-slate-700 border-slate-300 shadow-sm'
+                : 'bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white border-gray-700/50'
+            }`}
             title={isRTL ? "فتح في نافذة جديدة" : "Open in new window"}
           >
             <FiExternalLink size={15} />
@@ -69,7 +91,11 @@ const LessonAnimationPlayer = ({
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-2 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
+            className={`p-2 rounded-xl transition-all cursor-pointer border flex items-center justify-center ${
+              isLight
+                ? 'bg-white hover:bg-slate-200 text-slate-700 border-slate-300 shadow-sm'
+                : 'bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white border-gray-700/50'
+            }`}
             title={isFullscreen ? (isRTL ? "إنهاء الشاشة الكاملة" : "Exit Fullscreen") : (isRTL ? "ملء الشاشة" : "Fullscreen")}
           >
             {isFullscreen ? <FiMinimize2 size={15} /> : <FiMaximize2 size={15} />}

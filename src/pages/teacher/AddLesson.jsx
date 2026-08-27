@@ -135,6 +135,18 @@ const AddLesson = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
 
+  const [isLight, setIsLight] = useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    window.addEventListener('themeChange', handleThemeChange);
+    return () => window.removeEventListener('themeChange', handleThemeChange);
+  }, []);
+
   // Load teacher subjects on mount
   useEffect(() => {
     dispatch(fetchTeacherSubjects());
@@ -646,17 +658,21 @@ const AddLesson = () => {
                 </div>
 
                 {/* --- HTML ANIMATION UPLOADER & FIELDS --- */}
-                <div className="mt-4 p-5 rounded-2xl bg-[#080911]/80 border border-purple-500/20 flex flex-col gap-4">
+                <div className={`mt-4 p-5 rounded-2xl border flex flex-col gap-4 transition-all ${
+                  isLight ? 'bg-purple-50/60 border-purple-200' : 'bg-[#080911]/80 border-purple-500/20'
+                }`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                        isLight ? 'bg-purple-100 border border-purple-300 text-purple-700' : 'bg-purple-500/15 border border-purple-500/30 text-purple-400'
+                      }`}>
                         <FiLayers size={18} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-black text-white">
+                        <h4 className={`text-sm font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
                           {isRTL ? "رسوم متحركة تفاعلية HTML (اختياري)" : "Interactive HTML Animation (Optional)"}
                         </h4>
-                        <p className="text-[11px] font-semibold text-gray-400">
+                        <p className={`text-[11px] font-semibold ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                           {isRTL ? "قم برفع ملف .html يحتوي على شريحة أو محاكاة تفاعلية تعرض للطالب" : "Upload a self-contained .html file (e.g. simulation/canvas) rendered via iframe"}
                         </p>
                       </div>
@@ -665,16 +681,20 @@ const AddLesson = () => {
 
                   {/* File Selection Box */}
                   {animationUrl || pendingAnimationFile ? (
-                    <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      isLight ? 'bg-purple-100/70 border-purple-300' : 'bg-purple-950/20 border-purple-500/30'
+                    }`}>
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center text-lg shrink-0">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0 ${
+                          isLight ? 'bg-purple-200 text-purple-800' : 'bg-purple-500/20 text-purple-300'
+                        }`}>
                           <FiCode />
                         </div>
                         <div className="min-w-0">
-                          <span className="text-xs font-black text-white truncate block">
+                          <span className={`text-xs font-black truncate block ${isLight ? 'text-slate-900' : 'text-white'}`}>
                             {pendingAnimationFile ? pendingAnimationFile.name : (animationUrl.split('/').pop() || animationUrl)}
                           </span>
-                          <span className="text-[10px] font-bold text-emerald-400">
+                          <span className={`text-[10px] font-bold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
                             {pendingAnimationFile ? (isRTL ? "جاهز للرفع عند الحفظ" : "Ready to upload on save") : (isRTL ? "تم الرفع مسبقاً" : "Uploaded")}
                           </span>
                         </div>
@@ -684,11 +704,15 @@ const AddLesson = () => {
                         <button
                           type="button"
                           onClick={() => setShowAnimationPreview(true)}
-                          className="px-3 py-1.5 rounded-lg bg-purple-600/80 hover:bg-purple-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
                         >
                           <FiEye size={14} /> {isRTL ? "معاينة" : "Preview"}
                         </button>
-                        <label className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-gray-700">
+                        <label className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                          isLight
+                            ? 'bg-white hover:bg-slate-100 text-slate-700 border-slate-300 shadow-sm'
+                            : 'bg-gray-800 hover:bg-gray-700 text-gray-200 border-gray-700'
+                        }`}>
                           <FiRefreshCw size={14} /> {isRTL ? "استبدال" : "Replace"}
                           <input
                             type="file"
@@ -700,21 +724,27 @@ const AddLesson = () => {
                         <button
                           type="button"
                           onClick={handleRemoveAnimation}
-                          className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-red-500/20"
+                          className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-red-500/20"
                         >
                           <FiTrash2 size={14} /> {isRTL ? "إزالة" : "Remove"}
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <label className="border-2 border-dashed border-purple-500/30 hover:border-purple-500/60 rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group bg-purple-950/10 hover:bg-purple-950/20">
-                      <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                    <label className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group ${
+                      isLight
+                        ? 'border-purple-300 hover:border-purple-500 bg-purple-50/80 hover:bg-purple-100/80'
+                        : 'border-purple-500/30 hover:border-purple-500/60 bg-purple-950/10 hover:bg-purple-950/20'
+                    }`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform ${
+                        isLight ? 'bg-purple-100 border border-purple-300 text-purple-700' : 'bg-purple-500/10 border border-purple-500/20 text-purple-400'
+                      }`}>
                         <FiUploadCloud />
                       </div>
-                      <span className="text-xs font-extrabold text-white">
+                      <span className={`text-xs font-extrabold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                         {isRTL ? "اضغط لاختيار ملف .html للرسوم التفاعلية" : "Click to select a .html animation file"}
                       </span>
-                      <span className="text-[11px] font-semibold text-gray-500">
+                      <span className={`text-[11px] font-semibold ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                         {isRTL ? "يُقبل فقط صيغة HTML (أقل من 10 ميجابايت)" : "Accepts HTML format only (max 10MB)"}
                       </span>
                       <input
@@ -750,15 +780,21 @@ const AddLesson = () => {
 
                   {/* Inline Preview Toggle */}
                   {showAnimationPreview && (animationUrl || animationPreviewBlob) && (
-                    <div className="mt-3 p-4 rounded-2xl bg-[#05060b] border border-purple-500/30 flex flex-col gap-3">
+                    <div className={`mt-3 p-4 rounded-2xl border flex flex-col gap-3 ${
+                      isLight ? 'bg-slate-100 border-purple-300 shadow-md' : 'bg-[#05060b] border-purple-500/30'
+                    }`}>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-purple-400 flex items-center gap-1.5">
+                        <span className={`text-xs font-extrabold flex items-center gap-1.5 ${
+                          isLight ? 'text-purple-700' : 'text-purple-400'
+                        }`}>
                           <FiEye /> {isRTL ? "معاينة الرسوم التفاعلية قبل النشر:" : "Interactive Animation Preview:"}
                         </span>
                         <button
                           type="button"
                           onClick={() => setShowAnimationPreview(false)}
-                          className="text-gray-400 hover:text-white text-xs font-bold flex items-center gap-1 cursor-pointer"
+                          className={`text-xs font-bold flex items-center gap-1 cursor-pointer ${
+                            isLight ? 'text-slate-600 hover:text-slate-900' : 'text-gray-400 hover:text-white'
+                          }`}
                         >
                           <FiX /> {isRTL ? "إغلاق المعاينة" : "Close Preview"}
                         </button>
