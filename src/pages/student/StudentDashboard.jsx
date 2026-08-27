@@ -55,6 +55,18 @@ const StudentDashboard = () => {
     : (activeEnrollment?.subject?.name || (isRTL ? 'الكيمياء' : 'Chemistry'));
   const activeProgress = activeEnrollment?.progressPercent ?? 0;
 
+  // Calculate dynamic Daily Mission completion (out of 3 tasks)
+  const isLessonDone = Boolean(activeProgress > 0 || (activeEnrollment && activeEnrollment.completedLessons > 0));
+  const isWeaknessDone = Boolean((dashboard?.student?.badges && dashboard.student.badges.length > 0) || streakDays > 0);
+  const isExamDone = Boolean(examsCount > 0 || recentExams.length > 0);
+
+  let dailyMissionsCompleted = 0;
+  if (isLessonDone) dailyMissionsCompleted += 1;
+  if (isWeaknessDone) dailyMissionsCompleted += 1;
+  if (isExamDone) dailyMissionsCompleted += 1;
+
+  const strokeDashOffset = 251.2 - (251.2 * (dailyMissionsCompleted / 3));
+
   return (
     <DashboardLayout
       role="student"
@@ -88,10 +100,10 @@ const StudentDashboard = () => {
           >
             {/* ── TOP GREETING HEADER ── */}
             <div className="flex flex-col text-start">
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              <h1 className={`text-2xl sm:text-3xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {t('student.dashboard.greeting')}, {studentName}?
               </h1>
-              <p className="text-sm font-semibold text-gray-400 mt-1">
+              <p className={`text-sm font-semibold mt-1 ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {t('student.dashboard.dailyMissionWaiting')}
               </p>
             </div>
@@ -138,40 +150,51 @@ const StudentDashboard = () => {
                       stroke="url(#cyanPurpleGrad)" 
                       strokeWidth="10" 
                       strokeDasharray="251.2"
-                      strokeDashoffset="251.2"
+                      strokeDashoffset={strokeDashOffset}
                       strokeLinecap="round"
+                      className="transition-all duration-700 ease-out"
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center font-black">
-                    <span className={`text-base xs:text-xl sm:text-3xl ${isLight ? 'text-slate-900' : 'keep-white'}`}>0</span>
-                    <span className={`text-xs sm:text-sm font-bold ${isRTL ? 'mr-0.5' : 'ml-0.5'} ${isLight ? 'text-purple-700' : 'keep-purple-light'}`}>/3</span>
+                    <span className={`text-base xs:text-xl sm:text-3xl ${isLight ? 'text-slate-900' : 'keep-white'}`}>
+                      {dailyMissionsCompleted}
+                    </span>
+                    <span className={`text-xs sm:text-sm font-bold ${isRTL ? 'mr-0.5' : 'ml-0.5'} ${isLight ? 'text-purple-700' : 'keep-purple-light'}`}>
+                      /3
+                    </span>
                   </div>
                 </div>
 
                 {/* Checklist Pills Stack */}
                 <div className="flex-1 min-w-0 flex flex-col gap-1.5 sm:gap-2 max-w-[130px] xs:max-w-[160px] sm:max-w-[210px]">
                   <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl flex items-center gap-1.5 sm:gap-2 text-[10px] xs:text-[11px] sm:text-xs font-bold shadow-sm min-w-0 ${
-                    isLight 
+                    isLessonDone 
+                      ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300' 
+                      : isLight 
                       ? 'bg-white/90 border border-purple-200/80 text-slate-800' 
                       : 'bg-white/10 border border-white/15 text-white'
                   }`}>
-                    <FiBookOpen size={12} className={isLight ? "text-purple-600 shrink-0" : "text-purple-300 shrink-0"} />
+                    {isLessonDone ? <FiCheckCircle size={12} className="text-emerald-500 shrink-0" /> : <FiBookOpen size={12} className={isLight ? "text-purple-600 shrink-0" : "text-purple-300 shrink-0"} />}
                     <span className="truncate">{activeCourse} {t('student.dashboard.lesson')}</span>
                   </div>
                   <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl flex items-center gap-1.5 sm:gap-2 text-[10px] xs:text-[11px] sm:text-xs font-bold shadow-sm min-w-0 ${
-                    isLight 
+                    isWeaknessDone 
+                      ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300' 
+                      : isLight 
                       ? 'bg-white/90 border border-purple-200/80 text-slate-800' 
                       : 'bg-white/10 border border-white/15 text-white'
                   }`}>
-                    <FiTarget size={12} className={isLight ? "text-cyan-600 shrink-0" : "text-cyan-300 shrink-0"} />
+                    {isWeaknessDone ? <FiCheckCircle size={12} className="text-emerald-500 shrink-0" /> : <FiTarget size={12} className={isLight ? "text-cyan-600 shrink-0" : "text-cyan-300 shrink-0"} />}
                     <span className="truncate">{t('student.dashboard.weaknessReview')}</span>
                   </div>
                   <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl flex items-center gap-1.5 sm:gap-2 text-[10px] xs:text-[11px] sm:text-xs font-bold shadow-sm min-w-0 ${
-                    isLight 
+                    isExamDone 
+                      ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300' 
+                      : isLight 
                       ? 'bg-white/90 border border-purple-200/80 text-slate-800' 
                       : 'bg-white/10 border border-white/15 text-white'
                   }`}>
-                    <FiClipboard size={12} className={isLight ? "text-blue-600 shrink-0" : "text-blue-300 shrink-0"} />
+                    {isExamDone ? <FiCheckCircle size={12} className="text-emerald-500 shrink-0" /> : <FiClipboard size={12} className={isLight ? "text-blue-600 shrink-0" : "text-blue-300 shrink-0"} />}
                     <span className="truncate">{t('student.dashboard.dailyExam')}</span>
                   </div>
                 </div>
@@ -210,60 +233,68 @@ const StudentDashboard = () => {
             {/* ── 2. STATS ROW (3 Metric Cards Grid) ── */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3.5 w-full">
               {/* Metric 1: Points */}
-              <div className="p-2.5 xs:p-3 sm:p-4 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center gap-2 sm:gap-3 shadow-md min-w-0">
+              <div className={`p-2.5 xs:p-3 sm:p-4 rounded-2xl border flex items-center gap-2 sm:gap-3 shadow-md min-w-0 ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#090b17] border-gray-800/80'
+              }`}>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-500 dark:text-cyan-400 shrink-0">
                   <FiStar className="text-sm sm:text-lg" />
                 </div>
                 <div className="flex flex-col text-start min-w-0">
-                  <span className="text-sm xs:text-base sm:text-2xl font-black text-white leading-none truncate">
+                  <span className={`text-sm xs:text-base sm:text-2xl font-black leading-none truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {points}
                   </span>
-                  <span className="text-[10px] sm:text-xs font-bold text-gray-400 mt-0.5 sm:mt-1 truncate">{t('student.dashboard.points')}</span>
+                  <span className={`text-[10px] sm:text-xs font-bold mt-0.5 sm:mt-1 truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('student.dashboard.points')}</span>
                 </div>
               </div>
 
               {/* Metric 2: Streak */}
-              <div className="p-2.5 xs:p-3 sm:p-4 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center gap-2 sm:gap-3 shadow-md min-w-0">
+              <div className={`p-2.5 xs:p-3 sm:p-4 rounded-2xl border flex items-center gap-2 sm:gap-3 shadow-md min-w-0 ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#090b17] border-gray-800/80'
+              }`}>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 dark:text-orange-400 shrink-0">
                   <FaFire className="text-sm sm:text-lg" />
                 </div>
                 <div className="flex flex-col text-start min-w-0">
-                  <span className="text-sm xs:text-base sm:text-2xl font-black text-white leading-none flex items-center gap-0.5 sm:gap-1 truncate">
-                    {streakDays} <span className="text-[10px] sm:text-xs font-bold text-gray-300">{t('student.dashboard.day')}</span>
+                  <span className={`text-sm xs:text-base sm:text-2xl font-black leading-none flex items-center gap-0.5 sm:gap-1 truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    {streakDays} <span className={`text-[10px] sm:text-xs font-bold ${isLight ? 'text-slate-600' : 'text-gray-300'}`}>{t('student.dashboard.day')}</span>
                   </span>
-                  <span className="text-[10px] sm:text-xs font-bold text-gray-400 mt-0.5 sm:mt-1 truncate">{t('student.dashboard.streak')}</span>
+                  <span className={`text-[10px] sm:text-xs font-bold mt-0.5 sm:mt-1 truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('student.dashboard.streak')}</span>
                 </div>
               </div>
 
               {/* Metric 3: Exams */}
-              <div className="p-2.5 xs:p-3 sm:p-4 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center gap-2 sm:gap-3 shadow-md min-w-0">
+              <div className={`p-2.5 xs:p-3 sm:p-4 rounded-2xl border flex items-center gap-2 sm:gap-3 shadow-md min-w-0 ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#090b17] border-gray-800/80'
+              }`}>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                   <FiClipboard className="text-sm sm:text-lg" />
                 </div>
                 <div className="flex flex-col text-start min-w-0">
-                  <span className="text-sm xs:text-base sm:text-2xl font-black text-white leading-none truncate">
+                  <span className={`text-sm xs:text-base sm:text-2xl font-black leading-none truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {examsCount}
                   </span>
-                  <span className="text-[10px] sm:text-xs font-bold text-gray-400 mt-0.5 sm:mt-1 truncate">{t('student.dashboard.exams')}</span>
+                  <span className={`text-[10px] sm:text-xs font-bold mt-0.5 sm:mt-1 truncate ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{t('student.dashboard.exams')}</span>
                 </div>
               </div>
             </div>
 
             {/* ── 3. "JUMP BACK IN" SECTION ── */}
             <div className="flex flex-col gap-3.5 text-start mt-1">
-              <h3 className="text-lg font-black text-white">{t('student.dashboard.jumpBackIn')}</h3>
+              <h3 className={`text-lg font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('student.dashboard.jumpBackIn')}</h3>
 
               {/* Main Course Progress Box */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-[#090b17] border border-gray-800/80 flex items-center justify-between gap-4 shadow-md">
+              <div className={`p-4 sm:p-5 rounded-2xl border flex items-center justify-between gap-4 shadow-md ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#090b17] border-gray-800/80'
+              }`}>
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-500/30 flex items-center justify-center text-purple-700 dark:text-purple-400 shrink-0 shadow-inner">
                     <FiBookOpen size={22} />
                   </div>
                   <div className="flex flex-col text-start min-w-0">
-                    <h4 className="text-base font-black text-white truncate">
+                    <h4 className={`text-base font-black truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                       {activeCourse}
                     </h4>
-                    <span className="text-xs font-semibold text-gray-400 mt-0.5">
+                    <span className={`text-xs font-semibold mt-0.5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                       {t('student.dashboard.unitLesson')}
                     </span>
                     <div className="flex items-center gap-2 mt-1.5 w-full">
@@ -293,13 +324,15 @@ const StudentDashboard = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 
                 {/* Card 1: Fix Weak Topics */}
-                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#090b17] border border-cyan-500/20 flex items-center justify-between gap-2.5 sm:gap-3 shadow-md hover:border-cyan-500/40 transition-all min-w-0">
+                <div className={`p-3.5 sm:p-4 rounded-2xl border flex items-center justify-between gap-2.5 sm:gap-3 shadow-md transition-all min-w-0 ${
+                  isLight ? 'bg-white border-slate-200 hover:border-cyan-300' : 'bg-[#090b17] border-cyan-500/20 hover:border-cyan-500/40'
+                }`}>
                   <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
                       <FiTarget className="text-base sm:text-lg" />
                     </div>
                     <div className="flex flex-col text-start min-w-0">
-                      <h5 className="text-xs sm:text-sm font-black text-white truncate">{t('student.dashboard.fixWeakTopics')}</h5>
+                      <h5 className={`text-xs sm:text-sm font-black truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('student.dashboard.fixWeakTopics')}</h5>
                       <span className="text-[11px] sm:text-xs font-bold text-cyan-600 dark:text-cyan-400 mt-0.5 truncate">{t('student.dashboard.questionsDue')}</span>
                     </div>
                   </div>
@@ -312,13 +345,15 @@ const StudentDashboard = () => {
                 </div>
 
                 {/* Card 2: Challenge a Friend */}
-                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#090b17] border border-purple-500/20 flex items-center justify-between gap-2.5 sm:gap-3 shadow-md hover:border-purple-500/40 transition-all min-w-0">
+                <div className={`p-3.5 sm:p-4 rounded-2xl border flex items-center justify-between gap-2.5 sm:gap-3 shadow-md transition-all min-w-0 ${
+                  isLight ? 'bg-white border-slate-200 hover:border-purple-300' : 'bg-[#090b17] border-purple-500/20 hover:border-purple-500/40'
+                }`}>
                   <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-purple-500/10 border border-purple-400/30 flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
                       <FiAward className="text-base sm:text-lg" />
                     </div>
                     <div className="flex flex-col text-start min-w-0">
-                      <h5 className="text-xs sm:text-sm font-black text-white truncate">{t('student.dashboard.challengeFriend')}</h5>
+                      <h5 className={`text-xs sm:text-sm font-black truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('student.dashboard.challengeFriend')}</h5>
                       <span className="text-[11px] sm:text-xs font-bold text-purple-600 dark:text-purple-400 mt-0.5 truncate">{t('student.dashboard.examDuel')}</span>
                     </div>
                   </div>
@@ -335,25 +370,27 @@ const StudentDashboard = () => {
 
             {/* ── 4. "RECENT RESULT" SECTION ── */}
             <div className="flex flex-col gap-3.5 text-start mt-1">
-              <h3 className="text-lg font-black text-white">{t('student.dashboard.recentResult')}</h3>
+              <h3 className={`text-lg font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{t('student.dashboard.recentResult')}</h3>
 
-              <div className="p-3.5 sm:p-5 rounded-2xl bg-[#090b17] border border-gray-800/80 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 sm:gap-4 shadow-md">
+              <div className={`p-3.5 sm:p-5 rounded-2xl border flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 sm:gap-4 shadow-md ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#090b17] border-gray-800/80'
+              }`}>
                 <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-purple-100 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-500/30 flex items-center justify-center text-purple-700 dark:text-purple-400 shrink-0">
                     <FiClipboard className="text-lg sm:text-2xl" />
                   </div>
                   <div className="flex flex-col text-start min-w-0">
-                    <h4 className="text-sm sm:text-base font-black text-white truncate">
+                    <h4 className={`text-sm sm:text-base font-black truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                       {recentExams[0]?.exam?.title || ((isRTL && recentExams[0]?.subject?.nameAr) ? recentExams[0].subject.nameAr : (recentExams[0]?.subject?.name || activeCourse))}
                     </h4>
-                    <span className="text-[11px] sm:text-xs font-semibold text-gray-400 mt-0.5">
+                    <span className={`text-[11px] sm:text-xs font-semibold mt-0.5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                       {recentExams[0]?.createdAt ? new Date(recentExams[0].createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '15 Aug 2026'}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between xs:justify-end gap-3 sm:gap-4 w-full xs:w-auto shrink-0">
-                  <span className="text-lg sm:text-2xl font-black text-white">
+                  <span className={`text-lg sm:text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {recentExams[0]?.score || 100}%
                   </span>
                   <button 
