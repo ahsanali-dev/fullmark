@@ -49,16 +49,24 @@ const StudentDashboard = () => {
   const examsCount = dashboard?.student?.totalExamsTaken ?? 0;
   const recentExams = dashboard?.recentAttempts || [];
   const enrollments = dashboard?.enrollments || [];
-  const activeEnrollment = enrollments.find(e => e.progressPercent > 0) || enrollments[0];
+  // Prioritize active enrollment with valid subject
+  const activeEnrollment = enrollments.find(e => e.subject && e.progressPercent > 0) || enrollments.find(e => e.subject) || enrollments[0];
   const activeCourse = (isRTL && activeEnrollment?.subject?.nameAr) 
     ? activeEnrollment.subject.nameAr 
     : (activeEnrollment?.subject?.name || (isRTL ? 'الكيمياء' : 'Chemistry'));
   const activeProgress = activeEnrollment?.progressPercent ?? 0;
 
-  // Calculate dynamic Daily Mission completion (out of 3 tasks)
-  const isLessonDone = Boolean(activeProgress > 0 || (activeEnrollment && activeEnrollment.completedLessons > 0));
+  // Align with Mobile App Daily Mission Logic:
+  // 1. Lesson: Checked if current active course has progress > 0
+  const isLessonDone = Boolean(activeEnrollment?.completedLessons > 0 && activeProgress > 0);
+  
+  // 2. Weakness: Checked if student has active streak or badges earned
   const isWeaknessDone = Boolean((dashboard?.student?.badges && dashboard.student.badges.length > 0) || streakDays > 0);
-  const isExamDone = Boolean(examsCount > 0 || recentExams.length > 0);
+  
+  // 3. Daily Exam: Checked if exam completed TODAY
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayActivity = dashboard?.weeklyActivity?.find(w => w.date === todayStr);
+  const isExamDone = Boolean(todayActivity?.active || (todayActivity?.examsCount && todayActivity.examsCount > 0));
 
   let dailyMissionsCompleted = 0;
   if (isLessonDone) dailyMissionsCompleted += 1;
