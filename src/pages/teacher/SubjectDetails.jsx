@@ -20,7 +20,10 @@ import {
   FiMoreVertical,
   FiEye,
   FiEyeOff,
-  FiLayers
+  FiLayers,
+  FiMenu,
+  FiChevronDown,
+  FiChevronUp
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,6 +40,7 @@ import {
   fetchQuestions,
   fetchExams,
   fetchLessons,
+  updateLesson,
   deleteLesson,
   toggleLessonPublish,
   deleteExam,
@@ -85,6 +89,17 @@ const SubjectDetails = () => {
   // Banner upload state
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
 
+  // Lesson Reordering States
+  const [orderedLessons, setOrderedLessons] = useState([]);
+  const [draggedLessonIndex, setDraggedLessonIndex] = useState(null);
+  const [isReordering, setIsReordering] = useState(false);
+
+  // Unit Reordering & Collapsing States
+  const [orderedUnits, setOrderedUnits] = useState([]);
+  const [draggedUnitIndex, setDraggedUnitIndex] = useState(null);
+  const [isReorderingUnits, setIsReorderingUnits] = useState(false);
+  const [collapsedUnits, setCollapsedUnits] = useState({});
+
   useEffect(() => {
     dispatch(fetchTeacherSubjects());
     dispatch(fetchSubjectUnits(subjectId));
@@ -93,6 +108,216 @@ const SubjectDetails = () => {
     dispatch(fetchExams());
     dispatch(fetchLessons(subjectId));
   }, [dispatch, subjectId]);
+
+  useEffect(() => {
+    const currentSubjectLessons = lessons.filter(
+      (les) => (les.subject?._id || les.subject || les.subjectId) === subjectId
+    );
+    const sorted = [...currentSubjectLessons].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+    setOrderedLessons(sorted);
+  }, [lessons, subjectId]);
+
+  useEffect(() => {
+    const sorted = [...units].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+    setOrderedUnits(sorted);
+  }, [units]);
+
+  const toggleUnitCollapse = (unitId) => {
+    setCollapsedUnits(prev => ({
+      ...prev,
+      [unitId]: !prev[unitId]
+    }));
+  };
+
+  const applyNewUnitOrder = async (newUnitsList) => {
+    // 1-based order values: first unit = 1, second = 2, ...
+    const reorderedWith1Based = newUnitsList.map((unit, index) => ({
+      ...unit,
+      calculatedOrder: index + 1
+    }));
+
+    const changedUnits = reorderedWith1Based.filter((unit) => Number(unit.order) !== unit.calculatedOrder);
+
+    if (changedUnits.length === 0) {
+      setOrderedUnits(reorderedWith1Based.map(u => ({ ...u, order: u.calculatedOrder })));
+      return;
+    }
+
+    setOrderedUnits(reorderedWith1Based.map(u => ({ ...u, order: u.calculatedOrder })));
+    setIsReorderingUnits(true);
+
+    try {
+      await Promise.all(
+        changedUnits.map((unit) =>
+          dispatch(updateUnit({
+            id: unit._id || unit.id,
+            unitData: { order: unit.calculatedOrder }
+          })).unwrap()
+        )
+      );
+      toast.success(isRTL ? 'تم حفظ الترتيب الجديد للوحدات بنجاح! ✨' : 'Unit order updated successfully! ✨', { id: 'unit-reorder-toast' });
+    } catch (err) {
+      console.error('Failed to update unit order:', err);
+      toast.error(isRTL ? 'فشل حفظ ترتيب الوحدات' : 'Failed to update unit order', { id: 'unit-reorder-toast' });
+      dispatch(fetchSubjectUnits(subjectId));
+    } finally {
+      setIsReorderingUnits(false);
+    }
+  };
+
+  const handleUnitDragStart = (e, index) => {
+    setDraggedUnitIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `unit-${index}`);
+  };
+
+  const handleUnitDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleUnitDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedUnitIndex === null || draggedUnitIndex === dropIndex) {
+      setDraggedUnitIndex(null);
+      return;
+    }
+
+    const updated = [...orderedUnits];
+    const [movedItem] = updated.splice(draggedUnitIndex, 1);
+    updated.splice(dropIndex, 0, movedItem);
+
+    setDraggedUnitIndex(null);
+    applyNewUnitOrder(updated);
+  };
+
+  const handleMoveUnit = (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= orderedUnits.length) return;
+
+    const updated = [...orderedUnits];
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+
+    applyNewUnitOrder(updated);
+  };
+
+  const applyNewLessonOrder = async (newOrderedList) => {
+    // 1-based order values: first lesson = 1, second = 2, ...
+    const reorderedWith1Based = newOrderedList.map((les, index) => ({
+      ...les,
+      calculatedOrder: index + 1
+    }));
+
+    // Find ONLY lessons whose order actually changed
+    const changedLessons = reorderedWith1Based.filter((les) => Number(les.order) !== les.calculatedOrder);
+
+    if (changedLessons.length === 0) {
+      setOrderedLessons(reorderedWith1Based.map(l => ({ ...l, order: l.calculatedOrder })));
+      return;
+    }
+
+    // Optimistically update local UI state
+    setOrderedLessons(reorderedWith1Based.map(l => ({ ...l, order: l.calculatedOrder })));
+    setIsReordering(true);
+
+    try {
+      // Send PUT /api/teacher/lessons/:id ONLY for lessons whose position actually changed
+      await Promise.all(
+        changedLessons.map((les) =>
+          dispatch(updateLesson({
+            id: les._id || les.id,
+            lessonData: { order: les.calculatedOrder }
+          })).unwrap()
+        )
+      );
+      toast.success(isRTL ? 'تم حفظ الترتيب الجديد للدروس بنجاح! ✨' : 'Lesson order updated successfully! ✨', { id: 'reorder-toast' });
+    } catch (err) {
+      console.error('Failed to update lesson order:', err);
+      toast.error(isRTL ? 'فشل حفظ ترتيب الدروس' : 'Failed to update lesson order', { id: 'reorder-toast' });
+      // Rollback on failure
+      dispatch(fetchLessons(subjectId));
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedLessonIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedLessonIndex === null || draggedLessonIndex === dropIndex) {
+      setDraggedLessonIndex(null);
+      return;
+    }
+
+    const updated = [...orderedLessons];
+    const [movedItem] = updated.splice(draggedLessonIndex, 1);
+    updated.splice(dropIndex, 0, movedItem);
+
+    setDraggedLessonIndex(null);
+    applyNewLessonOrder(updated);
+  };
+
+  const handleMoveLesson = (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= orderedLessons.length) return;
+
+    const updated = [...orderedLessons];
+    const temp = updated[index];
+    updated[index] = updated[targetIndex];
+    updated[targetIndex] = temp;
+
+    applyNewLessonOrder(updated);
+  };
+
+  const handleMoveLessonInUnit = (lesson, direction, unitLessons) => {
+    const currentIndex = unitLessons.findIndex(l => (l._id || l.id) === (lesson._id || lesson.id));
+    if (currentIndex === -1) return;
+    const targetIndex = currentIndex + direction;
+    if (targetIndex < 0 || targetIndex >= unitLessons.length) return;
+
+    const updatedUnitLessons = [...unitLessons];
+    const temp = updatedUnitLessons[currentIndex];
+    updatedUnitLessons[currentIndex] = updatedUnitLessons[targetIndex];
+    updatedUnitLessons[targetIndex] = temp;
+
+    let newFullList = [];
+    const currentUnitId = lesson.unit?._id || lesson.unit || lesson.unitId || null;
+
+    if (orderedUnits.length > 0) {
+      orderedUnits.forEach(u => {
+        const uId = u._id || u.id;
+        if (uId === currentUnitId) {
+          newFullList.push(...updatedUnitLessons);
+        } else {
+          const uLes = orderedLessons.filter(l => (l.unit?._id || l.unit || l.unitId) === uId);
+          newFullList.push(...uLes);
+        }
+      });
+      // Handle unassigned
+      const unassigned = orderedLessons.filter(l => !l.unit && !l.unitId);
+      if (!currentUnitId) {
+        newFullList.push(...updatedUnitLessons);
+      } else {
+        newFullList.push(...unassigned);
+      }
+    } else {
+      newFullList = updatedUnitLessons;
+    }
+
+    applyNewLessonOrder(newFullList);
+  };
 
   const foundSubject = subjects.find((sub) => (sub._id || sub.id) === subjectId);
   const subject = foundSubject ? {
@@ -497,38 +722,61 @@ const SubjectDetails = () => {
           {/* TAB 1: UNITS */}
           {activeTab === 'units' && (
             <div className="flex flex-col gap-6 text-start">
-              <div className="flex items-center justify-between">
-                <div className="text-start">
-                  <h3 className="text-lg font-black text-white">{isRTL ? "وحدات المادة" : "Course Units"}</h3>
-                  <p className="text-xs text-gray-500 font-semibold">{isRTL ? "تنظيم الدروس في فصول وحدات قابلة للطي" : "Organize lessons into collapsible unit chapters"}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-col text-start">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black text-white">{isRTL ? "وحدات المادة" : "Course Units"}</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 text-[10px] font-black">
+                      {orderedUnits.length} {isRTL ? "وحدات" : "Units"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 font-semibold mt-0.5">
+                    {isRTL ? "اسحب الوحدات لإعادة ترتيبها أو استخدم الأسهم" : "Drag units to reorder or use arrow buttons"}
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={handleOpenAddUnit}
-                  className="px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white preserve-white font-black text-xs md:text-sm flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
+                  className="px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white preserve-white font-black text-xs md:text-sm flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30 self-start sm:self-auto"
                 >
                   <FiPlus size={18} className="stroke-[3] shrink-0" /> <span className="whitespace-nowrap text-white preserve-white">{isRTL ? "إضافة وحدة" : "Add Unit"}</span>
                 </button>
               </div>
 
-              {units.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  {units.map((unit, index) => {
+              {orderedUnits.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {orderedUnits.map((unit, index) => {
                     const unitLessonsCount = subjectLessons.filter(
                       l => (l.unit?._id || l.unit || l.unitId) === (unit._id || unit.id)
                     ).length;
+                    const isBeingDragged = draggedUnitIndex === index;
 
                     return (
                       <div
                         key={unit._id || unit.id}
-                        className="p-5 rounded-2xl bg-[#0e101a] border border-gray-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md hover:border-gray-700 transition-all text-start"
+                        draggable={!isReorderingUnits}
+                        onDragStart={(e) => handleUnitDragStart(e, index)}
+                        onDragOver={(e) => handleUnitDragOver(e, index)}
+                        onDrop={(e) => handleUnitDrop(e, index)}
+                        onDragEnd={() => setDraggedUnitIndex(null)}
+                        className={`p-4 md:p-5 rounded-2xl bg-[#0e101a] border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md text-start ${isBeingDragged
+                            ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
+                            : 'border-gray-800/80 hover:border-gray-700'
+                          }`}
                       >
-                        <div className="flex items-center gap-4 text-start">
-                          <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black shrink-0">
+                        <div className="flex items-center gap-3.5 text-start flex-1 min-w-0">
+                          <div
+                            className="cursor-grab active:cursor-grabbing p-2 rounded-xl hover:bg-gray-800/80 text-gray-500 hover:text-white transition-colors shrink-0 flex items-center justify-center"
+                            title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+                          >
+                            <FiMenu size={18} />
+                          </div>
+
+                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black shrink-0 text-sm">
                             #{unit.order || index + 1}
                           </div>
-                          <div className="text-start">
-                            <h4 className="text-base font-extrabold text-white flex items-center gap-2">
+                          <div className="text-start min-w-0 flex-1">
+                            <h4 className="text-base font-extrabold text-white flex items-center gap-2 truncate">
                               {unit.title}
                               {unit.titleAr && <span className="text-xs font-normal text-gray-400">({unit.titleAr})</span>}
                             </h4>
@@ -538,19 +786,21 @@ const SubjectDetails = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end shrink-0">
                           <button
                             type="button"
-                            onClick={() => handleReorderUnit(unit, 'up')}
-                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40"
+                            onClick={() => handleMoveUnit(index, -1)}
+                            disabled={index === 0 || isReorderingUnits}
+                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
                             title={isRTL ? "تحريك لأعلى" : "Move Unit Up"}
                           >
                             <FiArrowUp size={16} />
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleReorderUnit(unit, 'down')}
-                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40"
+                            onClick={() => handleMoveUnit(index, 1)}
+                            disabled={index === orderedUnits.length - 1 || isReorderingUnits}
+                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
                             title={isRTL ? "تحريك لأسفل" : "Move Unit Down"}
                           >
                             <FiArrowDown size={16} />
@@ -595,37 +845,484 @@ const SubjectDetails = () => {
             </div>
           )}
 
-          {/* TAB 2: LESSONS */}
+          {/* TAB 2: LESSONS (GROUPED BY UNIT ACCORDION) */}
           {activeTab === 'lessons' && (
             <div className="flex flex-col gap-6 text-start">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black tracking-widest text-gray-500 uppercase">
-                  {isRTL ? "قائمة الدروس" : "Lesson List"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/teacher/subjects/${subjectId}/add-lesson`)}
-                  className="px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white preserve-white font-black text-xs md:text-sm flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30"
-                >
-                  <FiPlus size={18} className="stroke-[3] shrink-0" /> <span className="whitespace-nowrap text-white preserve-white">{isRTL ? "إضافة درس" : "Add Lesson"}</span>
-                </button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-col text-start">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black tracking-widest text-gray-500 uppercase">
+                      {isRTL ? "قائمة الدروس" : "Lesson List"}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 text-[10px] font-black">
+                      {orderedLessons.length} {isRTL ? "دروس" : "Lessons"}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                    {isRTL ? "منظمة حسب الوحدات في فصول قابلة للطي، اسحب الدروس لإعادة ترتيبها (1-based order)" : "Organized by collapsible units. Drag cards to reorder (1-based order synced with mobile)"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/teacher/subjects/${subjectId}/add-lesson`)}
+                    className="px-4 sm:px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white preserve-white font-black text-xs md:text-sm flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_25px_rgba(37,99,235,0.5)] transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border border-blue-400/30 self-start sm:self-auto"
+                  >
+                    <FiPlus size={18} className="stroke-[3] shrink-0" /> <span className="whitespace-nowrap text-white preserve-white">{isRTL ? "إضافة درس" : "Add Lesson"}</span>
+                  </button>
+                </div>
               </div>
 
-              {subjectLessons.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {subjectLessons.map((les) => {
-                    const lessonUnit = units.find(u => (u._id || u.id) === (les.unit?._id || les.unit || les.unitId));
+              {/* Units-based collapsible grouping */}
+              {orderedUnits.length > 0 ? (
+                <div className="flex flex-col gap-5">
+                  {orderedUnits.map((unit, uIdx) => {
+                    const unitId = unit._id || unit.id;
+                    const unitLessons = orderedLessons.filter(l => (l.unit?._id || l.unit || l.unitId) === unitId);
+                    const isCollapsed = !!collapsedUnits[unitId];
 
                     return (
                       <div
-                        key={les._id || les.id}
-                        className={`p-5 rounded-2xl bg-[#0e101a] border border-gray-800/80 hover:border-gray-700 transition-all flex flex-col justify-between gap-4 text-start group relative min-w-0 ${activeLessonDropdown === (les._id || les.id) ? 'z-30' : 'z-10'}`}
+                        key={unitId}
+                        className="rounded-3xl bg-[#0c0d19] border border-gray-800/90 overflow-hidden shadow-lg transition-all"
                       >
-                        <div className="flex items-start justify-between gap-3 min-w-0">
+                        {/* Unit Accordion Header */}
+                        <div
+                          onClick={() => toggleUnitCollapse(unitId)}
+                          className="p-4 sm:p-5 bg-[#101322] border-b border-gray-800/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#14182c] transition-colors select-none"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-xs shrink-0 shadow-sm">
+                              #{unit.order || uIdx + 1}
+                            </div>
+                            <div className="flex flex-col text-start min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[11px] font-black text-blue-400 uppercase tracking-wider">
+                                  {isRTL ? "الوحدة" : "Unit"} #{unit.order || uIdx + 1}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[10px] font-bold">
+                                  {unitLessons.length} {isRTL ? "دروس" : "Lessons"}
+                                </span>
+                              </div>
+                              <h4 className="text-sm md:text-base font-extrabold text-white truncate mt-0.5">
+                                {unit.title} {unit.titleAr ? `(${unit.titleAr})` : ''}
+                              </h4>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-gray-800/80 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                              {isCollapsed ? <FiChevronDown size={18} /> : <FiChevronUp size={18} />}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Unit Lessons Accordion Body */}
+                        {!isCollapsed && (
+                          <div className="p-4 sm:p-5 flex flex-col gap-3">
+                            {unitLessons.length > 0 ? (
+                              unitLessons.map((les, indexInUnit) => {
+                                const globalIndex = orderedLessons.findIndex(l => (l._id || l.id) === (les._id || les.id));
+                                const isBeingDragged = draggedLessonIndex === globalIndex;
+
+                                return (
+                                  <div
+                                    key={les._id || les.id || indexInUnit}
+                                    draggable={!isReordering}
+                                    onDragStart={(e) => handleDragStart(e, globalIndex)}
+                                    onDragOver={(e) => handleDragOver(e, globalIndex)}
+                                    onDrop={(e) => handleDrop(e, globalIndex)}
+                                    onDragEnd={() => setDraggedLessonIndex(null)}
+                                    className={`p-4 rounded-2xl bg-[#0e101a] border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
+                                        ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
+                                        : 'border-gray-800/80 hover:border-gray-700'
+                                      } ${activeLessonDropdown === (les._id || les.id) ? 'z-30' : 'z-10'}`}
+                                  >
+                                    {/* Drag Handle & Order Badge */}
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                      <div
+                                        className="cursor-grab active:cursor-grabbing p-2 rounded-xl hover:bg-gray-800/80 text-gray-500 hover:text-white transition-colors shrink-0 flex items-center justify-center"
+                                        title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+                                      >
+                                        <FiMenu size={18} />
+                                      </div>
+
+                                      <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 font-black text-xs shrink-0 shadow-sm">
+                                        #{les.order || globalIndex + 1}
+                                      </div>
+
+                                      {/* Lesson Info */}
+                                      <div className="flex flex-col text-start min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="text-[11px] font-extrabold text-blue-400 uppercase tracking-wider truncate">
+                                            {isRTL ? "الدرس" : "Lesson"} #{les.order || globalIndex + 1}
+                                          </span>
+                                          {les.animationUrl && (
+                                            <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1">
+                                              <FiLayers size={10} /> {isRTL ? "رسوم تفاعلية" : "Interactive HTML"}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <h4 className="text-sm md:text-base font-extrabold text-white mt-0.5 group-hover:text-blue-400 transition-colors truncate" title={les.title}>
+                                          {les.title}
+                                        </h4>
+                                        <div className="flex items-center gap-3 text-xs text-gray-500 font-semibold mt-1">
+                                          <span className="flex items-center gap-1">
+                                            <FiClock size={13} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
+                                          </span>
+                                          <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                                            {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Reorder Buttons & Actions */}
+                                    <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800/40">
+                                      {/* Standalone Up / Down Buttons matching Units tab */}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleMoveLessonInUnit(les, -1, unitLessons)}
+                                        disabled={indexInUnit === 0 || isReordering}
+                                        className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                                        title={isRTL ? "تحريك لأعلى" : "Move Up"}
+                                      >
+                                        <FiArrowUp size={16} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleMoveLessonInUnit(les, 1, unitLessons)}
+                                        disabled={indexInUnit === unitLessons.length - 1 || isReordering}
+                                        className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                                        title={isRTL ? "تحريك لأسفل" : "Move Down"}
+                                      >
+                                        <FiArrowDown size={16} />
+                                      </button>
+
+                                      {/* Options Dropdown */}
+                                      <div className="relative">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveLessonDropdown(activeLessonDropdown === (les._id || les.id) ? null : (les._id || les.id));
+                                          }}
+                                          className="w-9 h-9 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
+                                          title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
+                                        >
+                                          <FiMoreVertical size={16} />
+                                        </button>
+
+                                        {activeLessonDropdown === (les._id || les.id) && (
+                                          <>
+                                            <div
+                                              className="fixed inset-0 z-40"
+                                              onClick={() => setActiveLessonDropdown(null)}
+                                            />
+
+                                            <div className="absolute right-0 ltr:right-0 rtl:left-0 top-full mt-1 w-48 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 p-1.5 flex flex-col gap-1 text-start">
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setActiveLessonDropdown(null);
+                                                  navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les._id || les.id}`);
+                                                }}
+                                                className="w-full px-3 py-2 rounded-xl hover:bg-blue-500/10 text-gray-300 hover:text-blue-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
+                                              >
+                                                <FiEdit3 size={15} className="text-blue-400" />
+                                                <span>{isRTL ? "تعديل الدرس" : "Edit Lesson"}</span>
+                                              </button>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setActiveLessonDropdown(null);
+                                                  handleTogglePublishLesson(les);
+                                                }}
+                                                className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${les.isPublished ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'}`}
+                                              >
+                                                {les.isPublished ? (
+                                                  <>
+                                                    <FiEyeOff size={15} className="text-amber-400" />
+                                                    <span>{isRTL ? "تحويل إلى مسودة" : "Unpublish (Draft)"}</span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <FiEye size={15} className="text-emerald-400" />
+                                                    <span>{isRTL ? "نشر الدرس" : "Publish Lesson"}</span>
+                                                  </>
+                                                )}
+                                              </button>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setActiveLessonDropdown(null);
+                                                  setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' });
+                                                }}
+                                                className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
+                                              >
+                                                <FiTrash2 size={15} className="text-rose-400" />
+                                                <span>{isRTL ? "حذف الدرس" : "Delete Lesson"}</span>
+                                              </button>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="p-8 text-center bg-[#0e101a]/50 border border-dashed border-gray-800 rounded-2xl flex flex-col items-center justify-center gap-2">
+                                <FiBookOpen className="text-gray-600" size={24} />
+                                <span className="text-xs font-bold text-gray-500">
+                                  {isRTL ? "لا توجد دروس في هذه الوحدة حتى الآن." : "No lessons in this unit yet."}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/teacher/subjects/${subjectId}/add-lesson?unit=${unitId}`)}
+                                  className="mt-1 px-3 py-1.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 text-xs font-bold border border-blue-500/30 flex items-center gap-1 cursor-pointer"
+                                >
+                                  <FiPlus size={14} /> {isRTL ? "إضافة أول درس لهذه الوحدة" : "Add First Lesson"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Unassigned Lessons (if any) */}
+                  {(() => {
+                    const unassignedLessons = orderedLessons.filter(l => !l.unit && !l.unitId);
+                    if (unassignedLessons.length === 0) return null;
+                    const isCollapsed = !!collapsedUnits['unassigned'];
+
+                    return (
+                      <div className="rounded-3xl bg-[#0c0d19] border border-gray-800/90 overflow-hidden shadow-lg transition-all">
+                        <div
+                          onClick={() => toggleUnitCollapse('unassigned')}
+                          className="p-4 sm:p-5 bg-[#101322] border-b border-gray-800/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#14182c] transition-colors select-none"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="w-10 h-10 rounded-xl bg-gray-700/20 border border-gray-700/40 flex items-center justify-center text-gray-400 font-black text-xs shrink-0 shadow-sm">
+                              •
+                            </div>
+                            <div className="flex flex-col text-start min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[11px] font-black text-gray-400 uppercase tracking-wider">
+                                  {isRTL ? "دروس عامة (بدون وحدة)" : "General / Unassigned"}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-gray-700/20 border border-gray-700/30 text-gray-300 text-[10px] font-bold">
+                                  {unassignedLessons.length} {isRTL ? "دروس" : "Lessons"}
+                                </span>
+                              </div>
+                              <h4 className="text-sm md:text-base font-extrabold text-white truncate mt-0.5">
+                                {isRTL ? "دروس غير مرتبطة بوحدة محددة" : "Lessons not linked to a specific unit"}
+                              </h4>
+                            </div>
+                          </div>
+
+                          <div className="w-8 h-8 rounded-xl bg-gray-800/80 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0">
+                            {isCollapsed ? <FiChevronDown size={18} /> : <FiChevronUp size={18} />}
+                          </div>
+                        </div>
+
+                        {!isCollapsed && (
+                          <div className="p-4 sm:p-5 flex flex-col gap-3">
+                            {unassignedLessons.map((les, indexInUnassigned) => {
+                              const globalIndex = orderedLessons.findIndex(l => (l._id || l.id) === (les._id || les.id));
+                              const isBeingDragged = draggedLessonIndex === globalIndex;
+
+                              return (
+                                <div
+                                  key={les._id || les.id || indexInUnassigned}
+                                  draggable={!isReordering}
+                                  onDragStart={(e) => handleDragStart(e, globalIndex)}
+                                  onDragOver={(e) => handleDragOver(e, globalIndex)}
+                                  onDrop={(e) => handleDrop(e, globalIndex)}
+                                  onDragEnd={() => setDraggedLessonIndex(null)}
+                                  className={`p-4 rounded-2xl bg-[#0e101a] border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
+                                      ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
+                                      : 'border-gray-800/80 hover:border-gray-700'
+                                    } ${activeLessonDropdown === (les._id || les.id) ? 'z-30' : 'z-10'}`}
+                                >
+                                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div
+                                      className="cursor-grab active:cursor-grabbing p-2 rounded-xl hover:bg-gray-800/80 text-gray-500 hover:text-white transition-colors shrink-0 flex items-center justify-center"
+                                      title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+                                    >
+                                      <FiMenu size={18} />
+                                    </div>
+
+                                    <div className="w-9 h-9 rounded-xl bg-gray-800/60 border border-gray-700/60 flex items-center justify-center text-gray-300 font-black text-xs shrink-0 shadow-sm">
+                                      #{les.order || globalIndex + 1}
+                                    </div>
+
+                                    <div className="flex flex-col text-start min-w-0 flex-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider truncate">
+                                          {isRTL ? "الدرس" : "Lesson"} #{les.order || globalIndex + 1}
+                                        </span>
+                                        {les.animationUrl && (
+                                          <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1">
+                                            <FiLayers size={10} /> {isRTL ? "رسوم تفاعلية" : "Interactive HTML"}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <h4 className="text-sm md:text-base font-extrabold text-white mt-0.5 group-hover:text-blue-400 transition-colors truncate" title={les.title}>
+                                        {les.title}
+                                      </h4>
+                                      <div className="flex items-center gap-3 text-xs text-gray-500 font-semibold mt-1">
+                                        <span className="flex items-center gap-1">
+                                          <FiClock size={13} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
+                                        </span>
+                                        <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                                          {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800/40">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMoveLessonInUnit(les, -1, unassignedLessons)}
+                                      disabled={indexInUnassigned === 0 || isReordering}
+                                      className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                                      title={isRTL ? "تحريك لأعلى" : "Move Up"}
+                                    >
+                                      <FiArrowUp size={16} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMoveLessonInUnit(les, 1, unassignedLessons)}
+                                      disabled={indexInUnassigned === unassignedLessons.length - 1 || isReordering}
+                                      className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                                      title={isRTL ? "تحريك لأسفل" : "Move Down"}
+                                    >
+                                      <FiArrowDown size={16} />
+                                    </button>
+
+                                    <div className="relative">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveLessonDropdown(activeLessonDropdown === (les._id || les.id) ? null : (les._id || les.id));
+                                        }}
+                                        className="w-9 h-9 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
+                                        title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
+                                      >
+                                        <FiMoreVertical size={16} />
+                                      </button>
+
+                                      {activeLessonDropdown === (les._id || les.id) && (
+                                        <>
+                                          <div
+                                            className="fixed inset-0 z-40"
+                                            onClick={() => setActiveLessonDropdown(null)}
+                                          />
+
+                                          <div className="absolute right-0 ltr:right-0 rtl:left-0 top-full mt-1 w-48 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 p-1.5 flex flex-col gap-1 text-start">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setActiveLessonDropdown(null);
+                                                navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les._id || les.id}`);
+                                              }}
+                                              className="w-full px-3 py-2 rounded-xl hover:bg-blue-500/10 text-gray-300 hover:text-blue-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
+                                            >
+                                              <FiEdit3 size={15} className="text-blue-400" />
+                                              <span>{isRTL ? "تعديل الدرس" : "Edit Lesson"}</span>
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setActiveLessonDropdown(null);
+                                                handleTogglePublishLesson(les);
+                                              }}
+                                              className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${les.isPublished ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'}`}
+                                            >
+                                              {les.isPublished ? (
+                                                <>
+                                                  <FiEyeOff size={15} className="text-amber-400" />
+                                                  <span>{isRTL ? "تحويل إلى مسودة" : "Unpublish (Draft)"}</span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <FiEye size={15} className="text-emerald-400" />
+                                                  <span>{isRTL ? "نشر الدرس" : "Publish Lesson"}</span>
+                                                </>
+                                              )}
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setActiveLessonDropdown(null);
+                                                setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' });
+                                              }}
+                                              className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
+                                            >
+                                              <FiTrash2 size={15} className="text-rose-400" />
+                                              <span>{isRTL ? "حذف الدرس" : "Delete Lesson"}</span>
+                                            </button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : orderedLessons.length > 0 ? (
+                /* Flat lessons list when no units exist */
+                <div className="flex flex-col gap-3">
+                  {orderedLessons.map((les, index) => {
+                    const isBeingDragged = draggedLessonIndex === index;
+
+                    return (
+                      <div
+                        key={les._id || les.id || index}
+                        draggable={!isReordering}
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDrop={(e) => handleDrop(e, index)}
+                        onDragEnd={() => setDraggedLessonIndex(null)}
+                        className={`p-4 md:p-5 rounded-2xl bg-[#0e101a] border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
+                            ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
+                            : 'border-gray-800/80 hover:border-gray-700'
+                          } ${activeLessonDropdown === (les._id || les.id) ? 'z-30' : 'z-10'}`}
+                      >
+                        {/* Drag Handle & Order Badge */}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div
+                            className="cursor-grab active:cursor-grabbing p-2 rounded-xl hover:bg-gray-800/80 text-gray-500 hover:text-white transition-colors shrink-0 flex items-center justify-center"
+                            title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+                          >
+                            <FiMenu size={18} />
+                          </div>
+
+                          <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 font-black text-xs shrink-0 shadow-sm">
+                            #{les.order || index + 1}
+                          </div>
+
+                          {/* Lesson Info */}
                           <div className="flex flex-col text-start min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider truncate">
-                                {isRTL ? "الوحدة" : "Module"} {les.order || 1} {lessonUnit ? `• ${lessonUnit.title}` : ''}
+                              <span className="text-[11px] font-extrabold text-blue-400 uppercase tracking-wider truncate">
+                                {isRTL ? "الدرس" : "Lesson"} #{les.order || index + 1}
                               </span>
                               {les.animationUrl && (
                                 <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1">
@@ -633,19 +1330,50 @@ const SubjectDetails = () => {
                                 </span>
                               )}
                             </div>
-                            <h4 className="text-base font-extrabold text-white mt-1 group-hover:text-blue-400 transition-colors line-clamp-2 break-words break-all" title={les.title}>
+                            <h4 className="text-sm md:text-base font-extrabold text-white mt-0.5 group-hover:text-blue-400 transition-colors truncate" title={les.title}>
                               {les.title}
                             </h4>
+                            <div className="flex items-center gap-3 text-xs text-gray-500 font-semibold mt-1">
+                              <span className="flex items-center gap-1">
+                                <FiClock size={13} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                                {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
+                              </span>
+                            </div>
                           </div>
+                        </div>
 
-                          <div className="relative shrink-0">
+                        {/* Reorder Buttons & Actions */}
+                        <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800/40">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveLesson(index, -1)}
+                            disabled={index === 0 || isReordering}
+                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={isRTL ? "تحريك لأعلى" : "Move Up"}
+                          >
+                            <FiArrowUp size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveLesson(index, 1)}
+                            disabled={index === orderedLessons.length - 1 || isReordering}
+                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={isRTL ? "تحريك لأسفل" : "Move Down"}
+                          >
+                            <FiArrowDown size={16} />
+                          </button>
+
+                          {/* Options Dropdown */}
+                          <div className="relative">
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setActiveLessonDropdown(activeLessonDropdown === (les._id || les.id) ? null : (les._id || les.id));
                               }}
-                              className="w-8 h-8 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
+                              className="w-9 h-9 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
                               title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
                             >
                               <FiMoreVertical size={16} />
@@ -653,9 +1381,9 @@ const SubjectDetails = () => {
 
                             {activeLessonDropdown === (les._id || les.id) && (
                               <>
-                                <div 
-                                  className="fixed inset-0 z-40" 
-                                  onClick={() => setActiveLessonDropdown(null)} 
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={() => setActiveLessonDropdown(null)}
                                 />
 
                                 <div className="absolute right-0 ltr:right-0 rtl:left-0 top-full mt-1 w-48 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 p-1.5 flex flex-col gap-1 text-start">
@@ -708,15 +1436,6 @@ const SubjectDetails = () => {
                             )}
                           </div>
                         </div>
-
-                        <div className="flex items-center justify-between border-t border-gray-850 pt-3 text-xs text-gray-500 font-semibold">
-                          <span className="flex items-center gap-1">
-                            <FiClock size={14} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
-                          </span>
-                          <span className={`px-2.5 py-1 rounded-lg font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                            {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
-                          </span>
-                        </div>
                       </div>
                     );
                   })}
@@ -750,11 +1469,11 @@ const SubjectDetails = () => {
                 <div className="flex flex-col gap-3">
                   {subjectQuestions.map((q) => {
                     const diff = (q.difficulty || 'easy').toLowerCase();
-                    const diffBadge = diff === 'hard' 
+                    const diffBadge = diff === 'hard'
                       ? 'bg-red-500/10 text-red-400 border-red-500/20'
                       : diff === 'medium'
-                      ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
 
                     return (
                       <div
@@ -977,12 +1696,12 @@ const SubjectDetails = () => {
       {/* UNIT CREATION / EDIT MODAL */}
       <AnimatePresence>
         {isUnitModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm p-4 sm:p-6 flex min-h-full items-center justify-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-[#0e101a] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-start relative"
+              className="w-full max-w-md my-auto bg-[#0e101a] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-start relative max-h-[calc(100vh-2rem)] overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                 <h3 className="text-lg font-black text-white">
@@ -1051,12 +1770,12 @@ const SubjectDetails = () => {
       {/* WEAKNESS TOPIC CREATION / EDIT MODAL */}
       <AnimatePresence>
         {isWeaknessModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm p-4 sm:p-6 flex min-h-full items-center justify-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-[#0e101a] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-start relative"
+              className="w-full max-w-md my-auto bg-[#0e101a] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-start relative max-h-[calc(100vh-2rem)] overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b border-gray-800 pb-3">
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
@@ -1149,7 +1868,7 @@ const SubjectDetails = () => {
                 {isRTL ? `حذف ${deleteTarget.name}` : `Delete ${deleteTarget.name}`}
               </h3>
               <p className="text-sm text-gray-400 leading-relaxed font-semibold mb-6">
-                {isRTL 
+                {isRTL
                   ? `هل أنت متأكد من أنك تريد حذف "${deleteTarget.title || deleteTarget.name}"؟ لا يمكن التراجع عن هذا الإجراء.`
                   : `Are you sure you want to delete "${deleteTarget.title || deleteTarget.name}"? This action cannot be undone.`}
               </p>

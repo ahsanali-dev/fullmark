@@ -196,6 +196,20 @@ export const fetchTeacherSubjects = createAsyncThunk(
   }
 );
 
+export const createSubject = createAsyncThunk(
+  'teacher/createSubject',
+  async (subjectData, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.post(apiEndpoints.teacher.subjects, subjectData, getAuthConfig(token));
+      return response.data.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to create subject';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 export const fetchLessons = createAsyncThunk(
   'teacher/fetchLessons',
   async (subjectId, thunkAPI) => {
@@ -647,6 +661,12 @@ const teacherSlice = createSlice({
       .addCase(fetchTeacherSubjects.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+      })
+      .addCase(createSubject.fulfilled, (state, action) => {
+        const newSubject = action.payload?.subject || action.payload;
+        if (newSubject) {
+          state.subjects = [newSubject, ...state.subjects];
+        }
       })
       // Lessons
       .addCase(fetchLessons.pending, (state) => {
