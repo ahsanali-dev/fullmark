@@ -275,6 +275,20 @@ export const toggleLessonPublish = createAsyncThunk(
   }
 );
 
+export const toggleLessonFree = createAsyncThunk(
+  'teacher/toggleLessonFree',
+  async (id, thunkAPI) => {
+    try {
+      const token = thunkAPI.getState().auth.token;
+      const response = await axios.patch(apiEndpoints.teacher.toggleLessonFree(id), {}, getAuthConfig(token));
+      return response.data?.data || response.data;
+    } catch (error) {
+      const message = error.response?.data?.message || error.message || 'Failed to toggle free lesson status';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 export const deleteLesson = createAsyncThunk(
   'teacher/deleteLesson',
   async (id, thunkAPI) => {

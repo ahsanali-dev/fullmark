@@ -99,6 +99,7 @@ export const apiEndpoints = {
     lessonById: (id) => `${BASE_URL}/teacher/lessons/${id}`,
     subjectLessons: (subjectId) => `${BASE_URL}/teacher/subjects/${subjectId}/lessons`,
     toggleLessonPublish: (id) => `${BASE_URL}/teacher/lessons/${id}/toggle-publish`,
+    toggleLessonFree: (id) => `${BASE_URL}/teacher/lessons/${id}/toggle-free`,
     questions: `${BASE_URL}/teacher/questions`,
     questionById: (id) => `${BASE_URL}/teacher/questions/${id}`,
     extractPdf: `${BASE_URL}/teacher/questions/extract-pdf`,

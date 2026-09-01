@@ -8,7 +8,10 @@ import {
   FiFileText,
   FiPlay,
   FiPause,
-  FiLayers
+  FiLayers,
+  FiLock,
+  FiUnlock,
+  FiShoppingBag
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -37,7 +40,7 @@ const LessonPlayer = () => {
   const lastReportedTime = useRef(0);
 
   const [isLight, setIsLight] = useState(() => {
-    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+    return typeof window !== 'undefined' && (localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
   });
 
   useEffect(() => {
@@ -45,7 +48,11 @@ const LessonPlayer = () => {
       setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
     };
     window.addEventListener('themeChange', handleThemeChange);
-    return () => window.removeEventListener('themeChange', handleThemeChange);
+    window.addEventListener('storage', handleThemeChange);
+    return () => {
+      window.removeEventListener('themeChange', handleThemeChange);
+      window.removeEventListener('storage', handleThemeChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -169,6 +176,52 @@ const LessonPlayer = () => {
     );
   }
 
+  const isEnrolled = lessonsData?.isEnrolled ?? true;
+  const isFree = Boolean(lesson.isFree);
+  const isLocked = lesson.isLocked || (!isEnrolled && !isFree);
+
+  // If lesson is locked for unenrolled student, render locked screen
+  if (isLocked) {
+    return (
+      <DashboardLayout
+        role="student"
+        activeTab="courses"
+        title={(isRTL && lesson.titleAr) ? lesson.titleAr : lesson.title}
+        subtitle={isRTL ? "هذا الدرس مقفل" : "Lesson Locked"}
+        showBackButton={true}
+        onBackClick={() => navigate(`/student/courses/${courseId}`)}
+      >
+        <div className="flex flex-col items-center justify-center min-h-[450px] p-6 max-w-xl mx-auto text-center">
+          <div className="w-20 h-20 rounded-3xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-500 mb-6 shadow-xl">
+            <FiLock size={36} />
+          </div>
+
+          <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 text-xs font-black uppercase tracking-wider mb-2">
+            {t('student.courseLessons.lessonNum')} {lesson.order || 1}
+          </span>
+
+          <h2 className={`text-2xl font-black mb-3 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            {(isRTL && lesson.titleAr) ? lesson.titleAr : lesson.title}
+          </h2>
+
+          <p className={`text-sm font-semibold mb-8 max-w-md ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+            {isRTL 
+              ? "هذا الدرس يتطلب الاشتراك الكامل في الكورس لمشاهدة الفيديو واستعراض كافة الرسوم والملفات المرفقة."
+              : "This lesson requires enrollment in the course to watch the video and access full interactive contents."}
+          </p>
+
+          <button
+            onClick={() => navigate(`/student/courses/${courseId}`)}
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer active:scale-98"
+          >
+            <FiShoppingBag size={18} />
+            <span>{isRTL ? "اشترك في الكورس الآن لفتح الدرس" : "Enroll in Course to Unlock Lesson"}</span>
+          </button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   const progress = localProgress?.progressPercent ?? (lesson.progressPercent || 0);
   const isCompleted = localProgress?.isCompleted ?? (lesson.isCompleted || false);
 
@@ -180,11 +233,42 @@ const LessonPlayer = () => {
       role="student"
       activeTab="courses"
       title={isRTL ? `الوحدة ${lesson.order || 1}` : `Module ${lesson.order || 1}`}
-      subtitle={lesson.title}
+      subtitle={(isRTL && lesson.titleAr) ? lesson.titleAr : lesson.title}
       showBackButton={true}
       onBackClick={() => navigate(`/student/courses/${courseId}/lessons`)}
     >
       <div className="flex flex-col gap-6 text-start p-4 sm:p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
+        {/* Free Preview Banner (for unenrolled student watching a free lesson) */}
+        {!isEnrolled && isFree && (
+          <div className={`p-4 sm:p-5 rounded-3xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all ${
+            isLight 
+              ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950' 
+              : 'bg-emerald-950/30 border-emerald-500/40 text-white'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                <FiUnlock size={20} />
+              </div>
+              <div className="flex flex-col text-start">
+                <span className="text-sm font-extrabold">
+                  {isRTL ? "أنت تشاهد درساً مجانياً (معاينة)" : "You are watching a Free Preview Lesson"}
+                </span>
+                <span className={`text-xs font-semibold ${isLight ? 'text-emerald-800' : 'text-gray-300'}`}>
+                  {isRTL ? "هل أعجبك الشرح؟ اشترك في الكورس الآن للوصول إلى كافة الدروس والامتحانات." : "Enjoying the lesson? Enroll in the course now to access all lessons & exams."}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate(`/student/courses/${courseId}`)}
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer shrink-0 active:scale-98"
+            >
+              <FiShoppingBag size={14} />
+              <span>{isRTL ? "اشترك في الكورس الآن" : "Enroll in Course Now"}</span>
+            </button>
+          </div>
+        )}
+
         {/* Media Tabs (shown when BOTH video and animation exist) */}
         {hasVideo && hasAnimation && (
           <div className={`grid grid-cols-2 sm:flex sm:w-fit items-center gap-1.5 p-1.5 rounded-2xl w-full transition-all ${

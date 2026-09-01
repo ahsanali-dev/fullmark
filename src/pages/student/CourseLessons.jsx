@@ -8,7 +8,10 @@ import {
   FiChevronRight, 
   FiFolder,
   FiBookOpen,
-  FiLayers
+  FiLayers,
+  FiLock,
+  FiUnlock,
+  FiShoppingBag
 } from 'react-icons/fi';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { TableRowSkeleton } from '../../components/ui/Skeleton';
@@ -25,16 +28,19 @@ const CourseLessons = () => {
   const { lessonsData, isLoading } = useSelector((state) => state.student);
   const [expandedUnits, setExpandedUnits] = useState({});
   const [isLight, setIsLight] = useState(() => {
-    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+    return typeof window !== 'undefined' && (localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
   });
 
   useEffect(() => {
     const handleThemeChange = () => {
       setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
     };
-    handleThemeChange();
     window.addEventListener('themeChange', handleThemeChange);
-    return () => window.removeEventListener('themeChange', handleThemeChange);
+    window.addEventListener('storage', handleThemeChange);
+    return () => {
+      window.removeEventListener('themeChange', handleThemeChange);
+      window.removeEventListener('storage', handleThemeChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -42,6 +48,7 @@ const CourseLessons = () => {
   }, [dispatch, courseId]);
 
   const subject = lessonsData?.subject;
+  const isEnrolled = lessonsData?.isEnrolled ?? true;
   const rawUnits = (lessonsData?.units || []).filter((u) => u && u._id !== null && u._id !== 'null');
   const lessons = lessonsData?.lessons || [];
   const progress = lessonsData?.progress || { completed: 0, total: 0, percent: 0 };
@@ -82,28 +89,54 @@ const CourseLessons = () => {
   const renderLessonCard = (lesson) => {
     const isDone = lesson.isCompleted;
     const lessonProgress = lesson.progressPercent || 0;
+    const isFree = Boolean(lesson.isFree);
+    const isLocked = lesson.isLocked || (!isEnrolled && !isFree);
 
     return (
       <div
         key={lesson._id || lesson.id}
-        onClick={() => navigate(`/student/courses/${courseId}/lessons/${lesson._id || lesson.id}`)}
+        onClick={() => {
+          if (!isLocked) {
+            navigate(`/student/courses/${courseId}/lessons/${lesson._id || lesson.id}`);
+          } else {
+            navigate(`/student/courses/${courseId}`);
+          }
+        }}
         className={`p-4 rounded-[2rem] border transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-          isDone 
+          isLocked
+            ? isLight
+              ? 'bg-slate-100/80 border-slate-200 opacity-85 hover:opacity-100'
+              : 'bg-gray-900/30 border-gray-800/60 opacity-75 hover:opacity-95'
+            : isDone 
             ? isLight
               ? 'bg-emerald-50/80 border-emerald-200 shadow-sm hover:border-emerald-400'
               : 'bg-emerald-500/5 border-emerald-500/20 shadow-md hover:border-emerald-500/40' 
+            : isFree && !isEnrolled
+            ? isLight
+              ? 'bg-emerald-50/70 border-emerald-200 shadow-sm hover:border-emerald-400'
+              : 'bg-emerald-950/20 border-emerald-500/30 hover:border-emerald-500/50'
             : isLight
               ? 'bg-white border-slate-200 shadow-sm hover:border-blue-400 hover:bg-slate-50/50'
               : 'bg-[#0c0d19]/60 border-gray-800/80 hover:border-blue-500/50 hover:bg-[#0c0d19]'
         }`}
       >
         <div className="flex items-start gap-4">
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-blue-400 shrink-0 shadow-inner ${
-            isDone 
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
+            isLocked
+              ? 'bg-gray-800 text-gray-400'
+              : isDone 
               ? isLight ? 'bg-emerald-100 text-emerald-600 border border-emerald-300' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-              : isLight ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-blue-600/20 border border-blue-500/25'
+              : isFree && !isEnrolled
+              ? 'bg-emerald-500 text-gray-950 shadow-sm'
+              : isLight ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-blue-600/20 border border-blue-500/25 text-blue-400'
           }`}>
-            {isDone ? <FiCheckCircle size={22} /> : <FiPlay size={20} className={`fill-blue-400/20 ${isRTL ? 'mr-0.5 rotate-180' : 'ml-0.5'}`} />}
+            {isLocked ? (
+              <FiLock size={20} />
+            ) : isDone ? (
+              <FiCheckCircle size={22} />
+            ) : (
+              <FiPlay size={20} className={isRTL ? 'mr-0.5 rotate-180' : 'ml-0.5'} />
+            )}
           </div>
           
           <div className="flex flex-col items-start text-start">
@@ -114,6 +147,18 @@ const CourseLessons = () => {
               {lesson.animationUrl && (
                 <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1">
                   <FiLayers size={10} /> {isRTL ? "رسوم تفاعلية" : "Interactive HTML"}
+                </span>
+              )}
+              {isFree && !isEnrolled && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 text-[10px] font-black flex items-center gap-1">
+                  <FiUnlock size={10} /> {isRTL ? "معاينة مجانية" : "Free Preview"}
+                </span>
+              )}
+              {isLocked && (
+                <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold flex items-center gap-1 ${
+                  isLight ? 'bg-slate-200 text-slate-600 border-slate-300' : 'bg-gray-800 text-gray-400 border-gray-700'
+                }`}>
+                  <FiLock size={10} /> {isRTL ? "يتطلب اشتراك" : "Locked"}
                 </span>
               )}
             </div>
@@ -127,18 +172,26 @@ const CourseLessons = () => {
         </div>
 
         <div className="flex flex-col gap-1.5 min-w-[150px] justify-end">
-          <div className={`flex items-center justify-between text-xs font-bold ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
-            <span>{t('student.courseLessons.watchProgress')}</span>
-            <span className={isDone ? (isLight ? 'text-emerald-600 font-extrabold' : 'text-emerald-400 font-extrabold') : (isLight ? 'text-slate-700 font-extrabold' : 'text-gray-300 font-extrabold')}>
-              {lessonProgress}%
+          {isLocked ? (
+            <span className={`text-xs font-bold ${isLight ? 'text-blue-600' : 'text-blue-400'}`}>
+              {isRTL ? "انقر للاشتراك وفتح الدرس" : "Tap to enroll & unlock"}
             </span>
-          </div>
-          <div className={`h-1.5 w-full rounded-full overflow-hidden border ${isLight ? 'bg-slate-200 border-slate-300' : 'bg-gray-950 border-gray-900'}`}>
-            <div 
-              className={`h-full rounded-full transition-all duration-300 ${isDone ? 'bg-emerald-500' : 'bg-blue-500'}`}
-              style={{ width: `${lessonProgress}%` }}
-            />
-          </div>
+          ) : (
+            <>
+              <div className={`flex items-center justify-between text-xs font-bold ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
+                <span>{t('student.courseLessons.watchProgress')}</span>
+                <span className={isDone ? (isLight ? 'text-emerald-600 font-extrabold' : 'text-emerald-400 font-extrabold') : (isLight ? 'text-slate-700 font-extrabold' : 'text-gray-300 font-extrabold')}>
+                  {lessonProgress}%
+                </span>
+              </div>
+              <div className={`h-1.5 w-full rounded-full overflow-hidden border ${isLight ? 'bg-slate-200 border-slate-300' : 'bg-gray-950 border-gray-900'}`}>
+                <div 
+                  className={`h-full rounded-full transition-all duration-300 ${isDone ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                  style={{ width: `${lessonProgress}%` }}
+                />
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -154,6 +207,37 @@ const CourseLessons = () => {
       onBackClick={() => navigate(`/student/courses/${courseId}`)}
     >
       <div className="flex flex-col gap-6 text-start p-6 md:p-8 pb-32 lg:pb-12 w-full max-w-4xl mx-auto">
+        {/* Unenrolled Free Preview Top Notice */}
+        {!isEnrolled && (
+          <div className={`p-4 sm:p-5 rounded-3xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-all ${
+            isLight 
+              ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950' 
+              : 'bg-emerald-950/30 border-emerald-500/40 text-white'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                <FiUnlock size={20} />
+              </div>
+              <div className="flex flex-col text-start">
+                <span className="text-sm font-extrabold">
+                  {isRTL ? "أنت تشاهد وضع المعاينة المجانية" : "You are in Free Preview Mode"}
+                </span>
+                <span className={`text-xs font-semibold ${isLight ? 'text-emerald-800' : 'text-gray-300'}`}>
+                  {isRTL ? "يمكنك مشاهدة الدروس المحددة كمعاينة مجانية. اشترك في الكورس لفتح كافة الدروس والامتحانات." : "You can watch free preview lessons. Enroll to unlock all lessons & exams."}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate(`/student/courses/${courseId}`)}
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer shrink-0 active:scale-98"
+            >
+              <FiShoppingBag size={14} />
+              <span>{isRTL ? "اشترك في الكورس الآن" : "Enroll in Course Now"}</span>
+            </button>
+          </div>
+        )}
+
         {/* Banner Section */}
         {subject?.bannerUrl && (
           <div className="w-full h-44 sm:h-56 rounded-[2.5rem] overflow-hidden border border-gray-800 shadow-2xl relative">

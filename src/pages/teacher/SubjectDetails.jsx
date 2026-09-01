@@ -23,7 +23,9 @@ import {
   FiLayers,
   FiMenu,
   FiChevronDown,
-  FiChevronUp
+  FiChevronUp,
+  FiLock,
+  FiUnlock
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,6 +45,7 @@ import {
   updateLesson,
   deleteLesson,
   toggleLessonPublish,
+  toggleLessonFree,
   deleteExam,
   deleteQuestion,
   uploadSubjectBanner,
@@ -110,8 +113,8 @@ const SubjectDetails = () => {
   }, [dispatch, subjectId]);
 
   useEffect(() => {
-    const currentSubjectLessons = lessons.filter(
-      (les) => (les.subject?._id || les.subject || les.subjectId) === subjectId
+    const currentSubjectLessons = (lessons || []).filter(
+      (les) => !les.subject || String(les.subject?._id || les.subject || les.subjectId) === String(subjectId)
     );
     const sorted = [...currentSubjectLessons].sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
     setOrderedLessons(sorted);
@@ -203,14 +206,13 @@ const SubjectDetails = () => {
     applyNewUnitOrder(updated);
   };
 
-  const applyNewLessonOrder = async (newOrderedList) => {
+  const applyNewLessonOrder = async (newLessonsList) => {
     // 1-based order values: first lesson = 1, second = 2, ...
-    const reorderedWith1Based = newOrderedList.map((les, index) => ({
+    const reorderedWith1Based = newLessonsList.map((les, index) => ({
       ...les,
       calculatedOrder: index + 1
     }));
 
-    // Find ONLY lessons whose order actually changed
     const changedLessons = reorderedWith1Based.filter((les) => Number(les.order) !== les.calculatedOrder);
 
     if (changedLessons.length === 0) {
@@ -218,12 +220,10 @@ const SubjectDetails = () => {
       return;
     }
 
-    // Optimistically update local UI state
     setOrderedLessons(reorderedWith1Based.map(l => ({ ...l, order: l.calculatedOrder })));
     setIsReordering(true);
 
     try {
-      // Send PUT /api/teacher/lessons/:id ONLY for lessons whose position actually changed
       await Promise.all(
         changedLessons.map((les) =>
           dispatch(updateLesson({
@@ -232,11 +232,10 @@ const SubjectDetails = () => {
           })).unwrap()
         )
       );
-      toast.success(isRTL ? 'تم حفظ الترتيب الجديد للدروس بنجاح! ✨' : 'Lesson order updated successfully! ✨', { id: 'reorder-toast' });
+      toast.success(isRTL ? 'تم حفظ الترتيب الجديد بنجاح! ✨' : 'Lesson order updated successfully! ✨', { id: 'reorder-toast' });
     } catch (err) {
       console.error('Failed to update lesson order:', err);
-      toast.error(isRTL ? 'فشل حفظ ترتيب الدروس' : 'Failed to update lesson order', { id: 'reorder-toast' });
-      // Rollback on failure
+      toast.error(isRTL ? 'فشل حفظ الترتيب' : 'Failed to update lesson order', { id: 'reorder-toast' });
       dispatch(fetchLessons(subjectId));
     } finally {
       setIsReordering(false);
@@ -246,7 +245,7 @@ const SubjectDetails = () => {
   const handleDragStart = (e, index) => {
     setDraggedLessonIndex(index);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.setData('text/plain', `lesson-${index}`);
   };
 
   const handleDragOver = (e, index) => {
@@ -281,32 +280,37 @@ const SubjectDetails = () => {
     applyNewLessonOrder(updated);
   };
 
-  const handleMoveLessonInUnit = (lesson, direction, unitLessons) => {
-    const currentIndex = unitLessons.findIndex(l => (l._id || l.id) === (lesson._id || lesson.id));
-    if (currentIndex === -1) return;
+  const handleMoveLessonInUnit = (lesson, direction, currentList) => {
+    const currentIndex = currentList.findIndex(l => (l._id || l.id) === (lesson._id || lesson.id));
     const targetIndex = currentIndex + direction;
-    if (targetIndex < 0 || targetIndex >= unitLessons.length) return;
+    if (targetIndex < 0 || targetIndex >= currentList.length) return;
 
-    const updatedUnitLessons = [...unitLessons];
-    const temp = updatedUnitLessons[currentIndex];
-    updatedUnitLessons[currentIndex] = updatedUnitLessons[targetIndex];
-    updatedUnitLessons[targetIndex] = temp;
+    const updatedUnitLessons = [...currentList];
+    const [movedItem] = updatedUnitLessons.splice(currentIndex, 1);
+    updatedUnitLessons.splice(targetIndex, 0, movedItem);
+
+    const validUnitIds = new Set(orderedUnits.map(u => String(u._id || u.id)));
+    const getLessonUnitId = (l) => {
+      const raw = typeof l.unit === 'object' ? (l.unit?._id || l.unit?.id) : (l.unit || l.unitId);
+      return raw && validUnitIds.has(String(raw)) ? String(raw) : null;
+    };
+
+    const currentUnitId = getLessonUnitId(lesson);
 
     let newFullList = [];
-    const currentUnitId = lesson.unit?._id || lesson.unit || lesson.unitId || null;
 
     if (orderedUnits.length > 0) {
       orderedUnits.forEach(u => {
-        const uId = u._id || u.id;
+        const uId = String(u._id || u.id);
         if (uId === currentUnitId) {
           newFullList.push(...updatedUnitLessons);
         } else {
-          const uLes = orderedLessons.filter(l => (l.unit?._id || l.unit || l.unitId) === uId);
+          const uLes = orderedLessons.filter(l => getLessonUnitId(l) === uId);
           newFullList.push(...uLes);
         }
       });
-      // Handle unassigned
-      const unassigned = orderedLessons.filter(l => !l.unit && !l.unitId);
+      // Handle unassigned / orphaned
+      const unassigned = orderedLessons.filter(l => getLessonUnitId(l) === null);
       if (!currentUnitId) {
         newFullList.push(...updatedUnitLessons);
       } else {
@@ -339,8 +343,8 @@ const SubjectDetails = () => {
   const subjectExams = examsList.filter(
     (ex) => (ex.subject?._id || ex.subject || ex.subjectId) === subjectId
   );
-  const subjectLessons = lessons.filter(
-    (les) => (les.subject?._id || les.subject || les.subjectId) === subjectId
+  const subjectLessons = (lessons || []).filter(
+    (les) => !les.subject || String(les.subject?._id || les.subject || les.subjectId) === String(subjectId)
   );
 
   // Handle Banner Upload
@@ -489,6 +493,19 @@ const SubjectDetails = () => {
       dispatch(fetchLessons(subjectId));
     } catch (err) {
       toast.error(err || (isRTL ? 'فشل تغيير حالة النشر' : 'Failed to update publish status'));
+    }
+  };
+
+  const handleToggleFreeLesson = async (les) => {
+    const targetId = les._id || les.id;
+    try {
+      await dispatch(toggleLessonFree(targetId)).unwrap();
+      toast.success(les.isFree 
+        ? (isRTL ? 'تم تغيير الدرس إلى مدفوع!' : 'Lesson changed to Paid!') 
+        : (isRTL ? 'تم تفعيل المعاينة المجانية للدرس!' : 'Lesson set to Free Preview!'));
+      dispatch(fetchLessons(subjectId));
+    } catch (err) {
+      toast.error(err || (isRTL ? 'فشل تغيير حالة الدرس' : 'Failed to update lesson free status'));
     }
   };
 
@@ -878,19 +895,24 @@ const SubjectDetails = () => {
               {orderedUnits.length > 0 ? (
                 <div className="flex flex-col gap-5">
                   {orderedUnits.map((unit, uIdx) => {
-                    const unitId = unit._id || unit.id;
-                    const unitLessons = orderedLessons.filter(l => (l.unit?._id || l.unit || l.unitId) === unitId);
+                    const unitId = String(unit._id || unit.id);
+                    const unitLessons = orderedLessons.filter(l => {
+                      const raw = typeof l.unit === 'object' ? (l.unit?._id || l.unit?.id) : (l.unit || l.unitId);
+                      return raw && String(raw) === unitId;
+                    });
                     const isCollapsed = !!collapsedUnits[unitId];
 
                     return (
                       <div
                         key={unitId}
-                        className="rounded-3xl bg-[#0c0d19] border border-gray-800/90 overflow-hidden shadow-lg transition-all"
+                        className={`rounded-3xl bg-[#0c0d19] border border-gray-800/90 shadow-lg transition-all ${
+                          isCollapsed ? 'overflow-hidden' : 'overflow-visible'
+                        }`}
                       >
                         {/* Unit Accordion Header */}
                         <div
                           onClick={() => toggleUnitCollapse(unitId)}
-                          className="p-4 sm:p-5 bg-[#101322] border-b border-gray-800/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#14182c] transition-colors select-none"
+                          className="p-4 sm:p-5 bg-[#101322] border-b border-gray-800/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#14182c] transition-colors select-none rounded-t-3xl"
                         >
                           <div className="flex items-center gap-3.5 min-w-0 flex-1">
                             <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-xs shrink-0 shadow-sm">
@@ -920,11 +942,13 @@ const SubjectDetails = () => {
 
                         {/* Unit Lessons Accordion Body */}
                         {!isCollapsed && (
-                          <div className="p-4 sm:p-5 flex flex-col gap-3">
+                          <div className="p-4 sm:p-5 flex flex-col gap-3 overflow-visible">
                             {unitLessons.length > 0 ? (
                               unitLessons.map((les, indexInUnit) => {
                                 const globalIndex = orderedLessons.findIndex(l => (l._id || l.id) === (les._id || les.id));
                                 const isBeingDragged = draggedLessonIndex === globalIndex;
+                                const isDropdownOpen = activeLessonDropdown === (les._id || les.id);
+                                const openUpwards = indexInUnit >= Math.max(1, unitLessons.length - 2);
 
                                 return (
                                   <div
@@ -937,7 +961,7 @@ const SubjectDetails = () => {
                                     className={`p-4 rounded-2xl bg-[#0e101a] border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
                                         ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
                                         : 'border-gray-800/80 hover:border-gray-700'
-                                      } ${activeLessonDropdown === (les._id || les.id) ? 'z-30' : 'z-10'}`}
+                                      } ${isDropdownOpen ? 'z-50' : 'z-10'}`}
                                   >
                                     {/* Drag Handle & Order Badge */}
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -967,12 +991,15 @@ const SubjectDetails = () => {
                                         <h4 className="text-sm md:text-base font-extrabold text-white mt-0.5 group-hover:text-blue-400 transition-colors truncate" title={les.title}>
                                           {les.title}
                                         </h4>
-                                        <div className="flex items-center gap-3 text-xs text-gray-500 font-semibold mt-1">
+                                        <div className="flex items-center gap-2.5 flex-wrap text-xs text-gray-500 font-semibold mt-1">
                                           <span className="flex items-center gap-1">
                                             <FiClock size={13} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
                                           </span>
                                           <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
                                             {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
+                                          </span>
+                                          <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isFree ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-gray-800/80 text-gray-400 border border-gray-700/60'}`}>
+                                            {les.isFree ? (isRTL ? 'معاينة مجانية' : 'Free Preview') : (isRTL ? 'مدفوع' : 'Paid')}
                                           </span>
                                         </div>
                                       </div>
@@ -1006,22 +1033,28 @@ const SubjectDetails = () => {
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            setActiveLessonDropdown(activeLessonDropdown === (les._id || les.id) ? null : (les._id || les.id));
+                                            setActiveLessonDropdown(isDropdownOpen ? null : (les._id || les.id));
                                           }}
-                                          className="w-9 h-9 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
+                                          className={`w-9 h-9 rounded-xl transition-all cursor-pointer border flex items-center justify-center ${
+                                            isDropdownOpen 
+                                              ? 'bg-blue-600 text-white border-blue-500 shadow-md' 
+                                              : 'bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white border-gray-700/50'
+                                          }`}
                                           title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
                                         >
                                           <FiMoreVertical size={16} />
                                         </button>
 
-                                        {activeLessonDropdown === (les._id || les.id) && (
+                                        {isDropdownOpen && (
                                           <>
                                             <div
                                               className="fixed inset-0 z-40"
                                               onClick={() => setActiveLessonDropdown(null)}
                                             />
 
-                                            <div className="absolute right-0 ltr:right-0 rtl:left-0 top-full mt-1 w-48 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 p-1.5 flex flex-col gap-1 text-start">
+                                            <div className={`absolute right-0 ltr:right-0 rtl:left-0 ${
+                                              openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'
+                                            } w-52 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_12px_40px_rgba(0,0,0,0.9)] z-50 p-1.5 flex flex-col gap-1 text-start`}>
                                               <button
                                                 type="button"
                                                 onClick={() => {
@@ -1032,6 +1065,31 @@ const SubjectDetails = () => {
                                               >
                                                 <FiEdit3 size={15} className="text-blue-400" />
                                                 <span>{isRTL ? "تعديل الدرس" : "Edit Lesson"}</span>
+                                              </button>
+
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  setActiveLessonDropdown(null);
+                                                  handleToggleFreeLesson(les);
+                                                }}
+                                                className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${
+                                                  les.isFree 
+                                                    ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' 
+                                                    : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'
+                                                }`}
+                                              >
+                                                {les.isFree ? (
+                                                  <>
+                                                    <FiLock size={15} className="text-amber-400" />
+                                                    <span>{isRTL ? "تغيير إلى درس مدفوع" : "Make Paid Lesson"}</span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <FiUnlock size={15} className="text-emerald-400" />
+                                                    <span>{isRTL ? "تفعيل كمعاينة مجانية" : "Set Free Preview"}</span>
+                                                  </>
+                                                )}
                                               </button>
 
                                               <button
@@ -1061,7 +1119,7 @@ const SubjectDetails = () => {
                                                   setActiveLessonDropdown(null);
                                                   setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' });
                                                 }}
-                                                className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
+                                                className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer border-t border-gray-800/60 mt-0.5 pt-1.5"
                                               >
                                                 <FiTrash2 size={15} className="text-rose-400" />
                                                 <span>{isRTL ? "حذف الدرس" : "Delete Lesson"}</span>
@@ -1097,15 +1155,21 @@ const SubjectDetails = () => {
 
                   {/* Unassigned Lessons (if any) */}
                   {(() => {
-                    const unassignedLessons = orderedLessons.filter(l => !l.unit && !l.unitId);
+                    const validUnitIds = new Set(orderedUnits.map(u => String(u._id || u.id)));
+                    const unassignedLessons = orderedLessons.filter(l => {
+                      const raw = typeof l.unit === 'object' ? (l.unit?._id || l.unit?.id) : (l.unit || l.unitId);
+                      return !raw || !validUnitIds.has(String(raw));
+                    });
                     if (unassignedLessons.length === 0) return null;
                     const isCollapsed = !!collapsedUnits['unassigned'];
 
                     return (
-                      <div className="rounded-3xl bg-[#0c0d19] border border-gray-800/90 overflow-hidden shadow-lg transition-all">
+                      <div className={`rounded-3xl bg-[#0c0d19] border border-gray-800/90 shadow-lg transition-all ${
+                        isCollapsed ? 'overflow-hidden' : 'overflow-visible'
+                      }`}>
                         <div
                           onClick={() => toggleUnitCollapse('unassigned')}
-                          className="p-4 sm:p-5 bg-[#101322] border-b border-gray-800/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#14182c] transition-colors select-none"
+                          className="p-4 sm:p-5 bg-[#101322] border-b border-gray-800/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#14182c] transition-colors select-none rounded-t-3xl"
                         >
                           <div className="flex items-center gap-3.5 min-w-0 flex-1">
                             <div className="w-10 h-10 rounded-xl bg-gray-700/20 border border-gray-700/40 flex items-center justify-center text-gray-400 font-black text-xs shrink-0 shadow-sm">
@@ -1132,10 +1196,12 @@ const SubjectDetails = () => {
                         </div>
 
                         {!isCollapsed && (
-                          <div className="p-4 sm:p-5 flex flex-col gap-3">
+                          <div className="p-4 sm:p-5 flex flex-col gap-3 overflow-visible">
                             {unassignedLessons.map((les, indexInUnassigned) => {
                               const globalIndex = orderedLessons.findIndex(l => (l._id || l.id) === (les._id || les.id));
                               const isBeingDragged = draggedLessonIndex === globalIndex;
+                              const isDropdownOpen = activeLessonDropdown === (les._id || les.id);
+                              const openUpwards = indexInUnassigned >= Math.max(1, unassignedLessons.length - 2);
 
                               return (
                                 <div
@@ -1148,7 +1214,7 @@ const SubjectDetails = () => {
                                   className={`p-4 rounded-2xl bg-[#0e101a] border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
                                       ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
                                       : 'border-gray-800/80 hover:border-gray-700'
-                                    } ${activeLessonDropdown === (les._id || les.id) ? 'z-30' : 'z-10'}`}
+                                    } ${isDropdownOpen ? 'z-50' : 'z-10'}`}
                                 >
                                   <div className="flex items-center gap-3 min-w-0 flex-1">
                                     <div
@@ -1176,12 +1242,15 @@ const SubjectDetails = () => {
                                       <h4 className="text-sm md:text-base font-extrabold text-white mt-0.5 group-hover:text-blue-400 transition-colors truncate" title={les.title}>
                                         {les.title}
                                       </h4>
-                                      <div className="flex items-center gap-3 text-xs text-gray-500 font-semibold mt-1">
+                                      <div className="flex items-center gap-2.5 flex-wrap text-xs text-gray-500 font-semibold mt-1">
                                         <span className="flex items-center gap-1">
                                           <FiClock size={13} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
                                         </span>
                                         <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
                                           {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
+                                        </span>
+                                        <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isFree ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-gray-800/80 text-gray-400 border border-gray-700/60'}`}>
+                                          {les.isFree ? (isRTL ? 'معاينة مجانية' : 'Free Preview') : (isRTL ? 'مدفوع' : 'Paid')}
                                         </span>
                                       </div>
                                     </div>
@@ -1212,22 +1281,28 @@ const SubjectDetails = () => {
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setActiveLessonDropdown(activeLessonDropdown === (les._id || les.id) ? null : (les._id || les.id));
+                                          setActiveLessonDropdown(isDropdownOpen ? null : (les._id || les.id));
                                         }}
-                                        className="w-9 h-9 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
+                                        className={`w-9 h-9 rounded-xl transition-all cursor-pointer border flex items-center justify-center ${
+                                          isDropdownOpen 
+                                            ? 'bg-blue-600 text-white border-blue-500 shadow-md' 
+                                            : 'bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white border-gray-700/50'
+                                        }`}
                                         title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
                                       >
                                         <FiMoreVertical size={16} />
                                       </button>
 
-                                      {activeLessonDropdown === (les._id || les.id) && (
+                                      {isDropdownOpen && (
                                         <>
                                           <div
                                             className="fixed inset-0 z-40"
                                             onClick={() => setActiveLessonDropdown(null)}
                                           />
 
-                                          <div className="absolute right-0 ltr:right-0 rtl:left-0 top-full mt-1 w-48 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 p-1.5 flex flex-col gap-1 text-start">
+                                          <div className={`absolute right-0 ltr:right-0 rtl:left-0 ${
+                                            openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'
+                                          } w-52 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_12px_40px_rgba(0,0,0,0.9)] z-50 p-1.5 flex flex-col gap-1 text-start`}>
                                             <button
                                               type="button"
                                               onClick={() => {
@@ -1238,6 +1313,31 @@ const SubjectDetails = () => {
                                             >
                                               <FiEdit3 size={15} className="text-blue-400" />
                                               <span>{isRTL ? "تعديل الدرس" : "Edit Lesson"}</span>
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setActiveLessonDropdown(null);
+                                                handleToggleFreeLesson(les);
+                                              }}
+                                              className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${
+                                                les.isFree 
+                                                  ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' 
+                                                  : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'
+                                              }`}
+                                            >
+                                              {les.isFree ? (
+                                                <>
+                                                  <FiLock size={15} className="text-amber-400" />
+                                                  <span>{isRTL ? "تغيير إلى درس مدفوع" : "Make Paid Lesson"}</span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <FiUnlock size={15} className="text-emerald-400" />
+                                                  <span>{isRTL ? "تفعيل كمعاينة مجانية" : "Set Free Preview"}</span>
+                                                </>
+                                              )}
                                             </button>
 
                                             <button
@@ -1267,7 +1367,7 @@ const SubjectDetails = () => {
                                                 setActiveLessonDropdown(null);
                                                 setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' });
                                               }}
-                                              className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
+                                              className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer border-t border-gray-800/60 mt-0.5 pt-1.5"
                                             >
                                               <FiTrash2 size={15} className="text-rose-400" />
                                               <span>{isRTL ? "حذف الدرس" : "Delete Lesson"}</span>
@@ -1288,9 +1388,11 @@ const SubjectDetails = () => {
                 </div>
               ) : orderedLessons.length > 0 ? (
                 /* Flat lessons list when no units exist */
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 overflow-visible">
                   {orderedLessons.map((les, index) => {
                     const isBeingDragged = draggedLessonIndex === index;
+                    const isDropdownOpen = activeLessonDropdown === (les._id || les.id);
+                    const openUpwards = index >= Math.max(1, orderedLessons.length - 2);
 
                     return (
                       <div
@@ -1303,7 +1405,7 @@ const SubjectDetails = () => {
                         className={`p-4 md:p-5 rounded-2xl bg-[#0e101a] border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
                             ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
                             : 'border-gray-800/80 hover:border-gray-700'
-                          } ${activeLessonDropdown === (les._id || les.id) ? 'z-30' : 'z-10'}`}
+                          } ${isDropdownOpen ? 'z-50' : 'z-10'}`}
                       >
                         {/* Drag Handle & Order Badge */}
                         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1333,12 +1435,15 @@ const SubjectDetails = () => {
                             <h4 className="text-sm md:text-base font-extrabold text-white mt-0.5 group-hover:text-blue-400 transition-colors truncate" title={les.title}>
                               {les.title}
                             </h4>
-                            <div className="flex items-center gap-3 text-xs text-gray-500 font-semibold mt-1">
+                            <div className="flex items-center gap-2.5 flex-wrap text-xs text-gray-500 font-semibold mt-1">
                               <span className="flex items-center gap-1">
                                 <FiClock size={13} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
                               </span>
                               <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
                                 {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isFree ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-gray-800/80 text-gray-400 border border-gray-700/60'}`}>
+                                {les.isFree ? (isRTL ? 'معاينة مجانية' : 'Free Preview') : (isRTL ? 'مدفوع' : 'Paid')}
                               </span>
                             </div>
                           </div>
@@ -1371,22 +1476,28 @@ const SubjectDetails = () => {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setActiveLessonDropdown(activeLessonDropdown === (les._id || les.id) ? null : (les._id || les.id));
+                                setActiveLessonDropdown(isDropdownOpen ? null : (les._id || les.id));
                               }}
-                              className="w-9 h-9 rounded-xl bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all cursor-pointer border border-gray-700/50 flex items-center justify-center"
+                              className={`w-9 h-9 rounded-xl transition-all cursor-pointer border flex items-center justify-center ${
+                                isDropdownOpen 
+                                  ? 'bg-blue-600 text-white border-blue-500 shadow-md' 
+                                  : 'bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white border-gray-700/50'
+                              }`}
                               title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
                             >
                               <FiMoreVertical size={16} />
                             </button>
 
-                            {activeLessonDropdown === (les._id || les.id) && (
+                            {isDropdownOpen && (
                               <>
                                 <div
                                   className="fixed inset-0 z-40"
                                   onClick={() => setActiveLessonDropdown(null)}
                                 />
 
-                                <div className="absolute right-0 ltr:right-0 rtl:left-0 top-full mt-1 w-48 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 p-1.5 flex flex-col gap-1 text-start">
+                                <div className={`absolute right-0 ltr:right-0 rtl:left-0 ${
+                                  openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'
+                                } w-52 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_12px_40px_rgba(0,0,0,0.9)] z-50 p-1.5 flex flex-col gap-1 text-start`}>
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -1397,6 +1508,31 @@ const SubjectDetails = () => {
                                   >
                                     <FiEdit3 size={15} className="text-blue-400" />
                                     <span>{isRTL ? "تعديل الدرس" : "Edit Lesson"}</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveLessonDropdown(null);
+                                      handleToggleFreeLesson(les);
+                                    }}
+                                    className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${
+                                      les.isFree 
+                                        ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' 
+                                        : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'
+                                    }`}
+                                  >
+                                    {les.isFree ? (
+                                      <>
+                                        <FiLock size={15} className="text-amber-400" />
+                                        <span>{isRTL ? "تغيير إلى درس مدفوع" : "Make Paid Lesson"}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FiUnlock size={15} className="text-emerald-400" />
+                                        <span>{isRTL ? "تفعيل كمعاينة مجانية" : "Set Free Preview"}</span>
+                                      </>
+                                    )}
                                   </button>
 
                                   <button
@@ -1426,7 +1562,7 @@ const SubjectDetails = () => {
                                       setActiveLessonDropdown(null);
                                       setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' });
                                     }}
-                                    className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer border-t border-gray-800/60 mt-0.5 pt-1.5"
                                   >
                                     <FiTrash2 size={15} className="text-rose-400" />
                                     <span>{isRTL ? "حذف الدرس" : "Delete Lesson"}</span>

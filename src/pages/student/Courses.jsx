@@ -191,11 +191,7 @@ const Courses = () => {
                 <div
                   key={course._id}
                   onClick={() => {
-                    if (isEnrolled) {
-                      navigate(`/student/courses/${course._id}`);
-                    } else {
-                      handleEnrollClick(course);
-                    }
+                    navigate(`/student/courses/${course._id}`);
                   }}
                   className="p-5 rounded-[2rem] bg-gradient-to-br from-[#0c0d19]/90 to-[#0a0a12]/95 border border-gray-800/80 hover:border-emerald-500/20 shadow-xl flex flex-col justify-between gap-4 relative overflow-hidden transition-all duration-300 hover:translate-y-[-2px] cursor-pointer group text-start"
                 >
@@ -280,7 +276,7 @@ const Courses = () => {
                         </div>
                       )}
 
-                      {/* Continue/Enroll button */}
+                      {/* Action buttons */}
                       {isEnrolled ? (
                         <button
                           onClick={(e) => {
@@ -292,15 +288,26 @@ const Courses = () => {
                           {isRTL ? "متابعة" : "Continue"} <FiChevronRight className={isRTL ? 'rotate-180' : ''} />
                         </button>
                       ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEnrollClick(course);
-                          }}
-                          className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_12px_rgba(37,99,235,0.25)] hover:scale-102 cursor-pointer flex items-center justify-center gap-1"
-                        >
-                          {isRTL ? "+ تسجيل" : "Enroll +"}
-                        </button>
+                        <div className="flex items-center gap-2 w-full">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/student/courses/${course._id}`);
+                            }}
+                            className="flex-1 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-black text-gray-200 hover:text-white transition-all border border-gray-700 hover:border-gray-600 cursor-pointer flex items-center justify-center gap-1"
+                          >
+                            {isRTL ? "معاينة / دروس" : "Preview / Details"}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEnrollClick(course);
+                            }}
+                            className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-black text-white transition-all shadow-[0_4px_12px_rgba(37,99,235,0.25)] hover:scale-102 cursor-pointer flex items-center justify-center gap-1"
+                          >
+                            {isRTL ? "+ تسجيل" : "Enroll +"}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
