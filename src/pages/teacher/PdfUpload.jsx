@@ -14,7 +14,10 @@ import {
   FiZap,
   FiCheckCircle,
   FiAlertCircle,
-  FiRefreshCw
+  FiRefreshCw,
+  FiMaximize2,
+  FiX,
+  FiEye
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -25,8 +28,12 @@ import {
   fetchTeacherSubjects,
   extractQuestionsFromPdf,
   createQuestion,
+  updateQuestion,
+  deleteQuestion,
+  uploadQuestionImage,
   fetchQuestions
 } from '../../redux/slices/teacherSlice';
+import { getImageUrl } from '../../utils/imageUrl';
 import { useLanguage } from '../../context/LanguageContext';
 
 const TeacherPdfUpload = () => {
@@ -58,6 +65,8 @@ const TeacherPdfUpload = () => {
   // Step 3 Review state
   const [extractedQuestions, setExtractedQuestions] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [previewModalImage, setPreviewModalImage] = useState(null);
+  const [uploadingTarget, setUploadingTarget] = useState(null); // { qIdx, optIdx: number | null }
 
   useEffect(() => {
     dispatch(fetchTeacherSubjects());
@@ -116,7 +125,7 @@ const TeacherPdfUpload = () => {
     const timer2 = setTimeout(() => {
       setProcessingProgress(75);
       setCompletedChecklist(prev => ({ ...prev, uploading: true, extracting: true }));
-      setProcessingStatus(isRTL ? 'جاري تحديد الأسئلة والخيارات بالذكاء الاصطناعي...' : 'Identifying questions & options with AI...');
+      setProcessingStatus(isRTL ? 'جاري تحديد الأسئلة والخيارات والرسوم بالذكاء الاصطناعي...' : 'Identifying questions, options & diagrams with AI...');
     }, 2200);
 
     try {
@@ -132,24 +141,31 @@ const TeacherPdfUpload = () => {
       setCompletedChecklist({ uploading: true, extracting: true, identifying: true });
       setProcessingStatus(isRTL ? 'مراجعة الذكاء الاصطناعي مكتملة ✓' : 'AI review complete ✓');
 
-      // Normalize extracted questions array
+      // Normalize extracted questions array and preserve images/diagrams/options
       const rawList = Array.isArray(result) ? result : (result?.questions || []);
-      const formatted = rawList.map((q, idx) => ({
-        _tempId: `ext-${Date.now()}-${idx}`,
-        text: q.text || q.question || `${isRTL ? 'سؤال مستخرج' : 'Extracted Question'} ${idx + 1}`,
-        options: Array.isArray(q.options) && q.options.length >= 4 
-          ? q.options 
-          : [
-              q.options?.[0] || (isRTL ? 'الخيار أ' : 'Option A'),
-              q.options?.[1] || (isRTL ? 'الخيار ب' : 'Option B'),
-              q.options?.[2] || (isRTL ? 'الخيار ج' : 'Option C'),
-              q.options?.[3] || (isRTL ? 'الخيار د' : 'Option D')
-            ],
-        correctOption: typeof q.correctOption === 'number' ? q.correctOption : 0,
-        difficulty: (q.difficulty || 'medium').toLowerCase(),
-        marks: q.marks || 1,
-        explanation: q.explanation || ''
-      }));
+      const formatted = rawList.map((q, idx) => {
+        const questionImg = q.image || (q.diagram && q.diagram.url ? q.diagram.url : null) || null;
+        return {
+          _tempId: q._id || `ext-${Date.now()}-${idx}`,
+          _id: q._id || null,
+          text: q.text || q.question || `${isRTL ? 'سؤال مستخرج' : 'Extracted Question'} ${idx + 1}`,
+          options: Array.isArray(q.options) && q.options.length >= 4 
+            ? q.options 
+            : [
+                q.options?.[0] || (isRTL ? 'الخيار أ' : 'Option A'),
+                q.options?.[1] || (isRTL ? 'الخيار ب' : 'Option B'),
+                q.options?.[2] || (isRTL ? 'الخيار ج' : 'Option C'),
+                q.options?.[3] || (isRTL ? 'الخيار د' : 'Option D')
+              ],
+          correctOption: typeof q.correctOption === 'number' ? q.correctOption : 0,
+          difficulty: (q.difficulty || 'medium').toLowerCase(),
+          marks: q.marks || 1,
+          explanation: q.explanation || '',
+          image: questionImg,
+          diagram: q.diagram || null,
+          optionImages: Array.isArray(q.optionImages) ? q.optionImages : []
+        };
+      });
 
       setExtractedQuestions(formatted);
 
@@ -183,7 +199,63 @@ const TeacherPdfUpload = () => {
     });
   };
 
-  const handleRemoveQuestion = (qIdx) => {
+  const handleQuestionImageUpload = async (qIdx, file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error(isRTL ? 'الرجاء اختيار ملف صورة صالح' : 'Please select a valid image file');
+      return;
+    }
+    const toastId = toast.loading(isRTL ? 'جاري رفع صورة السؤال...' : 'Uploading question image...');
+    setUploadingTarget({ qIdx, optIdx: null });
+    try {
+      const url = await dispatch(uploadQuestionImage(file)).unwrap();
+      handleUpdateQuestion(qIdx, 'image', url);
+      toast.dismiss(toastId);
+      toast.success(isRTL ? 'تم رفع الصورة بنجاح' : 'Image uploaded successfully');
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error(err || (isRTL ? 'فشل رفع الصورة' : 'Failed to upload image'));
+    } finally {
+      setUploadingTarget(null);
+    }
+  };
+
+  const handleOptionImageUpload = async (qIdx, optIdx, file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error(isRTL ? 'الرجاء اختيار ملف صورة صالح' : 'Please select a valid image file');
+      return;
+    }
+    const toastId = toast.loading(isRTL ? 'جاري رفع صورة الخيار...' : 'Uploading option image...');
+    setUploadingTarget({ qIdx, optIdx });
+    try {
+      const url = await dispatch(uploadQuestionImage(file)).unwrap();
+      setExtractedQuestions(prev => {
+        const copy = [...prev];
+        const optImages = [...(copy[qIdx].optionImages || ['', '', '', ''])];
+        optImages[optIdx] = url;
+        copy[qIdx] = { ...copy[qIdx], optionImages: optImages };
+        return copy;
+      });
+      toast.dismiss(toastId);
+      toast.success(isRTL ? 'تم رفع صورة الخيار بنجاح' : 'Option image uploaded');
+    } catch (err) {
+      toast.dismiss(toastId);
+      toast.error(err || (isRTL ? 'فشل رفع صورة الخيار' : 'Failed to upload option image'));
+    } finally {
+      setUploadingTarget(null);
+    }
+  };
+
+  const handleRemoveQuestion = async (qIdx) => {
+    const q = extractedQuestions[qIdx];
+    if (q?._id) {
+      try {
+        await dispatch(deleteQuestion(q._id)).unwrap();
+      } catch (err) {
+        console.error('Error removing question from database:', err);
+      }
+    }
     setExtractedQuestions(prev => prev.filter((_, idx) => idx !== qIdx));
     toast.success(isRTL ? 'تمت إزالة السؤال' : 'Question removed');
   };
@@ -193,6 +265,7 @@ const TeacherPdfUpload = () => {
       ...prev,
       {
         _tempId: `ext-new-${Date.now()}`,
+        _id: null,
         text: isRTL ? 'نص السؤال الجديد' : 'New Question Text',
         options: [
           isRTL ? 'الخيار أ' : 'Option A',
@@ -203,7 +276,9 @@ const TeacherPdfUpload = () => {
         correctOption: 0,
         difficulty: 'medium',
         marks: 1,
-        explanation: ''
+        explanation: '',
+        image: null,
+        optionImages: []
       }
     ]);
   };
@@ -219,15 +294,34 @@ const TeacherPdfUpload = () => {
 
     try {
       for (const q of extractedQuestions) {
-        await dispatch(createQuestion({
-          subjectId: selectedSubjectId,
-          text: q.text,
-          options: q.options,
-          correctOption: q.correctOption,
-          difficulty: q.difficulty,
-          marks: q.marks,
-          explanation: q.explanation
-        })).unwrap();
+        if (q._id) {
+          await dispatch(updateQuestion({
+            id: q._id,
+            questionData: {
+              subject: selectedSubjectId,
+              text: q.text,
+              options: q.options,
+              correctOption: q.correctOption,
+              difficulty: q.difficulty,
+              marks: q.marks,
+              explanation: q.explanation,
+              image: q.image || null,
+              optionImages: q.optionImages || []
+            }
+          })).unwrap();
+        } else {
+          await dispatch(createQuestion({
+            subjectId: selectedSubjectId,
+            text: q.text,
+            options: q.options,
+            correctOption: q.correctOption,
+            difficulty: q.difficulty,
+            marks: q.marks,
+            explanation: q.explanation,
+            image: q.image || null,
+            optionImages: q.optionImages || []
+          })).unwrap();
+        }
       }
 
       toast.dismiss(toastId);
@@ -616,17 +710,49 @@ const TeacherPdfUpload = () => {
                     className="p-6 bg-[#0e101a] border border-gray-800/90 rounded-[2rem] shadow-xl flex flex-col gap-5 relative text-start"
                   >
                     {/* Header */}
-                    <div className="flex items-center justify-between">
-                      <span className="px-3.5 py-1 rounded-full bg-blue-600/20 text-blue-400 text-xs font-black">
-                        {isRTL ? `سؤال #${qIdx + 1}` : `Question #${qIdx + 1}`}
-                      </span>
-                      <button
-                        onClick={() => handleRemoveQuestion(qIdx)}
-                        className="p-2 text-gray-500 hover:text-red-400 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
-                        title={isRTL ? "إزالة السؤال" : "Remove question"}
-                      >
-                        <FiTrash2 size={18} />
-                      </button>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-3.5 py-1 rounded-full bg-blue-600/20 text-blue-400 text-xs font-black">
+                          {isRTL ? `سؤال #${qIdx + 1}` : `Question #${qIdx + 1}`}
+                        </span>
+
+                        {q.image && (
+                          <span className="px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 text-xs font-black flex items-center gap-1.5 shadow-sm">
+                            <FiImage size={13} />
+                            <span>{isRTL ? "مرفق رسم / صورة" : "Diagram / Image Included"}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* Add / Replace Image Button */}
+                        <label
+                          className="p-2 text-gray-400 hover:text-blue-400 rounded-xl hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold"
+                          title={isRTL ? (q.image ? "تغيير الصورة" : "إرفاق صورة") : (q.image ? "Change Image" : "Attach Image")}
+                        >
+                          <FiImage size={16} />
+                          <span className="hidden sm:inline">{q.image ? (isRTL ? "تغيير صورة" : "Change Image") : (isRTL ? "إضافة صورة" : "Add Image")}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                handleQuestionImageUpload(qIdx, e.target.files[0]);
+                                e.target.value = '';
+                              }
+                            }}
+                          />
+                        </label>
+
+                        <button
+                          onClick={() => handleRemoveQuestion(qIdx)}
+                          className="p-2 text-gray-500 hover:text-red-400 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
+                          title={isRTL ? "إزالة السؤال" : "Remove question"}
+                        >
+                          <FiTrash2 size={18} />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Question Text Input */}
@@ -642,38 +768,159 @@ const TeacherPdfUpload = () => {
                       />
                     </div>
 
+                    {/* Extracted / Attached Question Image Display */}
+                    {q.image && (
+                      <div className="flex flex-col gap-2.5 p-3.5 bg-[#0b0d18] border border-blue-500/30 rounded-2xl relative shadow-inner">
+                        <div className="flex items-center justify-between px-1">
+                          <div className="flex items-center gap-1.5 text-xs font-black text-blue-400">
+                            <FiImage size={14} className="text-blue-400" />
+                            <span>{isRTL ? "الرسم التوضيحي / الصورة المستخرجة بالسؤال:" : "Extracted Question Diagram / Image:"}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModalImage(getImageUrl(q.image))}
+                              className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                              title={isRTL ? "معاينة وتكبير الصورة" : "Preview & Enlarge Image"}
+                            >
+                              <FiMaximize2 size={13} />
+                              <span>{isRTL ? "تكبير" : "Preview"}</span>
+                            </button>
+                            <label
+                              className="p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
+                              title={isRTL ? "استبدال الصورة" : "Replace Image"}
+                            >
+                              <FiRefreshCw size={13} />
+                              <span className="hidden sm:inline">{isRTL ? "استبدال" : "Replace"}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  if (e.target.files?.[0]) {
+                                    handleQuestionImageUpload(qIdx, e.target.files[0]);
+                                    e.target.value = '';
+                                  }
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleUpdateQuestion(qIdx, 'image', null);
+                                toast.success(isRTL ? 'تمت إزالة صورة السؤال' : 'Question image removed');
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+                              title={isRTL ? "إزالة الصورة" : "Remove Image"}
+                            >
+                              <FiX size={14} className="stroke-[2.5]" />
+                              <span>{isRTL ? "إزالة الصورة" : "Remove"}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Image Preview Canvas */}
+                        <div
+                          onClick={() => setPreviewModalImage(getImageUrl(q.image))}
+                          className="w-full max-h-72 sm:max-h-84 rounded-xl overflow-hidden bg-black/60 border border-gray-800/90 flex items-center justify-center p-3 cursor-pointer hover:border-blue-500/50 transition-all group/img relative"
+                        >
+                          <img
+                            src={getImageUrl(q.image)}
+                            alt={`Question ${qIdx + 1} Visual`}
+                            className="max-h-64 sm:max-h-78 w-auto max-w-full object-contain rounded-lg shadow-md group-hover/img:scale-[1.01] transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/35 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity pointer-events-none">
+                            <span className="px-3 py-1.5 rounded-xl bg-black/85 text-white text-xs font-black flex items-center gap-1.5 shadow-2xl border border-white/20">
+                              <FiMaximize2 size={13} className="text-blue-400" />
+                              <span>{isRTL ? "انقر للمعاينة بالحجم الكامل" : "Click for full resolution"}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Options Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-start">
                       {['A', 'B', 'C', 'D'].map((optLabel, optIdx) => {
                         const isCorrect = q.correctOption === optIdx;
+                        const optImg = q.optionImages?.[optIdx];
                         return (
                           <div
                             key={optLabel}
-                            className={`p-3 rounded-2xl border flex items-center gap-3 transition-all ${
+                            className={`p-3.5 rounded-2xl border flex flex-col gap-2 transition-all ${
                               isCorrect 
                                 ? 'bg-emerald-950/20 border-emerald-500/50 text-white' 
                                 : 'bg-[#121424] border-gray-800/80 text-gray-300'
                             }`}
                           >
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateQuestion(qIdx, 'correctOption', optIdx)}
-                              className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center shrink-0 transition-transform ${
-                                isCorrect
-                                  ? 'bg-emerald-500 text-gray-950 shadow-[0_0_10px_rgba(16,185,129,0.5)] scale-105'
-                                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                              }`}
-                              title={isRTL ? "تحديد كإجابة صحيحة" : "Set as Correct Answer"}
-                            >
-                              {optLabel}
-                            </button>
-                            <input
-                              type="text"
-                              value={q.options[optIdx] || ''}
-                              onChange={(e) => handleUpdateOption(qIdx, optIdx, e.target.value)}
-                              className="w-full bg-transparent border-none text-white text-sm font-semibold outline-none focus:ring-0 text-start"
-                              placeholder={isRTL ? `الخيار ${optLabel}` : `Option ${optLabel}`}
-                            />
+                            <div className="flex items-center gap-3 w-full">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateQuestion(qIdx, 'correctOption', optIdx)}
+                                className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center shrink-0 transition-transform ${
+                                  isCorrect
+                                    ? 'bg-emerald-500 text-gray-950 shadow-[0_0_10px_rgba(16,185,129,0.5)] scale-105'
+                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                }`}
+                                title={isRTL ? "تحديد كإجابة صحيحة" : "Set as Correct Answer"}
+                              >
+                                {optLabel}
+                              </button>
+                              <input
+                                type="text"
+                                value={q.options[optIdx] || ''}
+                                onChange={(e) => handleUpdateOption(qIdx, optIdx, e.target.value)}
+                                className="w-full bg-transparent border-none text-white text-sm font-semibold outline-none focus:ring-0 text-start"
+                                placeholder={isRTL ? `الخيار ${optLabel}` : `Option ${optLabel}`}
+                              />
+                              <label
+                                className="p-1.5 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-white/5 transition-colors cursor-pointer shrink-0"
+                                title={isRTL ? "إرفاق صورة للخيار" : "Attach image to option"}
+                              >
+                                <FiImage size={14} />
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    if (e.target.files?.[0]) {
+                                      handleOptionImageUpload(qIdx, optIdx, e.target.files[0]);
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+
+                            {/* Option image if present */}
+                            {optImg && (
+                              <div className="relative group/optimg rounded-xl overflow-hidden border border-gray-800 bg-black/40 p-1.5 max-h-28 flex items-center justify-center">
+                                <img
+                                  src={getImageUrl(optImg)}
+                                  alt={`Option ${optLabel} Visual`}
+                                  className="max-h-24 object-contain rounded-lg cursor-pointer"
+                                  onClick={() => setPreviewModalImage(getImageUrl(optImg))}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExtractedQuestions(prev => {
+                                      const copy = [...prev];
+                                      const optImages = [...(copy[qIdx].optionImages || [])];
+                                      optImages[optIdx] = '';
+                                      copy[qIdx] = { ...copy[qIdx], optionImages: optImages };
+                                      return copy;
+                                    });
+                                    toast.success(isRTL ? 'تمت إزالة صورة الخيار' : 'Option image removed');
+                                  }}
+                                  className={`absolute top-1.5 ${isRTL ? 'left-1.5' : 'right-1.5'} w-6 h-6 bg-red-600/90 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-90 group-hover/optimg:opacity-100 transition-all cursor-pointer shadow-md`}
+                                  title={isRTL ? "حذف صورة الخيار" : "Remove option image"}
+                                >
+                                  <FiX size={13} className="stroke-[2.5]" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -777,6 +1024,47 @@ const TeacherPdfUpload = () => {
         )}
 
       </div>
+
+      {/* Full Size Image Preview Lightbox Modal */}
+      <AnimatePresence>
+        {previewModalImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setPreviewModalImage(null)}
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 md:p-8 cursor-zoom-out"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-4xl max-h-[90vh] bg-[#0c0e1a] border border-gray-800 rounded-3xl p-4 shadow-2xl flex flex-col items-center cursor-default overflow-hidden"
+            >
+              <div className="w-full flex items-center justify-between pb-3 border-b border-gray-800/80 mb-3 px-2">
+                <div className="flex items-center gap-2 text-sm font-black text-white">
+                  <FiImage className="text-blue-400" size={18} />
+                  <span>{isRTL ? "معاينة الرسم / الصورة بالحجم الكامل" : "Full Resolution Image Preview"}</span>
+                </div>
+                <button
+                  onClick={() => setPreviewModalImage(null)}
+                  className="w-8 h-8 rounded-xl bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+              <div className="w-full max-h-[75vh] overflow-auto flex items-center justify-center rounded-2xl bg-black/40 p-2">
+                <img
+                  src={previewModalImage}
+                  alt="Preview Visual"
+                  className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-2xl"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 };
