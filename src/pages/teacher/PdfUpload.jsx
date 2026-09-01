@@ -49,6 +49,23 @@ const TeacherPdfUpload = () => {
   // Stepper state: 1 = Upload, 2 = Processing, 3 = Review, 4 = Done
   const [currentStep, setCurrentStep] = useState(1);
 
+  // Theme support (light/dark mode)
+  const [isLight, setIsLight] = useState(() => {
+    return typeof window !== 'undefined' && (localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+  });
+
+  useEffect(() => {
+    const handleTheme = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    window.addEventListener('themeChange', handleTheme);
+    window.addEventListener('storage', handleTheme);
+    return () => {
+      window.removeEventListener('themeChange', handleTheme);
+      window.removeEventListener('storage', handleTheme);
+    };
+  }, []);
+
   // Step 1 Form state
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [pdfFile, setPdfFile] = useState(null);
@@ -360,31 +377,37 @@ const TeacherPdfUpload = () => {
         <div className="flex items-center justify-between gap-4">
           <button
             onClick={() => navigate('/teacher/questions')}
-            className="w-12 h-12 rounded-2xl bg-[#0e101a] border border-gray-800 hover:border-gray-700 text-gray-300 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-md shrink-0"
+            className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all cursor-pointer shadow-md shrink-0 ${
+              isLight 
+                ? 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700' 
+                : 'bg-[#0e101a] border-gray-800 hover:border-gray-700 text-gray-300 hover:text-white'
+            }`}
           >
             <FiChevronLeft size={22} className={isRTL ? 'rotate-180' : ''} />
           </button>
 
           <div className="flex-1 text-start">
-            <h2 className="text-xl md:text-2xl font-black text-white leading-tight">
+            <h2 className={`text-xl md:text-2xl font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
               {isRTL ? "رفع أسئلة PDF" : "PDF Question Upload"}
             </h2>
-            <p className="text-xs md:text-sm text-gray-400 font-semibold mt-0.5">
+            <p className={`text-xs md:text-sm font-semibold mt-0.5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
               {isRTL ? "استخراج الأسئلة بالذكاء الاصطناعي" : "AI-powered question extraction"}
             </p>
           </div>
 
-          <div className="px-3.5 py-1.5 rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-black flex items-center gap-1.5 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-            <FiZap size={14} className="text-blue-400" />
+          <div className="px-3.5 py-1.5 rounded-full bg-blue-600/15 border border-blue-500/30 text-blue-500 text-xs font-black flex items-center gap-1.5 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+            <FiZap size={14} className="text-blue-500" />
             <span>{isRTL ? "ذكاء اصطناعي" : "AI"}</span>
           </div>
         </div>
 
         {/* Stepper Bar (4 Steps) */}
-        <div className="w-full bg-[#0e101a] border border-gray-800/80 rounded-3xl p-4 md:p-6 shadow-xl">
+        <div className={`w-full border rounded-3xl p-4 md:p-6 shadow-md transition-colors ${
+          isLight ? 'bg-white border-slate-200' : 'bg-[#0e101a] border-gray-800/80'
+        }`}>
           <div className="relative flex items-center justify-between w-full max-w-lg mx-auto">
             {/* Step Line Connector */}
-            <div className="absolute left-6 right-6 top-5 h-0.5 bg-gray-800 -z-0">
+            <div className={`absolute left-6 right-6 top-5 h-0.5 -z-0 ${isLight ? 'bg-slate-200' : 'bg-gray-800'}`}>
               <div 
                 className="h-full bg-blue-500 transition-all duration-500" 
                 style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
@@ -406,9 +429,11 @@ const TeacherPdfUpload = () => {
                   <div
                     className={`w-10 h-10 md:w-11 md:h-11 rounded-full font-black text-sm md:text-base flex items-center justify-center transition-all duration-300 ${
                       isCompleted
-                        ? 'bg-emerald-500 text-gray-950 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                        ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]'
                         : isActive
                         ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.5)] ring-4 ring-blue-500/20'
+                        : isLight
+                        ? 'bg-slate-100 border border-slate-200 text-slate-400'
                         : 'bg-[#151726] border border-gray-800 text-gray-500'
                     }`}
                   >
@@ -417,9 +442,11 @@ const TeacherPdfUpload = () => {
                   <span
                     className={`text-xs font-extrabold transition-colors ${
                       isActive
-                        ? 'text-blue-400'
+                        ? 'text-blue-500'
                         : isCompleted
-                        ? 'text-emerald-400'
+                        ? 'text-emerald-500'
+                        : isLight
+                        ? 'text-slate-400'
                         : 'text-gray-500'
                     }`}
                   >
@@ -441,13 +468,17 @@ const TeacherPdfUpload = () => {
           >
             {/* A. Select Subject */}
             <div className="flex flex-col gap-2">
-              <label className="text-base font-extrabold text-white">{isRTL ? "اختر المادة" : "Select Subject"}</label>
+              <label className={`text-base font-extrabold ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "اختر المادة" : "Select Subject"}</label>
               <div className="relative">
-                <FiBookOpen className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-blue-400`} size={18} />
+                <FiBookOpen className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 -translate-y-1/2 text-blue-500`} size={18} />
                 <select
                   value={selectedSubjectId}
                   onChange={(e) => setSelectedSubjectId(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-12 pl-10' : 'pl-12 pr-10'} py-4 bg-[#0e101a] border border-gray-800 hover:border-gray-700 rounded-2xl text-white text-base font-bold outline-none focus:border-blue-500 appearance-none cursor-pointer shadow-lg transition-all text-start`}
+                  className={`w-full ${isRTL ? 'pr-12 pl-10' : 'pl-12 pr-10'} py-4 border rounded-2xl text-base font-bold outline-none focus:border-blue-500 appearance-none cursor-pointer shadow-sm transition-all text-start ${
+                    isLight 
+                      ? 'bg-white border-slate-200 text-slate-900 hover:border-slate-300' 
+                      : 'bg-[#0e101a] border-gray-800 text-white hover:border-gray-700'
+                  }`}
                 >
                   {isSubjectsLoading ? (
                     <option value="">{isRTL ? "جاري تحميل المواد..." : "Loading subjects..."}</option>
@@ -475,19 +506,25 @@ const TeacherPdfUpload = () => {
             />
 
             {pdfFile ? (
-              <div className="p-6 md:p-8 bg-[#0c0e1a] border-2 border-blue-500/50 rounded-[2.5rem] shadow-[0_0_30px_rgba(37,99,235,0.15)] flex flex-col items-center justify-center text-center relative overflow-hidden group">
+              <div className={`p-6 md:p-8 border-2 rounded-[2.5rem] flex flex-col items-center justify-center text-center relative overflow-hidden group transition-all ${
+                isLight 
+                  ? 'bg-blue-50/40 border-blue-300 shadow-sm' 
+                  : 'bg-[#0c0e1a] border-blue-500/50 shadow-[0_0_30px_rgba(37,99,235,0.15)]'
+              }`}>
                 {/* Top Corner Quick Remove Button */}
                 <button
                   type="button"
                   onClick={handleRemovePdf}
-                  className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} w-9 h-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 flex items-center justify-center transition-all cursor-pointer shadow-sm`}
+                  className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} w-9 h-9 rounded-xl border flex items-center justify-center transition-all cursor-pointer shadow-sm ${
+                    isLight ? 'bg-red-50 hover:bg-red-100 border-red-200 text-red-600' : 'bg-red-500/10 hover:bg-red-500/20 border-red-500/30 text-red-400'
+                  }`}
                   title={isRTL ? "إزالة ملف PDF" : "Remove PDF file"}
                 >
                   <FiTrash2 size={16} />
                 </button>
 
                 {/* PDF Document Icon Box */}
-                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 mb-3 shadow-[0_0_25px_rgba(59,130,246,0.3)]">
+                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-500 mb-3 shadow-[0_0_25px_rgba(59,130,246,0.25)]">
                   <FiFileText size={38} />
                   <span className={`absolute -bottom-1 ${isRTL ? '-left-1' : '-right-1'} px-2 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md`}>
                     PDF
@@ -495,10 +532,10 @@ const TeacherPdfUpload = () => {
                 </div>
 
                 {/* File Details */}
-                <h3 className="text-lg md:text-xl font-black text-white max-w-xs md:max-w-md truncate">
+                <h3 className={`text-lg md:text-xl font-black max-w-xs md:max-w-md truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {pdfFile.name}
                 </h3>
-                <span className="text-xs text-gray-400 font-bold mt-1">
+                <span className={`text-xs font-bold mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                   {(pdfFile.size / (1024 * 1024)).toFixed(2)} MB • {isRTL ? "جاهز للاستخراج بالذكاء الاصطناعي" : "Ready for AI Extraction"}
                 </span>
 
@@ -507,7 +544,9 @@ const TeacherPdfUpload = () => {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-5 py-2.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-400 text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer"
+                    className={`px-5 py-2.5 rounded-xl border text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                      isLight ? 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600' : 'bg-blue-600/15 hover:bg-blue-600/25 border-blue-500/30 text-blue-400'
+                    }`}
                   >
                     <FiRefreshCw size={14} />
                     <span>{isRTL ? "تغيير PDF" : "Change PDF"}</span>
@@ -516,7 +555,9 @@ const TeacherPdfUpload = () => {
                   <button
                     type="button"
                     onClick={handleRemovePdf}
-                    className="px-5 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer"
+                    className={`px-5 py-2.5 rounded-xl border text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                      isLight ? 'bg-red-50 hover:bg-red-100 border-red-200 text-red-600' : 'bg-red-500/10 hover:bg-red-500/20 border-red-500/30 text-red-400'
+                    }`}
                   >
                     <FiTrash2 size={14} />
                     <span>{isRTL ? "إزالة PDF" : "Remove PDF"}</span>
@@ -526,17 +567,23 @@ const TeacherPdfUpload = () => {
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="p-8 md:p-12 bg-[#0e101a] border-2 border-dashed border-gray-800 hover:border-blue-500/40 rounded-[2.5rem] shadow-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all group relative overflow-hidden"
+                className={`p-8 md:p-12 border-2 border-dashed rounded-[2.5rem] shadow-sm flex flex-col items-center justify-center text-center cursor-pointer transition-all group relative overflow-hidden ${
+                  isLight 
+                    ? 'bg-white border-slate-300 hover:border-blue-500' 
+                    : 'bg-[#0e101a] border-gray-800 hover:border-blue-500/40'
+                }`}
               >
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4 shadow-[0_0_30px_rgba(59,130,246,0.25)] group-hover:scale-105 transition-transform">
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-3xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-500 mb-4 shadow-[0_0_30px_rgba(59,130,246,0.25)] group-hover:scale-105 transition-transform">
                   <FiFileText size={36} />
                 </div>
 
-                <h3 className="text-xl md:text-2xl font-black text-white">{isRTL ? "رفع ملف PDF" : "Upload PDF File"}</h3>
-                <p className="text-sm font-semibold text-gray-400 mt-1">{isRTL ? "انقر لتصفح ملف PDF الخاص بك" : "Tap to browse your PDF"}</p>
+                <h3 className={`text-xl md:text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "رفع ملف PDF" : "Upload PDF File"}</h3>
+                <p className={`text-sm font-semibold mt-1 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{isRTL ? "انقر لتصفح ملف PDF الخاص بك" : "Tap to browse your PDF"}</p>
                 <button
                   type="button"
-                  className="mt-5 px-6 py-3 rounded-2xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-400 font-black transition-all cursor-pointer"
+                  className={`mt-5 px-6 py-3 rounded-2xl border font-black transition-all cursor-pointer ${
+                    isLight ? 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600' : 'bg-blue-600/15 hover:bg-blue-600/25 border-blue-500/30 text-blue-400'
+                  }`}
                 >
                   {isRTL ? "تصفح الملفات" : "Browse Files"}
                 </button>
@@ -545,37 +592,43 @@ const TeacherPdfUpload = () => {
 
             {/* C. Feature Highlight Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-start">
-              <div className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-2xl flex items-start gap-4 shadow-lg">
-                <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+              <div className={`p-5 border rounded-2xl flex items-start gap-4 shadow-sm transition-colors ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#0e101a] border-gray-800/80'
+              }`}>
+                <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 shrink-0">
                   <FiZap size={20} />
                 </div>
                 <div className="text-start">
-                  <h4 className="text-base font-bold text-white leading-tight">{isRTL ? "استخراج بالذكاء الاصطناعي" : "AI Extraction"}</h4>
-                  <p className="text-xs font-semibold text-gray-400 mt-1 leading-snug">
+                  <h4 className={`text-base font-bold leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "استخراج بالذكاء الاصطناعي" : "AI Extraction"}</h4>
+                  <p className={`text-xs font-semibold mt-1 leading-snug ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                     {isRTL ? "يكتشف الأسئلة والخيارات والإجابات تلقائيًا" : "Automatically detects questions, options and answers"}
                   </p>
                 </div>
               </div>
 
-              <div className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-2xl flex items-start gap-4 shadow-lg">
-                <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+              <div className={`p-5 border rounded-2xl flex items-start gap-4 shadow-sm transition-colors ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#0e101a] border-gray-800/80'
+              }`}>
+                <div className="w-11 h-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 shrink-0">
                   <FiImage size={20} />
                 </div>
                 <div className="text-start">
-                  <h4 className="text-base font-bold text-white leading-tight">{isRTL ? "دعم الصور" : "Image Support"}</h4>
-                  <p className="text-xs font-semibold text-gray-400 mt-1 leading-snug">
+                  <h4 className={`text-base font-bold leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "دعم الصور" : "Image Support"}</h4>
+                  <p className={`text-xs font-semibold mt-1 leading-snug ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                     {isRTL ? "يستخرج الصور والرسوم التوضيحية المضمنة في PDF" : "Extracts embedded images and diagrams from PDF"}
                   </p>
                 </div>
               </div>
 
-              <div className="p-5 bg-[#0e101a] border border-gray-800/80 rounded-2xl flex items-start gap-4 shadow-lg">
-                <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+              <div className={`p-5 border rounded-2xl flex items-start gap-4 shadow-sm transition-colors ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#0e101a] border-gray-800/80'
+              }`}>
+                <div className="w-11 h-11 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
                   <FiEdit3 size={20} />
                 </div>
                 <div className="text-start">
-                  <h4 className="text-base font-bold text-white leading-tight">{isRTL ? "المراجعة أولاً" : "Review First"}</h4>
-                  <p className="text-xs font-semibold text-gray-400 mt-1 leading-snug">
+                  <h4 className={`text-base font-bold leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>{isRTL ? "المراجعة أولاً" : "Review First"}</h4>
+                  <p className={`text-xs font-semibold mt-1 leading-snug ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                     {isRTL ? "يمكنك المراجعة والموافقة قبل النشر" : "You review and approve before publishing"}
                   </p>
                 </div>
@@ -600,35 +653,41 @@ const TeacherPdfUpload = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="flex flex-col items-center justify-center p-8 md:p-12 bg-[#0e101a] border border-gray-800 rounded-[2.5rem] shadow-2xl text-center gap-6 my-4"
+            className={`flex flex-col items-center justify-center p-8 md:p-12 border rounded-[2.5rem] shadow-xl text-center gap-6 my-4 transition-colors ${
+              isLight ? 'bg-white border-slate-200' : 'bg-[#0e101a] border-gray-800 shadow-2xl'
+            }`}
           >
             {/* Animated Glowing AI Circle */}
             <div className="relative">
-              <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-blue-600/20 border-2 border-blue-500/40 flex items-center justify-center text-blue-400 shadow-[0_0_50px_rgba(59,130,246,0.35)] animate-pulse">
-                <FiZap size={56} className="text-blue-400 animate-bounce" />
+              <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-blue-600/20 border-2 border-blue-500/40 flex items-center justify-center text-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.35)] animate-pulse">
+                <FiZap size={56} className="text-blue-500 animate-bounce" />
               </div>
             </div>
 
             <div>
-              <h3 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+              <h3 className={`text-2xl md:text-3xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {isRTL ? "الذكاء الاصطناعي يحلل ملف PDF الخاص بك" : "AI is Analyzing Your PDF"}
               </h3>
-              <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-blue-600/15 border border-blue-500/30 text-blue-400 text-xs font-black mt-3">
+              <div className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black mt-3 border ${
+                isLight ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-blue-600/15 border-blue-500/30 text-blue-400'
+              }`}>
                 <span>{isRTL ? `المادة: ${selectedSubject?.title || selectedSubject?.name || 'المادة المحددة'}` : `Subject: ${selectedSubject?.title || selectedSubject?.name || 'Selected Subject'}`}</span>
               </div>
-              <p className="text-sm font-extrabold text-gray-400 mt-2">
+              <p className={`text-sm font-extrabold mt-2 ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {processingStatus}
               </p>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full max-w-md bg-gray-900 rounded-full h-3 p-0.5 border border-gray-800 relative overflow-hidden mt-2">
+            <div className={`w-full max-w-md rounded-full h-3 p-0.5 border relative overflow-hidden mt-2 ${
+              isLight ? 'bg-slate-100 border-slate-200' : 'bg-gray-900 border-gray-800'
+            }`}>
               <div
                 className="bg-blue-500 h-full rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(59,130,246,0.6)]"
                 style={{ width: `${processingProgress}%` }}
               />
             </div>
-            <span className="text-xs font-black text-blue-400 tracking-wider -mt-4">
+            <span className="text-xs font-black text-blue-500 tracking-wider -mt-4">
               {isRTL ? `جاري المعالجة... ${processingProgress}%` : `Processing... ${processingProgress}%`}
             </span>
 
@@ -636,28 +695,28 @@ const TeacherPdfUpload = () => {
             <div className="w-full max-w-md flex flex-col gap-3 mt-4 text-start">
               <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-colors ${
                 completedChecklist.uploading 
-                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400' 
-                  : 'bg-[#121424] border-gray-800 text-gray-400'
+                  ? isLight ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400' 
+                  : isLight ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-[#121424] border-gray-800 text-gray-400'
               }`}>
-                <FiCheckCircle className={completedChecklist.uploading ? 'text-emerald-400' : 'text-gray-600'} size={20} />
+                <FiCheckCircle className={completedChecklist.uploading ? (isLight ? 'text-emerald-600' : 'text-emerald-400') : (isLight ? 'text-slate-400' : 'text-gray-600')} size={20} />
                 <span className="text-sm font-bold">{isRTL ? "جاري رفع ملف PDF..." : "Uploading PDF..."}</span>
               </div>
 
               <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-colors ${
                 completedChecklist.extracting 
-                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400' 
-                  : 'bg-[#121424] border-gray-800 text-gray-400'
+                  ? isLight ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400' 
+                  : isLight ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-[#121424] border-gray-800 text-gray-400'
               }`}>
-                <FiCheckCircle className={completedChecklist.extracting ? 'text-emerald-400' : 'text-gray-600'} size={20} />
+                <FiCheckCircle className={completedChecklist.extracting ? (isLight ? 'text-emerald-600' : 'text-emerald-400') : (isLight ? 'text-slate-400' : 'text-gray-600')} size={20} />
                 <span className="text-sm font-bold">{isRTL ? "جاري استخراج المحتوى النصي..." : "Extracting text content..."}</span>
               </div>
 
               <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-colors ${
                 completedChecklist.identifying 
-                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400' 
-                  : 'bg-[#121424] border-gray-800 text-gray-400'
+                  ? isLight ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-emerald-950/20 border-emerald-500/30 text-emerald-400' 
+                  : isLight ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-[#121424] border-gray-800 text-gray-400'
               }`}>
-                <FiCheckCircle className={completedChecklist.identifying ? 'text-emerald-400' : 'text-gray-600'} size={20} />
+                <FiCheckCircle className={completedChecklist.identifying ? (isLight ? 'text-emerald-600' : 'text-emerald-400') : (isLight ? 'text-slate-400' : 'text-gray-600')} size={20} />
                 <span className="text-sm font-bold">{isRTL ? "جاري تحديد الأسئلة..." : "Identifying questions..."}</span>
               </div>
             </div>
@@ -672,19 +731,25 @@ const TeacherPdfUpload = () => {
             exit={{ opacity: 0, y: -15 }}
             className="flex flex-col gap-6 text-start"
           >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-gray-800/60">
+            <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b transition-colors ${
+              isLight ? 'border-slate-200' : 'border-gray-800/60'
+            }`}>
               <div className="text-start">
-                <h3 className="text-xl md:text-2xl font-black text-white">
+                <h3 className={`text-xl md:text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {isRTL ? `مراجعة الأسئلة المستخرجة (${extractedQuestions.length})` : `Review Extracted Questions (${extractedQuestions.length})`}
                 </h3>
-                <p className="text-xs md:text-sm font-semibold text-gray-400 mt-0.5">
+                <p className={`text-xs md:text-sm font-semibold mt-0.5 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                   {isRTL ? "راجع وعدّل قبل الحفظ في بنك الأسئلة" : "Review and edit before saving to your question bank"}
                 </p>
               </div>
 
               <button
                 onClick={handleAddBlankQuestion}
-                className="px-4 py-2.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-400 text-sm font-extrabold flex items-center gap-2 transition-all cursor-pointer self-start md:self-auto"
+                className={`px-4 py-2.5 rounded-xl border text-sm font-extrabold flex items-center gap-2 transition-all cursor-pointer self-start md:self-auto ${
+                  isLight 
+                    ? 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-600' 
+                    : 'bg-blue-600/15 hover:bg-blue-600/25 border-blue-500/30 text-blue-400'
+                }`}
               >
                 <FiPlus size={16} />
                 <span>{isRTL ? "إضافة سؤال" : "Add Question"}</span>
@@ -693,8 +758,10 @@ const TeacherPdfUpload = () => {
 
             {/* Questions List */}
             {extractedQuestions.length === 0 ? (
-              <div className="p-12 text-center bg-[#0e101a] border border-gray-800 rounded-3xl">
-                <p className="text-gray-400 font-bold">{isRTL ? "لم يتم العثور على أسئلة في هذا الملف." : "No questions found in this PDF."}</p>
+              <div className={`p-12 text-center border rounded-3xl transition-colors ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#0e101a] border-gray-800'
+              }`}>
+                <p className={`font-bold ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>{isRTL ? "لم يتم العثور على أسئلة في هذا الملف." : "No questions found in this PDF."}</p>
                 <button
                   onClick={() => setCurrentStep(1)}
                   className="mt-4 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm"
@@ -707,17 +774,29 @@ const TeacherPdfUpload = () => {
                 {extractedQuestions.map((q, qIdx) => (
                   <div
                     key={q._tempId || qIdx}
-                    className="p-6 bg-[#0e101a] border border-gray-800/90 rounded-[2rem] shadow-xl flex flex-col gap-5 relative text-start"
+                    className={`p-6 border rounded-[2rem] shadow-sm flex flex-col gap-5 relative text-start transition-colors ${
+                      isLight 
+                        ? 'bg-white border-slate-200' 
+                        : 'bg-[#0e101a] border-gray-800/90 shadow-xl'
+                    }`}
                   >
                     {/* Header */}
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-3.5 py-1 rounded-full bg-blue-600/20 text-blue-400 text-xs font-black">
+                        <span className={`px-3.5 py-1 rounded-full text-xs font-black ${
+                          isLight 
+                            ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                            : 'bg-blue-600/20 text-blue-400'
+                        }`}>
                           {isRTL ? `سؤال #${qIdx + 1}` : `Question #${qIdx + 1}`}
                         </span>
 
                         {q.image && (
-                          <span className="px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 text-xs font-black flex items-center gap-1.5 shadow-sm">
+                          <span className={`px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5 border shadow-xs ${
+                            isLight 
+                              ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                              : 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400 shadow-sm'
+                          }`}>
                             <FiImage size={13} />
                             <span>{isRTL ? "مرفق رسم / صورة" : "Diagram / Image Included"}</span>
                           </span>
@@ -727,7 +806,11 @@ const TeacherPdfUpload = () => {
                       <div className="flex items-center gap-2">
                         {/* Add / Replace Image Button */}
                         <label
-                          className="p-2 text-gray-400 hover:text-blue-400 rounded-xl hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold"
+                          className={`p-2 rounded-xl transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold ${
+                            isLight 
+                              ? 'text-slate-600 hover:text-blue-600 hover:bg-slate-100' 
+                              : 'text-gray-400 hover:text-blue-400 hover:bg-white/5'
+                          }`}
                           title={isRTL ? (q.image ? "تغيير الصورة" : "إرفاق صورة") : (q.image ? "Change Image" : "Attach Image")}
                         >
                           <FiImage size={16} />
@@ -747,7 +830,11 @@ const TeacherPdfUpload = () => {
 
                         <button
                           onClick={() => handleRemoveQuestion(qIdx)}
-                          className="p-2 text-gray-500 hover:text-red-400 rounded-xl hover:bg-white/5 transition-colors cursor-pointer"
+                          className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                            isLight 
+                              ? 'text-slate-400 hover:text-red-600 hover:bg-red-50' 
+                              : 'text-gray-500 hover:text-red-400 hover:bg-white/5'
+                          }`}
                           title={isRTL ? "إزالة السؤال" : "Remove question"}
                         >
                           <FiTrash2 size={18} />
@@ -757,37 +844,57 @@ const TeacherPdfUpload = () => {
 
                     {/* Question Text Input */}
                     <div className="flex flex-col gap-1.5 text-start">
-                      <label className="text-xs font-black text-gray-400 uppercase tracking-wider">
+                      <label className={`text-xs font-black uppercase tracking-wider ${
+                        isLight ? 'text-slate-600' : 'text-gray-400'
+                      }`}>
                         {isRTL ? "نص السؤال" : "Question Statement"}
                       </label>
                       <textarea
                         rows={2}
                         value={q.text}
                         onChange={(e) => handleUpdateQuestion(qIdx, 'text', e.target.value)}
-                        className="w-full p-4 bg-[#121424] border border-gray-800 rounded-2xl text-white text-base font-bold outline-none focus:border-blue-500 resize-none text-start"
+                        className={`w-full p-4 border rounded-2xl text-base font-bold outline-none focus:border-blue-500 resize-none text-start transition-colors ${
+                          isLight 
+                            ? 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white' 
+                            : 'bg-[#121424] border-gray-800 text-white'
+                        }`}
                       />
                     </div>
 
                     {/* Extracted / Attached Question Image Display */}
                     {q.image && (
-                      <div className="flex flex-col gap-2.5 p-3.5 bg-[#0b0d18] border border-blue-500/30 rounded-2xl relative shadow-inner">
+                      <div className={`flex flex-col gap-2.5 p-3.5 border rounded-2xl relative transition-colors ${
+                        isLight 
+                          ? 'bg-slate-50/80 border-slate-200 shadow-sm' 
+                          : 'bg-[#0b0d18] border-blue-500/30 shadow-inner'
+                      }`}>
                         <div className="flex items-center justify-between px-1">
-                          <div className="flex items-center gap-1.5 text-xs font-black text-blue-400">
-                            <FiImage size={14} className="text-blue-400" />
+                          <div className={`flex items-center gap-1.5 text-xs font-black ${
+                            isLight ? 'text-blue-700' : 'text-blue-400'
+                          }`}>
+                            <FiImage size={14} className={isLight ? 'text-blue-600' : 'text-blue-400'} />
                             <span>{isRTL ? "الرسم التوضيحي / الصورة المستخرجة بالسؤال:" : "Extracted Question Diagram / Image:"}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
                               onClick={() => setPreviewModalImage(getImageUrl(q.image))}
-                              className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                              className={`px-2.5 py-1 rounded-lg border text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                                isLight 
+                                  ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700' 
+                                  : 'bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30 text-blue-300'
+                              }`}
                               title={isRTL ? "معاينة وتكبير الصورة" : "Preview & Enlarge Image"}
                             >
                               <FiMaximize2 size={13} />
                               <span>{isRTL ? "تكبير" : "Preview"}</span>
                             </button>
                             <label
-                              className="p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
+                              className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1 text-xs font-bold ${
+                                isLight 
+                                  ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700 shadow-xs' 
+                                  : 'bg-gray-800/80 hover:bg-gray-700 border-gray-700 text-gray-300 hover:text-white'
+                              }`}
                               title={isRTL ? "استبدال الصورة" : "Replace Image"}
                             >
                               <FiRefreshCw size={13} />
@@ -810,7 +917,11 @@ const TeacherPdfUpload = () => {
                                 handleUpdateQuestion(qIdx, 'image', null);
                                 toast.success(isRTL ? 'تمت إزالة صورة السؤال' : 'Question image removed');
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-sm"
+                              className={`px-2.5 py-1 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs ${
+                                isLight 
+                                  ? 'bg-red-50 hover:bg-red-100 border-red-200 text-red-600' 
+                                  : 'bg-red-500/15 hover:bg-red-500/25 border-red-500/30 text-red-400'
+                              }`}
                               title={isRTL ? "إزالة الصورة" : "Remove Image"}
                             >
                               <FiX size={14} className="stroke-[2.5]" />
@@ -822,16 +933,24 @@ const TeacherPdfUpload = () => {
                         {/* Image Preview Canvas */}
                         <div
                           onClick={() => setPreviewModalImage(getImageUrl(q.image))}
-                          className="w-full max-h-72 sm:max-h-84 rounded-xl overflow-hidden bg-black/60 border border-gray-800/90 flex items-center justify-center p-3 cursor-pointer hover:border-blue-500/50 transition-all group/img relative"
+                          className={`w-full max-h-72 sm:max-h-84 rounded-xl overflow-hidden border flex items-center justify-center p-3 cursor-pointer transition-all group/img relative ${
+                            isLight 
+                              ? 'bg-white border-slate-200 hover:border-blue-400 shadow-inner' 
+                              : 'bg-black/60 border-gray-800/90 hover:border-blue-500/50'
+                          }`}
                         >
                           <img
                             src={getImageUrl(q.image)}
                             alt={`Question ${qIdx + 1} Visual`}
-                            className="max-h-64 sm:max-h-78 w-auto max-w-full object-contain rounded-lg shadow-md group-hover/img:scale-[1.01] transition-transform"
+                            className="max-h-64 sm:max-h-78 w-auto max-w-full object-contain rounded-lg shadow-sm group-hover/img:scale-[1.01] transition-transform"
                           />
-                          <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/35 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity pointer-events-none">
-                            <span className="px-3 py-1.5 rounded-xl bg-black/85 text-white text-xs font-black flex items-center gap-1.5 shadow-2xl border border-white/20">
-                              <FiMaximize2 size={13} className="text-blue-400" />
+                          <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/30 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity pointer-events-none">
+                            <span className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xl border ${
+                              isLight 
+                                ? 'bg-white/95 text-slate-900 border-slate-200' 
+                                : 'bg-black/85 text-white border-white/20'
+                            }`}>
+                              <FiMaximize2 size={13} className="text-blue-500" />
                               <span>{isRTL ? "انقر للمعاينة بالحجم الكامل" : "Click for full resolution"}</span>
                             </span>
                           </div>
@@ -849,8 +968,12 @@ const TeacherPdfUpload = () => {
                             key={optLabel}
                             className={`p-3.5 rounded-2xl border flex flex-col gap-2 transition-all ${
                               isCorrect 
-                                ? 'bg-emerald-950/20 border-emerald-500/50 text-white' 
-                                : 'bg-[#121424] border-gray-800/80 text-gray-300'
+                                ? isLight 
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-950' 
+                                  : 'bg-emerald-950/20 border-emerald-500/50 text-white' 
+                                : isLight 
+                                  ? 'bg-slate-50 border-slate-200 text-slate-900 focus-within:bg-white focus-within:border-blue-400' 
+                                  : 'bg-[#121424] border-gray-800/80 text-gray-300'
                             }`}
                           >
                             <div className="flex items-center gap-3 w-full">
@@ -859,7 +982,9 @@ const TeacherPdfUpload = () => {
                                 onClick={() => handleUpdateQuestion(qIdx, 'correctOption', optIdx)}
                                 className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center shrink-0 transition-transform ${
                                   isCorrect
-                                    ? 'bg-emerald-500 text-gray-950 shadow-[0_0_10px_rgba(16,185,129,0.5)] scale-105'
+                                    ? 'bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] scale-105'
+                                    : isLight
+                                    ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
                                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                                 }`}
                                 title={isRTL ? "تحديد كإجابة صحيحة" : "Set as Correct Answer"}
@@ -870,11 +995,15 @@ const TeacherPdfUpload = () => {
                                 type="text"
                                 value={q.options[optIdx] || ''}
                                 onChange={(e) => handleUpdateOption(qIdx, optIdx, e.target.value)}
-                                className="w-full bg-transparent border-none text-white text-sm font-semibold outline-none focus:ring-0 text-start"
+                                className={`w-full bg-transparent border-none text-sm font-semibold outline-none focus:ring-0 text-start ${
+                                  isLight ? 'text-slate-900 placeholder:text-slate-400' : 'text-white placeholder:text-gray-500'
+                                }`}
                                 placeholder={isRTL ? `الخيار ${optLabel}` : `Option ${optLabel}`}
                               />
                               <label
-                                className="p-1.5 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-white/5 transition-colors cursor-pointer shrink-0"
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
+                                  isLight ? 'text-slate-400 hover:text-blue-600 hover:bg-slate-200' : 'text-gray-400 hover:text-blue-400 hover:bg-white/5'
+                                }`}
                                 title={isRTL ? "إرفاق صورة للخيار" : "Attach image to option"}
                               >
                                 <FiImage size={14} />
@@ -894,7 +1023,9 @@ const TeacherPdfUpload = () => {
 
                             {/* Option image if present */}
                             {optImg && (
-                              <div className="relative group/optimg rounded-xl overflow-hidden border border-gray-800 bg-black/40 p-1.5 max-h-28 flex items-center justify-center">
+                              <div className={`relative group/optimg rounded-xl overflow-hidden border p-1.5 max-h-28 flex items-center justify-center transition-colors ${
+                                isLight ? 'bg-white border-slate-200' : 'bg-black/40 border-gray-800'
+                              }`}>
                                 <img
                                   src={getImageUrl(optImg)}
                                   alt={`Option ${optLabel} Visual`}
@@ -927,13 +1058,21 @@ const TeacherPdfUpload = () => {
                     </div>
 
                     {/* Meta Info: Difficulty & Explanation */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-gray-800/40 text-start">
+                    <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t text-start ${
+                      isLight ? 'border-slate-200' : 'border-gray-800/40'
+                    }`}>
                       <div className="flex flex-col gap-1 text-start">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{isRTL ? "الصعوبة" : "Difficulty"}</label>
+                        <label className={`text-[10px] font-black uppercase tracking-wider ${
+                          isLight ? 'text-slate-600' : 'text-gray-400'
+                        }`}>{isRTL ? "الصعوبة" : "Difficulty"}</label>
                         <select
                           value={q.difficulty}
                           onChange={(e) => handleUpdateQuestion(qIdx, 'difficulty', e.target.value)}
-                          className="px-3 py-2 bg-[#121424] border border-gray-800 rounded-xl text-white text-xs font-bold outline-none cursor-pointer text-start"
+                          className={`px-3 py-2 border rounded-xl text-xs font-bold outline-none cursor-pointer text-start transition-colors ${
+                            isLight 
+                              ? 'bg-slate-50 border-slate-200 text-slate-900' 
+                              : 'bg-[#121424] border-gray-800 text-white'
+                          }`}
                         >
                           <option value="easy">{isRTL ? "سهل" : "Easy"}</option>
                           <option value="medium">{isRTL ? "متوسط" : "Medium"}</option>
@@ -942,13 +1081,19 @@ const TeacherPdfUpload = () => {
                       </div>
 
                       <div className="md:col-span-2 flex flex-col gap-1 text-start">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{isRTL ? "الشرح (اختياري)" : "Explanation (Optional)"}</label>
+                        <label className={`text-[10px] font-black uppercase tracking-wider ${
+                          isLight ? 'text-slate-600' : 'text-gray-400'
+                        }`}>{isRTL ? "الشرح (اختياري)" : "Explanation (Optional)"}</label>
                         <input
                           type="text"
                           value={q.explanation}
                           onChange={(e) => handleUpdateQuestion(qIdx, 'explanation', e.target.value)}
                           placeholder={isRTL ? "شرح مختصر للإجابة الصحيحة" : "Brief explanation for correct option"}
-                          className="px-3 py-2 bg-[#121424] border border-gray-800 rounded-xl text-white text-xs font-semibold outline-none focus:border-blue-500 text-start"
+                          className={`px-3 py-2 border rounded-xl text-xs font-semibold outline-none focus:border-blue-500 text-start transition-colors ${
+                            isLight 
+                              ? 'bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white' 
+                              : 'bg-[#121424] border-gray-800 text-white placeholder:text-gray-500 focus:border-blue-500'
+                          }`}
                         />
                       </div>
                     </div>
@@ -959,10 +1104,16 @@ const TeacherPdfUpload = () => {
             )}
 
             {/* Bottom Actions */}
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-gray-800">
+            <div className={`flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t ${
+              isLight ? 'border-slate-200' : 'border-gray-800'
+            }`}>
               <button
                 onClick={() => setCurrentStep(1)}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-sm transition-all cursor-pointer"
+                className={`w-full sm:w-auto px-6 py-3.5 rounded-2xl font-bold text-sm transition-all cursor-pointer border ${
+                  isLight 
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200' 
+                    : 'bg-gray-800 hover:bg-gray-700 text-gray-300 border-gray-700'
+                }`}
               >
                 {isRTL ? "إلغاء الكل" : "Discard All"}
               </button>
@@ -984,19 +1135,21 @@ const TeacherPdfUpload = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="flex flex-col items-center justify-center p-8 md:p-14 bg-[#0e101a] border border-gray-800 rounded-[2.5rem] shadow-2xl text-center gap-6 my-4"
+            className={`flex flex-col items-center justify-center p-8 md:p-14 border rounded-[2.5rem] shadow-xl text-center gap-6 my-4 transition-colors ${
+              isLight ? 'bg-white border-slate-200' : 'bg-[#0e101a] border-gray-800 shadow-2xl'
+            }`}
           >
-            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-[0_0_40px_rgba(16,185,129,0.35)]">
+            <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center text-emerald-500 shadow-[0_0_40px_rgba(16,185,129,0.35)]">
               <FiCheckCircle size={56} />
             </div>
 
             <div>
-              <h3 className="text-2xl md:text-3xl font-black text-white">
+              <h3 className={`text-2xl md:text-3xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {isRTL ? "اكتمل الاستيراد!" : "Import Complete!"}
               </h3>
-              <p className="text-sm font-semibold text-gray-400 mt-2 max-w-md">
+              <p className={`text-sm font-semibold mt-2 max-w-md ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
                 {isRTL ? "تم استخراج الأسئلة بنجاح وإضافتها إلى بنك الأسئلة لمادة " : "Questions have been successfully extracted and added to your Question Bank for "}
-                <span className="text-blue-400 font-bold">{selectedSubject?.title || selectedSubject?.name || (isRTL ? 'المادة' : 'Subject')}</span>.
+                <span className="text-blue-500 font-bold">{selectedSubject?.title || selectedSubject?.name || (isRTL ? 'المادة' : 'Subject')}</span>.
               </p>
             </div>
 
@@ -1007,7 +1160,11 @@ const TeacherPdfUpload = () => {
                   setExtractedQuestions([]);
                   setCurrentStep(1);
                 }}
-                className="px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-black text-sm flex items-center gap-2 transition-all cursor-pointer"
+                className={`px-6 py-3.5 rounded-2xl font-black text-sm flex items-center gap-2 transition-all cursor-pointer border ${
+                  isLight 
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200' 
+                    : 'bg-white/10 hover:bg-white/15 text-white border-white/10'
+                }`}
               >
                 <FiRefreshCw size={16} />
                 <span>{isRTL ? "رفع ملف PDF آخر" : "Upload Another PDF"}</span>
@@ -1033,32 +1190,44 @@ const TeacherPdfUpload = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setPreviewModalImage(null)}
-            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 md:p-8 cursor-zoom-out"
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8 cursor-zoom-out"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl max-h-[90vh] bg-[#0c0e1a] border border-gray-800 rounded-3xl p-4 shadow-2xl flex flex-col items-center cursor-default overflow-hidden"
+              className={`relative max-w-4xl max-h-[90vh] border rounded-3xl p-4 shadow-2xl flex flex-col items-center cursor-default overflow-hidden transition-colors ${
+                isLight ? 'bg-white border-slate-200' : 'bg-[#0c0e1a] border-gray-800'
+              }`}
             >
-              <div className="w-full flex items-center justify-between pb-3 border-b border-gray-800/80 mb-3 px-2">
-                <div className="flex items-center gap-2 text-sm font-black text-white">
-                  <FiImage className="text-blue-400" size={18} />
+              <div className={`w-full flex items-center justify-between pb-3 border-b mb-3 px-2 ${
+                isLight ? 'border-slate-200' : 'border-gray-800/80'
+              }`}>
+                <div className={`flex items-center gap-2 text-sm font-black ${
+                  isLight ? 'text-slate-900' : 'text-white'
+                }`}>
+                  <FiImage className="text-blue-500" size={18} />
                   <span>{isRTL ? "معاينة الرسم / الصورة بالحجم الكامل" : "Full Resolution Image Preview"}</span>
                 </div>
                 <button
                   onClick={() => setPreviewModalImage(null)}
-                  className="w-8 h-8 rounded-xl bg-gray-800/80 hover:bg-gray-700 text-gray-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+                  className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
+                    isLight 
+                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700' 
+                      : 'bg-gray-800/80 hover:bg-gray-700 border-gray-700 text-gray-300 hover:text-white'
+                  }`}
                 >
                   <FiX size={18} />
                 </button>
               </div>
-              <div className="w-full max-h-[75vh] overflow-auto flex items-center justify-center rounded-2xl bg-black/40 p-2">
+              <div className={`w-full max-h-[75vh] overflow-auto flex items-center justify-center rounded-2xl p-2 ${
+                isLight ? 'bg-slate-50 border border-slate-200' : 'bg-black/40'
+              }`}>
                 <img
                   src={previewModalImage}
                   alt="Preview Visual"
-                  className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-2xl"
+                  className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-md"
                 />
               </div>
             </motion.div>
