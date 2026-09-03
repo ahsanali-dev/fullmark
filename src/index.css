@@ -449,6 +449,7 @@ input:-webkit-autofill:active {
 .light .bg-\[\#090b17\],
 .light .bg-\[\#0a0b14\],
 .light .bg-\[\#0a0b14\]\/80,
+.light .bg-\[\#0a0c16\],
 .light .bg-\[\#0b0c16\],
 .light .bg-\[\#0c0d19\],
 .light .bg-\[\#0c0d19\]\/40,
@@ -461,8 +462,12 @@ input:-webkit-autofill:active {
 .light .bg-\[\#0e101a\]\/50,
 .light .bg-\[\#0e101a\]\/40,
 .light .bg-\[\#0e101a\]\/30,
+.light .bg-\[\#101322\],
+.light .bg-\[\#111422\],
 .light .bg-\[\#121324\],
-.light .bg-\[\#121424\] {
+.light .bg-\[\#121424\],
+.light .bg-\[\#141829\],
+.light .bg-\[\#14182c\] {
   background-color: #ffffff !important;
 }
 

@@ -72,13 +72,38 @@ const SubjectDetails = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeLessonDropdown, setActiveLessonDropdown] = useState(null);
 
-  // Unit Modal States
+  const [isLight, setIsLight] = useState(() => {
+    return localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light');
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      setIsLight(localStorage.getItem('theme') === 'light' || document.documentElement.classList.contains('light'));
+    };
+    handleThemeChange();
+    window.addEventListener('themeChange', handleThemeChange);
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => {
+      window.removeEventListener('themeChange', handleThemeChange);
+      observer.disconnect();
+    };
+  }, []);
+
+  // Top-level Unit Modal States
   const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState(null);
   const [unitTitle, setUnitTitle] = useState('');
-  const [unitTitleAr, setUnitTitleAr] = useState('');
   const [unitOrder, setUnitOrder] = useState(1);
   const [isSubmittingUnit, setIsSubmittingUnit] = useState(false);
+
+  // Sub-unit Modal States (Completely separate modal)
+  const [isSubUnitModalOpen, setIsSubUnitModalOpen] = useState(false);
+  const [editingSubUnit, setEditingSubUnit] = useState(null);
+  const [parentUnitForSubUnit, setParentUnitForSubUnit] = useState(null);
+  const [subUnitTitle, setSubUnitTitle] = useState('');
+  const [subUnitOrder, setSubUnitOrder] = useState(1);
+  const [isSubmittingSubUnit, setIsSubmittingSubUnit] = useState(false);
 
   // Weakness Topic Modal States
   const [isWeaknessModalOpen, setIsWeaknessModalOpen] = useState(false);
@@ -280,47 +305,33 @@ const SubjectDetails = () => {
     applyNewLessonOrder(updated);
   };
 
+  const getRawLessonUnitId = (l) => {
+    if (!l) return null;
+    const raw = typeof l.unit === 'object' ? (l.unit?._id || l.unit?.id) : (l.unit || l.unitId);
+    return raw ? String(raw) : null;
+  };
+
   const handleMoveLessonInUnit = (lesson, direction, currentList) => {
     const currentIndex = currentList.findIndex(l => (l._id || l.id) === (lesson._id || lesson.id));
     const targetIndex = currentIndex + direction;
     if (targetIndex < 0 || targetIndex >= currentList.length) return;
 
-    const updatedUnitLessons = [...currentList];
-    const [movedItem] = updatedUnitLessons.splice(currentIndex, 1);
-    updatedUnitLessons.splice(targetIndex, 0, movedItem);
+    const lessonA = currentList[currentIndex];
+    const lessonB = currentList[targetIndex];
+    const idA = lessonA._id || lessonA.id;
+    const idB = lessonB._id || lessonB.id;
 
-    const validUnitIds = new Set(orderedUnits.map(u => String(u._id || u.id)));
-    const getLessonUnitId = (l) => {
-      const raw = typeof l.unit === 'object' ? (l.unit?._id || l.unit?.id) : (l.unit || l.unitId);
-      return raw && validUnitIds.has(String(raw)) ? String(raw) : null;
-    };
+    const globalIndexA = orderedLessons.findIndex(l => (l._id || l.id) === idA);
+    const globalIndexB = orderedLessons.findIndex(l => (l._id || l.id) === idB);
 
-    const currentUnitId = getLessonUnitId(lesson);
+    if (globalIndexA === -1 || globalIndexB === -1) return;
 
-    let newFullList = [];
+    const updated = [...orderedLessons];
+    const temp = updated[globalIndexA];
+    updated[globalIndexA] = updated[globalIndexB];
+    updated[globalIndexB] = temp;
 
-    if (orderedUnits.length > 0) {
-      orderedUnits.forEach(u => {
-        const uId = String(u._id || u.id);
-        if (uId === currentUnitId) {
-          newFullList.push(...updatedUnitLessons);
-        } else {
-          const uLes = orderedLessons.filter(l => getLessonUnitId(l) === uId);
-          newFullList.push(...uLes);
-        }
-      });
-      // Handle unassigned / orphaned
-      const unassigned = orderedLessons.filter(l => getLessonUnitId(l) === null);
-      if (!currentUnitId) {
-        newFullList.push(...updatedUnitLessons);
-      } else {
-        newFullList.push(...unassigned);
-      }
-    } else {
-      newFullList = updatedUnitLessons;
-    }
-
-    applyNewLessonOrder(newFullList);
+    applyNewLessonOrder(updated);
   };
 
   const foundSubject = subjects.find((sub) => (sub._id || sub.id) === subjectId);
@@ -377,19 +388,17 @@ const SubjectDetails = () => {
     }
   };
 
-  // Unit Modal Handlers
+  // Top-level Unit Modal Handlers
   const handleOpenAddUnit = () => {
     setEditingUnit(null);
     setUnitTitle('');
-    setUnitTitleAr('');
-    setUnitOrder(units.length + 1);
+    setUnitOrder(orderedUnits.length + 1);
     setIsUnitModalOpen(true);
   };
 
   const handleOpenEditUnit = (unit) => {
     setEditingUnit(unit);
     setUnitTitle(unit.title || '');
-    setUnitTitleAr(unit.titleAr || '');
     setUnitOrder(unit.order || 1);
     setIsUnitModalOpen(true);
   };
@@ -402,7 +411,11 @@ const SubjectDetails = () => {
     }
 
     setIsSubmittingUnit(true);
-    const loadingToast = toast.loading(editingUnit ? (isRTL ? 'جاري تحديث الوحدة...' : 'Updating unit...') : (isRTL ? 'جاري إنشاء الوحدة...' : 'Creating unit...'));
+    const loadingToast = toast.loading(
+      editingUnit
+        ? (isRTL ? 'جاري تحديث الوحدة...' : 'Updating unit...')
+        : (isRTL ? 'جاري إنشاء الوحدة...' : 'Creating unit...')
+    );
 
     try {
       if (editingUnit) {
@@ -410,7 +423,6 @@ const SubjectDetails = () => {
           id: editingUnit._id || editingUnit.id,
           unitData: {
             title: unitTitle,
-            titleAr: unitTitleAr,
             order: Number(unitOrder)
           }
         })).unwrap();
@@ -418,19 +430,92 @@ const SubjectDetails = () => {
       } else {
         await dispatch(createUnit({
           subjectId,
+          parentId: null,
           title: unitTitle,
-          titleAr: unitTitleAr,
           order: Number(unitOrder)
         })).unwrap();
         toast.success(isRTL ? 'تم إنشاء الوحدة بنجاح! 📁' : 'Unit created successfully! 📁', { id: loadingToast });
       }
 
       setIsUnitModalOpen(false);
+      setEditingUnit(null);
+      setUnitTitle('');
       dispatch(fetchSubjectUnits(subjectId));
     } catch (err) {
       toast.error(err || (isRTL ? 'فشل حفظ الوحدة' : 'Failed to save unit'), { id: loadingToast });
     } finally {
       setIsSubmittingUnit(false);
+    }
+  };
+
+  // Sub-unit Modal Handlers
+  const handleOpenAddSubUnit = (parentUnit) => {
+    if (!parentUnit) return;
+    setEditingSubUnit(null);
+    setParentUnitForSubUnit(parentUnit);
+    setSubUnitTitle('');
+    setSubUnitOrder((parentUnit.subUnits?.length || 0) + 1);
+    setIsSubUnitModalOpen(true);
+  };
+
+  const handleOpenEditSubUnit = (subUnit, parentUnit) => {
+    setEditingSubUnit(subUnit);
+    setParentUnitForSubUnit(
+      parentUnit || (subUnit.parent ? orderedUnits.find((u) => String(u._id || u.id) === String(subUnit.parent)) : null)
+    );
+    setSubUnitTitle(subUnit.title || '');
+    setSubUnitOrder(subUnit.order || 1);
+    setIsSubUnitModalOpen(true);
+  };
+
+  const handleSaveSubUnit = async (e) => {
+    e.preventDefault();
+    if (!subUnitTitle.trim()) {
+      toast.error(isRTL ? 'عنوان الوحدة الفرعية مطلوب' : 'Sub-unit title is required');
+      return;
+    }
+
+    if (!parentUnitForSubUnit) {
+      toast.error(isRTL ? 'الوحدة الرئيسية مفقودة' : 'Parent unit is missing');
+      return;
+    }
+
+    setIsSubmittingSubUnit(true);
+    const loadingToast = toast.loading(
+      editingSubUnit
+        ? (isRTL ? 'جاري تحديث الوحدة الفرعية...' : 'Updating sub-unit...')
+        : (isRTL ? 'جاري إنشاء الوحدة الفرعية...' : 'Creating sub-unit...')
+    );
+
+    try {
+      if (editingSubUnit) {
+        await dispatch(updateUnit({
+          id: editingSubUnit._id || editingSubUnit.id,
+          unitData: {
+            title: subUnitTitle,
+            order: Number(subUnitOrder)
+          }
+        })).unwrap();
+        toast.success(isRTL ? 'تم تحديث الوحدة الفرعية بنجاح!' : 'Sub-unit updated successfully!', { id: loadingToast });
+      } else {
+        await dispatch(createUnit({
+          subjectId,
+          parentId: parentUnitForSubUnit._id || parentUnitForSubUnit.id,
+          title: subUnitTitle,
+          order: Number(subUnitOrder)
+        })).unwrap();
+        toast.success(isRTL ? 'تم إنشاء الوحدة الفرعية بنجاح! 📁' : 'Sub-unit created successfully! 📁', { id: loadingToast });
+      }
+
+      setIsSubUnitModalOpen(false);
+      setEditingSubUnit(null);
+      setParentUnitForSubUnit(null);
+      setSubUnitTitle('');
+      dispatch(fetchSubjectUnits(subjectId));
+    } catch (err) {
+      toast.error(err || (isRTL ? 'فشل حفظ الوحدة الفرعية' : 'Failed to save sub-unit'), { id: loadingToast });
+    } finally {
+      setIsSubmittingSubUnit(false);
     }
   };
 
@@ -763,84 +848,202 @@ const SubjectDetails = () => {
               {orderedUnits.length > 0 ? (
                 <div className="flex flex-col gap-3">
                   {orderedUnits.map((unit, index) => {
-                    const unitLessonsCount = subjectLessons.filter(
-                      l => (l.unit?._id || l.unit || l.unitId) === (unit._id || unit.id)
+                    const unitIdStr = String(unit._id || unit.id);
+                    const directCount = subjectLessons.filter(
+                      l => getRawLessonUnitId(l) === unitIdStr
                     ).length;
+                    const subUnitsList = unit.subUnits || [];
+                    const subLessonsCount = subUnitsList.reduce((acc, su) => {
+                      return acc + subjectLessons.filter(l => getRawLessonUnitId(l) === String(su._id || su.id)).length;
+                    }, 0);
+                    const totalUnitLessonsCount = directCount + subLessonsCount;
                     const isBeingDragged = draggedUnitIndex === index;
 
                     return (
                       <div
                         key={unit._id || unit.id}
-                        draggable={!isReorderingUnits}
-                        onDragStart={(e) => handleUnitDragStart(e, index)}
-                        onDragOver={(e) => handleUnitDragOver(e, index)}
-                        onDrop={(e) => handleUnitDrop(e, index)}
-                        onDragEnd={() => setDraggedUnitIndex(null)}
-                        className={`p-4 md:p-5 rounded-2xl bg-[#0e101a] border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md text-start ${isBeingDragged
+                        className={`p-4 md:p-5 rounded-2xl border transition-all flex flex-col gap-3 shadow-md text-start ${
+                          isBeingDragged
                             ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
-                            : 'border-gray-800/80 hover:border-gray-700'
-                          }`}
+                            : isLight
+                            ? 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
+                            : 'bg-[#0e101a] border-gray-800/80 hover:border-gray-700'
+                        }`}
                       >
-                        <div className="flex items-center gap-3.5 text-start flex-1 min-w-0">
-                          <div
-                            className="cursor-grab active:cursor-grabbing p-2 rounded-xl hover:bg-gray-800/80 text-gray-500 hover:text-white transition-colors shrink-0 flex items-center justify-center"
-                            title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
-                          >
-                            <FiMenu size={18} />
+                        {/* Unit Row */}
+                        <div
+                          draggable={!isReorderingUnits}
+                          onDragStart={(e) => handleUnitDragStart(e, index)}
+                          onDragOver={(e) => handleUnitDragOver(e, index)}
+                          onDrop={(e) => handleUnitDrop(e, index)}
+                          onDragEnd={() => setDraggedUnitIndex(null)}
+                          className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        >
+                          <div className="flex items-center gap-3.5 text-start flex-1 min-w-0">
+                            <div
+                              className={`cursor-grab active:cursor-grabbing p-2 rounded-xl transition-colors shrink-0 flex items-center justify-center ${
+                                isLight ? 'hover:bg-slate-100 text-slate-400 hover:text-slate-700' : 'hover:bg-gray-800/80 text-gray-500 hover:text-white'
+                              }`}
+                              title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+                            >
+                              <FiMenu size={18} />
+                            </div>
+
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black shrink-0 text-sm">
+                              #{unit.order || index + 1}
+                            </div>
+                            <div className="text-start min-w-0 flex-1">
+                              <h4 className={`text-base font-extrabold flex items-center gap-2 truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                {unit.title}
+                              </h4>
+                              <span className="text-xs text-gray-500 font-semibold mt-0.5 block">
+                                {totalUnitLessonsCount} {isRTL ? 'درس/دروس مخصصة' : 'lesson(s) assigned'}
+                                {subUnitsList.length > 0 && ` • ${subUnitsList.length} ${isRTL ? 'وحدات فرعية' : 'sub-unit(s)'}`}
+                              </span>
+                            </div>
                           </div>
 
-                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-black shrink-0 text-sm">
-                            #{unit.order || index + 1}
-                          </div>
-                          <div className="text-start min-w-0 flex-1">
-                            <h4 className="text-base font-extrabold text-white flex items-center gap-2 truncate">
-                              {unit.title}
-                              {unit.titleAr && <span className="text-xs font-normal text-gray-400">({unit.titleAr})</span>}
-                            </h4>
-                            <span className="text-xs text-gray-500 font-semibold mt-0.5 block">
-                              {unitLessonsCount} {isRTL ? 'درس/دروس مخصصة' : 'lesson(s) assigned'}
-                            </span>
+                          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleMoveUnit(index, -1)}
+                              disabled={index === 0 || isReorderingUnits}
+                              className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                              title={isRTL ? "تحريك لأعلى" : "Move Unit Up"}
+                            >
+                              <FiArrowUp size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveUnit(index, 1)}
+                              disabled={index === orderedUnits.length - 1 || isReorderingUnits}
+                              className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                              title={isRTL ? "تحريك لأسفل" : "Move Unit Down"}
+                            >
+                              <FiArrowDown size={16} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAddSubUnit(unit)}
+                              className={`px-3.5 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${
+                                isLight
+                                  ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border-indigo-200'
+                                  : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 hover:text-indigo-300 border-indigo-500/20'
+                              }`}
+                              title={isRTL ? "إضافة وحدة فرعية" : "Add Sub-unit"}
+                            >
+                              <FiPlus size={15} /> {isRTL ? 'إضافة فرعية' : 'Add Sub-unit'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditUnit(unit)}
+                              className={`px-3.5 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${
+                                isLight
+                                  ? 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200'
+                                  : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 border-blue-500/20'
+                              }`}
+                              title={isRTL ? "تعديل الوحدة" : "Edit Unit"}
+                            >
+                              <FiEdit3 size={15} /> {isRTL ? 'تعديل' : 'Edit'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget({ type: 'unit', id: unit._id || unit.id, title: unit.title, name: isRTL ? 'الوحدة' : 'Unit' })}
+                              className={`px-3.5 py-2.5 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${
+                                isLight
+                                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-200'
+                                  : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border-rose-500/20'
+                              }`}
+                              title={isRTL ? "حذف الوحدة" : "Delete Unit"}
+                            >
+                              <FiTrash2 size={15} /> {isRTL ? 'حذف' : 'Delete'}
+                            </button>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleMoveUnit(index, -1)}
-                            disabled={index === 0 || isReorderingUnits}
-                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={isRTL ? "تحريك لأعلى" : "Move Unit Up"}
-                          >
-                            <FiArrowUp size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveUnit(index, 1)}
-                            disabled={index === orderedUnits.length - 1 || isReorderingUnits}
-                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={isRTL ? "تحريك لأسفل" : "Move Unit Down"}
-                          >
-                            <FiArrowDown size={16} />
-                          </button>
+                        {/* Indented Sub-units List */}
+                        {subUnitsList.length > 0 && (
+                          <div className={`mt-2 pt-3 border-t flex flex-col gap-2.5 ${
+                            isLight ? 'border-slate-200' : 'border-gray-800/60'
+                          } ${isRTL ? 'pr-5 sm:pr-8 border-r-2 border-r-indigo-500/40' : 'pl-5 sm:pl-8 border-l-2 border-l-indigo-500/40'}`}>
+                            {subUnitsList.map((su, suIdx) => {
+                              const suId = String(su._id || su.id);
+                              const suLessonsCount = subjectLessons.filter(l => getRawLessonUnitId(l) === suId).length;
 
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditUnit(unit)}
-                            className="px-3.5 py-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-blue-500/20"
-                            title={isRTL ? "تعديل الوحدة" : "Edit Unit"}
-                          >
-                            <FiEdit3 size={15} /> {isRTL ? 'تعديل' : 'Edit'}
-                          </button>
+                              return (
+                                <div
+                                  key={suId}
+                                  className={`p-3 sm:p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-start shadow-xs transition-all ${
+                                    isLight
+                                      ? 'bg-slate-50 hover:bg-slate-100/80 border-slate-200 hover:border-indigo-300'
+                                      : 'bg-[#111422] hover:bg-[#15192c] border-gray-800/70 hover:border-indigo-500/30'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${
+                                      isLight
+                                        ? 'bg-indigo-100 border border-indigo-200 text-indigo-600'
+                                        : 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-400'
+                                    }`}>
+                                      {su.order || suIdx + 1}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className={`text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                                          isLight ? 'text-indigo-600' : 'text-indigo-400'
+                                        }`}>
+                                          <span>↳</span> {isRTL ? "وحدة فرعية" : "Sub-unit"} #{su.order || suIdx + 1}
+                                        </span>
+                                        <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
+                                          isLight
+                                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                                            : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-300'
+                                        }`}>
+                                          {suLessonsCount} {isRTL ? "دروس" : "Lessons"}
+                                        </span>
+                                      </div>
+                                      <h5 className={`text-sm font-extrabold truncate mt-0.5 ${
+                                        isLight ? 'text-slate-900' : 'text-white'
+                                      }`}>
+                                        {su.title}
+                                      </h5>
+                                    </div>
+                                  </div>
 
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTarget({ type: 'unit', id: unit._id || unit.id, title: unit.title, name: isRTL ? 'الوحدة' : 'Unit' })}
-                            className="px-3.5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 font-extrabold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/20"
-                            title={isRTL ? "حذف الوحدة" : "Delete Unit"}
-                          >
-                            <FiTrash2 size={15} /> {isRTL ? 'حذف' : 'Delete'}
-                          </button>
-                        </div>
+                                  <div className="flex items-center gap-2 justify-end shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditSubUnit(su, unit)}
+                                      className={`px-3 py-1.5 rounded-lg font-extrabold text-xs flex items-center gap-1 cursor-pointer transition-all border ${
+                                        isLight
+                                          ? 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200'
+                                          : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 border-blue-500/20'
+                                      }`}
+                                      title={isRTL ? "تعديل الوحدة الفرعية" : "Edit Sub-unit"}
+                                    >
+                                      <FiEdit3 size={13} /> {isRTL ? 'تعديل' : 'Edit'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setDeleteTarget({ type: 'unit', id: suId, title: su.title, name: isRTL ? 'الوحدة الفرعية' : 'Sub-unit' })}
+                                      className={`px-3 py-1.5 rounded-lg font-extrabold text-xs flex items-center gap-1 cursor-pointer transition-all border ${
+                                        isLight
+                                          ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 border-rose-200'
+                                          : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border-rose-500/20'
+                                      }`}
+                                      title={isRTL ? "حذف الوحدة الفرعية" : "Delete Sub-unit"}
+                                    >
+                                      <FiTrash2 size={13} /> {isRTL ? 'حذف' : 'Delete'}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -893,499 +1096,487 @@ const SubjectDetails = () => {
 
               {/* Units-based collapsible grouping */}
               {orderedUnits.length > 0 ? (
-                <div className="flex flex-col gap-5">
-                  {orderedUnits.map((unit, uIdx) => {
-                    const unitId = String(unit._id || unit.id);
-                    const unitLessons = orderedLessons.filter(l => {
-                      const raw = typeof l.unit === 'object' ? (l.unit?._id || l.unit?.id) : (l.unit || l.unitId);
-                      return raw && String(raw) === unitId;
+                (() => {
+                  const allValidUnitAndSubUnitIds = new Set();
+                  orderedUnits.forEach((u) => {
+                    allValidUnitAndSubUnitIds.add(String(u._id || u.id));
+                    (u.subUnits || []).forEach((su) => {
+                      allValidUnitAndSubUnitIds.add(String(su._id || su.id));
                     });
-                    const isCollapsed = !!collapsedUnits[unitId];
+                  });
+
+                  const renderTeacherLessonCard = (les, indexInGroup, groupList) => {
+                    const globalIndex = orderedLessons.findIndex((l) => (l._id || l.id) === (les._id || les.id));
+                    const isBeingDragged = draggedLessonIndex === globalIndex;
+                    const isDropdownOpen = activeLessonDropdown === (les._id || les.id);
+                    const openUpwards = indexInGroup >= Math.max(1, groupList.length - 2);
 
                     return (
                       <div
-                        key={unitId}
-                        className={`rounded-3xl bg-[#0c0d19] border border-gray-800/90 shadow-lg transition-all ${
-                          isCollapsed ? 'overflow-hidden' : 'overflow-visible'
-                        }`}
+                        key={les._id || les.id || indexInGroup}
+                        draggable={!isReordering}
+                        onDragStart={(e) => handleDragStart(e, globalIndex)}
+                        onDragOver={(e) => handleDragOver(e, globalIndex)}
+                        onDrop={(e) => handleDrop(e, globalIndex)}
+                        onDragEnd={() => setDraggedLessonIndex(null)}
+                        className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${
+                          isBeingDragged
+                            ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
+                            : isLight
+                            ? 'bg-white border-slate-200 hover:border-slate-300 shadow-xs'
+                            : 'bg-[#0e101a] border-gray-800/80 hover:border-gray-700'
+                        } ${isDropdownOpen ? 'z-50' : 'z-10'}`}
                       >
-                        {/* Unit Accordion Header */}
-                        <div
-                          onClick={() => toggleUnitCollapse(unitId)}
-                          className="p-4 sm:p-5 bg-[#101322] border-b border-gray-800/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#14182c] transition-colors select-none rounded-t-3xl"
-                        >
-                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                            <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 font-black text-xs shrink-0 shadow-sm">
-                              #{unit.order || uIdx + 1}
-                            </div>
-                            <div className="flex flex-col text-start min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[11px] font-black text-blue-400 uppercase tracking-wider">
-                                  {isRTL ? "الوحدة" : "Unit"} #{unit.order || uIdx + 1}
-                                </span>
-                                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[10px] font-bold">
-                                  {unitLessons.length} {isRTL ? "دروس" : "Lessons"}
-                                </span>
-                              </div>
-                              <h4 className="text-sm md:text-base font-extrabold text-white truncate mt-0.5">
-                                {unit.title} {unit.titleAr ? `(${unit.titleAr})` : ''}
-                              </h4>
-                            </div>
+                        {/* Drag Handle & Order Badge */}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div
+                            className={`cursor-grab active:cursor-grabbing p-2 rounded-xl transition-colors shrink-0 flex items-center justify-center ${
+                              isLight ? 'hover:bg-slate-100 text-slate-400 hover:text-slate-700' : 'hover:bg-gray-800/80 text-gray-500 hover:text-white'
+                            }`}
+                            title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+                          >
+                            <FiMenu size={18} />
                           </div>
 
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="w-8 h-8 rounded-xl bg-gray-800/80 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                              {isCollapsed ? <FiChevronDown size={18} /> : <FiChevronUp size={18} />}
+                          <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 font-black text-xs shrink-0 shadow-sm">
+                            #{les.order || globalIndex + 1}
+                          </div>
+
+                          {/* Lesson Info */}
+                          <div className="flex flex-col text-start min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[11px] font-extrabold text-blue-400 uppercase tracking-wider truncate">
+                                {isRTL ? "الدرس" : "Lesson"} #{les.order || globalIndex + 1}
+                              </span>
+                              {les.animationUrl && (
+                                <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1">
+                                  <FiLayers size={10} /> {isRTL ? "رسوم تفاعلية" : "Interactive HTML"}
+                                </span>
+                              )}
+                            </div>
+                            <h4 className={`text-sm md:text-base font-extrabold mt-0.5 group-hover:text-blue-500 transition-colors truncate ${
+                              isLight ? 'text-slate-900' : 'text-white'
+                            }`} title={les.title}>
+                              {les.title}
+                            </h4>
+                            <div className="flex items-center gap-2.5 flex-wrap text-xs text-gray-500 font-semibold mt-1">
+                              <span className="flex items-center gap-1">
+                                <FiClock size={13} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                                {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${
+                                les.isFree 
+                                  ? (isLight ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30')
+                                  : (isLight ? 'bg-slate-100 text-slate-600 border border-slate-200' : 'bg-gray-800/80 text-gray-400 border border-gray-700/60')
+                              }`}>
+                                {les.isFree ? (isRTL ? 'معاينة مجانية' : 'Free Preview') : (isRTL ? 'مدفوع' : 'Paid')}
+                              </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Unit Lessons Accordion Body */}
-                        {!isCollapsed && (
-                          <div className="p-4 sm:p-5 flex flex-col gap-3 overflow-visible">
-                            {unitLessons.length > 0 ? (
-                              unitLessons.map((les, indexInUnit) => {
-                                const globalIndex = orderedLessons.findIndex(l => (l._id || l.id) === (les._id || les.id));
-                                const isBeingDragged = draggedLessonIndex === globalIndex;
-                                const isDropdownOpen = activeLessonDropdown === (les._id || les.id);
-                                const openUpwards = indexInUnit >= Math.max(1, unitLessons.length - 2);
+                        {/* Reorder Buttons & Actions */}
+                        <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800/40">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveLessonInUnit(les, -1, groupList)}
+                            disabled={indexInGroup === 0 || isReordering}
+                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={isRTL ? "تحريك لأعلى" : "Move Up"}
+                          >
+                            <FiArrowUp size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveLessonInUnit(les, 1, groupList)}
+                            disabled={indexInGroup === groupList.length - 1 || isReordering}
+                            className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={isRTL ? "تحريك لأسفل" : "Move Down"}
+                          >
+                            <FiArrowDown size={16} />
+                          </button>
 
-                                return (
-                                  <div
-                                    key={les._id || les.id || indexInUnit}
-                                    draggable={!isReordering}
-                                    onDragStart={(e) => handleDragStart(e, globalIndex)}
-                                    onDragOver={(e) => handleDragOver(e, globalIndex)}
-                                    onDrop={(e) => handleDrop(e, globalIndex)}
-                                    onDragEnd={() => setDraggedLessonIndex(null)}
-                                    className={`p-4 rounded-2xl bg-[#0e101a] border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
-                                        ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
-                                        : 'border-gray-800/80 hover:border-gray-700'
-                                      } ${isDropdownOpen ? 'z-50' : 'z-10'}`}
+                          {/* Options Dropdown */}
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveLessonDropdown(isDropdownOpen ? null : (les._id || les.id));
+                              }}
+                              className={`w-9 h-9 rounded-xl transition-all cursor-pointer border flex items-center justify-center ${
+                                isDropdownOpen 
+                                  ? 'bg-blue-600 text-white border-blue-500 shadow-md' 
+                                  : 'bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white border-gray-700/50'
+                              }`}
+                              title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
+                            >
+                              <FiMoreVertical size={16} />
+                            </button>
+
+                            {isDropdownOpen && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={() => setActiveLessonDropdown(null)}
+                                />
+
+                                <div className={`absolute right-0 ltr:right-0 rtl:left-0 ${
+                                  openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'
+                                } w-52 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_12px_40px_rgba(0,0,0,0.9)] z-50 p-1.5 flex flex-col gap-1 text-start`}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveLessonDropdown(null);
+                                      navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les._id || les.id}`);
+                                    }}
+                                    className="w-full px-3 py-2 rounded-xl hover:bg-blue-500/10 text-gray-300 hover:text-blue-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
                                   >
-                                    {/* Drag Handle & Order Badge */}
-                                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                                      <div
-                                        className="cursor-grab active:cursor-grabbing p-2 rounded-xl hover:bg-gray-800/80 text-gray-500 hover:text-white transition-colors shrink-0 flex items-center justify-center"
-                                        title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
-                                      >
-                                        <FiMenu size={18} />
-                                      </div>
+                                    <FiEdit3 size={15} className="text-blue-400" />
+                                    <span>{isRTL ? "تعديل الدرس" : "Edit Lesson"}</span>
+                                  </button>
 
-                                      <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-400 font-black text-xs shrink-0 shadow-sm">
-                                        #{les.order || globalIndex + 1}
-                                      </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveLessonDropdown(null);
+                                      handleToggleFreeLesson(les);
+                                    }}
+                                    className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${
+                                      les.isFree 
+                                        ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' 
+                                        : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'
+                                    }`}
+                                  >
+                                    {les.isFree ? (
+                                      <>
+                                        <FiLock size={15} className="text-amber-400" />
+                                        <span>{isRTL ? "تغيير إلى درس مدفوع" : "Make Paid Lesson"}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FiUnlock size={15} className="text-emerald-400" />
+                                        <span>{isRTL ? "تفعيل كمعاينة مجانية" : "Set Free Preview"}</span>
+                                      </>
+                                    )}
+                                  </button>
 
-                                      {/* Lesson Info */}
-                                      <div className="flex flex-col text-start min-w-0 flex-1">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                          <span className="text-[11px] font-extrabold text-blue-400 uppercase tracking-wider truncate">
-                                            {isRTL ? "الدرس" : "Lesson"} #{les.order || globalIndex + 1}
-                                          </span>
-                                          {les.animationUrl && (
-                                            <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1">
-                                              <FiLayers size={10} /> {isRTL ? "رسوم تفاعلية" : "Interactive HTML"}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <h4 className="text-sm md:text-base font-extrabold text-white mt-0.5 group-hover:text-blue-400 transition-colors truncate" title={les.title}>
-                                          {les.title}
-                                        </h4>
-                                        <div className="flex items-center gap-2.5 flex-wrap text-xs text-gray-500 font-semibold mt-1">
-                                          <span className="flex items-center gap-1">
-                                            <FiClock size={13} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
-                                          </span>
-                                          <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                                            {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
-                                          </span>
-                                          <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isFree ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-gray-800/80 text-gray-400 border border-gray-700/60'}`}>
-                                            {les.isFree ? (isRTL ? 'معاينة مجانية' : 'Free Preview') : (isRTL ? 'مدفوع' : 'Paid')}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveLessonDropdown(null);
+                                      handleTogglePublishLesson(les);
+                                    }}
+                                    className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${les.isPublished ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'}`}
+                                  >
+                                    {les.isPublished ? (
+                                      <>
+                                        <FiEyeOff size={15} className="text-amber-400" />
+                                        <span>{isRTL ? "تحويل إلى مسودة" : "Unpublish (Draft)"}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <FiEye size={15} className="text-emerald-400" />
+                                        <span>{isRTL ? "نشر الدرس" : "Publish Lesson"}</span>
+                                      </>
+                                    )}
+                                  </button>
 
-                                    {/* Reorder Buttons & Actions */}
-                                    <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800/40">
-                                      {/* Standalone Up / Down Buttons matching Units tab */}
-                                      <button
-                                        type="button"
-                                        onClick={() => handleMoveLessonInUnit(les, -1, unitLessons)}
-                                        disabled={indexInUnit === 0 || isReordering}
-                                        className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
-                                        title={isRTL ? "تحريك لأعلى" : "Move Up"}
-                                      >
-                                        <FiArrowUp size={16} />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleMoveLessonInUnit(les, 1, unitLessons)}
-                                        disabled={indexInUnit === unitLessons.length - 1 || isReordering}
-                                        className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
-                                        title={isRTL ? "تحريك لأسفل" : "Move Down"}
-                                      >
-                                        <FiArrowDown size={16} />
-                                      </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveLessonDropdown(null);
+                                      setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' });
+                                    }}
+                                    className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer border-t border-gray-800/60 mt-0.5 pt-1.5"
+                                  >
+                                    <FiTrash2 size={15} className="text-rose-400" />
+                                    <span>{isRTL ? "حذف الدرس" : "Delete Lesson"}</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  };
 
-                                      {/* Options Dropdown */}
-                                      <div className="relative">
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveLessonDropdown(isDropdownOpen ? null : (les._id || les.id));
-                                          }}
-                                          className={`w-9 h-9 rounded-xl transition-all cursor-pointer border flex items-center justify-center ${
-                                            isDropdownOpen 
-                                              ? 'bg-blue-600 text-white border-blue-500 shadow-md' 
-                                              : 'bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white border-gray-700/50'
-                                          }`}
-                                          title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
-                                        >
-                                          <FiMoreVertical size={16} />
-                                        </button>
+                  const unassignedLessons = orderedLessons.filter((l) => {
+                    const raw = getRawLessonUnitId(l);
+                    return !raw || !allValidUnitAndSubUnitIds.has(String(raw));
+                  });
 
-                                        {isDropdownOpen && (
-                                          <>
-                                            <div
-                                              className="fixed inset-0 z-40"
-                                              onClick={() => setActiveLessonDropdown(null)}
-                                            />
+                  return (
+                    <div className="flex flex-col gap-5">
+                      {orderedUnits.map((unit, uIdx) => {
+                        const unitId = String(unit._id || unit.id);
+                        const directLessons = orderedLessons.filter((l) => getRawLessonUnitId(l) === unitId);
+                        const subUnits = unit.subUnits || [];
+                        const subLessonsCount = subUnits.reduce((acc, su) => {
+                          return acc + orderedLessons.filter((l) => getRawLessonUnitId(l) === String(su._id || su.id)).length;
+                        }, 0);
+                        const totalUnitLessonsCount = directLessons.length + subLessonsCount;
+                        const isCollapsed = !!collapsedUnits[unitId];
 
-                                            <div className={`absolute right-0 ltr:right-0 rtl:left-0 ${
-                                              openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'
-                                            } w-52 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_12px_40px_rgba(0,0,0,0.9)] z-50 p-1.5 flex flex-col gap-1 text-start`}>
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  setActiveLessonDropdown(null);
-                                                  navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les._id || les.id}`);
-                                                }}
-                                                className="w-full px-3 py-2 rounded-xl hover:bg-blue-500/10 text-gray-300 hover:text-blue-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
-                                              >
-                                                <FiEdit3 size={15} className="text-blue-400" />
-                                                <span>{isRTL ? "تعديل الدرس" : "Edit Lesson"}</span>
-                                              </button>
-
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  setActiveLessonDropdown(null);
-                                                  handleToggleFreeLesson(les);
-                                                }}
-                                                className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${
-                                                  les.isFree 
-                                                    ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' 
-                                                    : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'
-                                                }`}
-                                              >
-                                                {les.isFree ? (
-                                                  <>
-                                                    <FiLock size={15} className="text-amber-400" />
-                                                    <span>{isRTL ? "تغيير إلى درس مدفوع" : "Make Paid Lesson"}</span>
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    <FiUnlock size={15} className="text-emerald-400" />
-                                                    <span>{isRTL ? "تفعيل كمعاينة مجانية" : "Set Free Preview"}</span>
-                                                  </>
-                                                )}
-                                              </button>
-
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  setActiveLessonDropdown(null);
-                                                  handleTogglePublishLesson(les);
-                                                }}
-                                                className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${les.isPublished ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'}`}
-                                              >
-                                                {les.isPublished ? (
-                                                  <>
-                                                    <FiEyeOff size={15} className="text-amber-400" />
-                                                    <span>{isRTL ? "تحويل إلى مسودة" : "Unpublish (Draft)"}</span>
-                                                  </>
-                                                ) : (
-                                                  <>
-                                                    <FiEye size={15} className="text-emerald-400" />
-                                                    <span>{isRTL ? "نشر الدرس" : "Publish Lesson"}</span>
-                                                  </>
-                                                )}
-                                              </button>
-
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  setActiveLessonDropdown(null);
-                                                  setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' });
-                                                }}
-                                                className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer border-t border-gray-800/60 mt-0.5 pt-1.5"
-                                              >
-                                                <FiTrash2 size={15} className="text-rose-400" />
-                                                <span>{isRTL ? "حذف الدرس" : "Delete Lesson"}</span>
-                                              </button>
-                                            </div>
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
+                        return (
+                          <div
+                            key={unitId}
+                            className={`rounded-3xl border transition-all ${
+                              isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19] border-gray-800/90 shadow-lg'
+                            } ${isCollapsed ? 'overflow-hidden' : 'overflow-visible'}`}
+                          >
+                            {/* Unit Accordion Header */}
+                            <div
+                              onClick={() => toggleUnitCollapse(unitId)}
+                              className={`p-4 sm:p-5 border-b flex items-center justify-between gap-3 cursor-pointer select-none rounded-t-3xl transition-colors ${
+                                isLight
+                                  ? 'bg-slate-50 hover:bg-slate-100 border-slate-200'
+                                  : 'bg-[#101322] hover:bg-[#14182c] border-gray-800/80'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-sm border ${
+                                  isLight ? 'bg-blue-100 border-blue-200 text-blue-600' : 'bg-blue-500/15 border border-blue-500/30 text-blue-400'
+                                }`}>
+                                  #{unit.order || uIdx + 1}
+                                </div>
+                                <div className="flex flex-col text-start min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[11px] font-black text-blue-500 uppercase tracking-wider">
+                                      {isRTL ? "الوحدة" : "Unit"} #{unit.order || uIdx + 1}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
+                                      isLight ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
+                                    }`}>
+                                      {totalUnitLessonsCount} {isRTL ? "دروس" : "Lessons"}
+                                    </span>
+                                    {subUnits.length > 0 && (
+                                      <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
+                                        isLight ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-300'
+                                      }`}>
+                                        {subUnits.length} {isRTL ? "وحدات فرعية" : "Sub-units"}
+                                      </span>
+                                    )}
                                   </div>
-                                );
-                              })
-                            ) : (
-                              <div className="p-8 text-center bg-[#0e101a]/50 border border-dashed border-gray-800 rounded-2xl flex flex-col items-center justify-center gap-2">
-                                <FiBookOpen className="text-gray-600" size={24} />
-                                <span className="text-xs font-bold text-gray-500">
-                                  {isRTL ? "لا توجد دروس في هذه الوحدة حتى الآن." : "No lessons in this unit yet."}
-                                </span>
+                                  <h4 className={`text-sm md:text-base font-extrabold truncate mt-0.5 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                    {unit.title}
+                                  </h4>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 shrink-0">
                                 <button
                                   type="button"
-                                  onClick={() => navigate(`/teacher/subjects/${subjectId}/add-lesson?unit=${unitId}`)}
-                                  className="mt-1 px-3 py-1.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 text-xs font-bold border border-blue-500/30 flex items-center gap-1 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/teacher/subjects/${subjectId}/add-lesson?unit=${unitId}`);
+                                  }}
+                                  className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition-all border ${
+                                    isLight ? 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200' : 'bg-blue-500/15 hover:bg-blue-500/25 border-blue-500/30 text-blue-400'
+                                  }`}
+                                  title={isRTL ? "إضافة درس للوحدة" : "Add Lesson to Unit"}
                                 >
-                                  <FiPlus size={14} /> {isRTL ? "إضافة أول درس لهذه الوحدة" : "Add First Lesson"}
+                                  <FiPlus size={14} /> <span className="hidden sm:inline">{isRTL ? "درس" : "Lesson"}</span>
                                 </button>
+                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors border ${
+                                  isLight ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200' : 'bg-gray-800/80 border-transparent text-gray-400 hover:text-white'
+                                }`}>
+                                  {isCollapsed ? <FiChevronDown size={18} /> : <FiChevronUp size={18} />}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Unit Accordion Body */}
+                            {!isCollapsed && (
+                              <div className={`p-4 sm:p-5 flex flex-col gap-4 overflow-visible ${isLight ? 'bg-white' : 'bg-[#0c0d19]'}`}>
+                                {/* Direct Unit Lessons */}
+                                {directLessons.length > 0 && (
+                                  <div className="flex flex-col gap-2.5">
+                                    {subUnits.length > 0 && (
+                                      <div className={`flex items-center gap-2 text-xs font-bold px-1 ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+                                        <FiBookOpen size={14} className="text-blue-500" />
+                                        <span>{isRTL ? "دروس مباشرة على الوحدة" : "Direct Unit Lessons"} ({directLessons.length})</span>
+                                      </div>
+                                    )}
+                                    {directLessons.map((les, idx) => renderTeacherLessonCard(les, idx, directLessons))}
+                                  </div>
+                                )}
+
+                                {/* Sub-Units and their lessons */}
+                                {subUnits.map((su, suIdx) => {
+                                  const suId = String(su._id || su.id);
+                                  const suLessons = orderedLessons.filter((l) => getRawLessonUnitId(l) === suId);
+
+                                  return (
+                                    <div
+                                      key={suId}
+                                      className={`rounded-2xl border p-3.5 sm:p-4 flex flex-col gap-3 ${
+                                        isLight
+                                          ? 'bg-slate-50 border-slate-200'
+                                          : 'bg-[#0a0c16] border-gray-800/80'
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${
+                                            isLight
+                                              ? 'bg-indigo-100 border border-indigo-200 text-indigo-600'
+                                              : 'bg-indigo-500/15 border border-indigo-500/30 text-indigo-400'
+                                          }`}>
+                                            {su.order || suIdx + 1}
+                                          </div>
+                                          <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                              <span className={`text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                                                isLight ? 'text-indigo-600' : 'text-indigo-400'
+                                              }`}>
+                                                <span>↳</span> {isRTL ? "الوحدة الفرعية" : "Sub-unit"} #{su.order || suIdx + 1}
+                                              </span>
+                                              <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
+                                                isLight
+                                                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                                                  : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-300'
+                                              }`}>
+                                                {suLessons.length} {isRTL ? "دروس" : "Lessons"}
+                                              </span>
+                                            </div>
+                                            <h5 className={`text-sm font-extrabold truncate mt-0.5 ${
+                                              isLight ? 'text-slate-900' : 'text-white'
+                                            }`}>
+                                              {su.title}
+                                            </h5>
+                                          </div>
+                                        </div>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => navigate(`/teacher/subjects/${subjectId}/add-lesson?unit=${unitId}&subUnit=${suId}`)}
+                                          className={`px-3 py-1 rounded-xl border font-bold text-xs flex items-center gap-1 cursor-pointer transition-all shrink-0 ${
+                                            isLight
+                                              ? 'bg-indigo-100/70 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+                                              : 'bg-indigo-500/15 hover:bg-indigo-500/25 border-indigo-500/30 text-indigo-300'
+                                          }`}
+                                          title={isRTL ? "إضافة درس للوحدة الفرعية" : "Add Lesson to Sub-unit"}
+                                        >
+                                          <FiPlus size={13} /> {isRTL ? "إضافة درس" : "Add Lesson"}
+                                        </button>
+                                      </div>
+
+                                      {/* Sub-unit Lessons */}
+                                      {suLessons.length > 0 ? (
+                                        <div className="flex flex-col gap-2.5 mt-1">
+                                          {suLessons.map((les, idx) => renderTeacherLessonCard(les, idx, suLessons))}
+                                        </div>
+                                      ) : (
+                                        <div className="p-4 text-center bg-[#0e101a]/50 border border-dashed border-gray-800/60 rounded-xl flex flex-col items-center justify-center gap-2">
+                                          <span className="text-xs font-semibold text-gray-500">
+                                            {isRTL ? "لا توجد دروس في هذه الوحدة الفرعية بعد." : "No lessons in this sub-unit yet."}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleOpenAddSubUnit(unit)}
+                                            className="px-3 py-1.5 rounded-xl bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-300 text-xs font-bold border border-indigo-500/30 flex items-center gap-1 cursor-pointer"
+                                          >
+                                            <FiPlus size={14} /> {isRTL ? "إضافة وحدة فرعية" : "Add Sub-unit"}
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+
+                                {/* Empty Unit State */}
+                                {totalUnitLessonsCount === 0 && (
+                                  <div className="p-8 text-center bg-[#0e101a]/50 border border-dashed border-gray-800 rounded-2xl flex flex-col items-center justify-center gap-2">
+                                    <FiBookOpen className="text-gray-600" size={24} />
+                                    <span className="text-xs font-bold text-gray-500">
+                                      {isRTL ? "لا توجد دروس في هذه الوحدة حتى الآن." : "No lessons in this unit yet."}
+                                    </span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => navigate(`/teacher/subjects/${subjectId}/add-lesson?unit=${unitId}`)}
+                                        className="px-3 py-1.5 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 text-xs font-bold border border-blue-500/30 flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <FiPlus size={14} /> {isRTL ? "إضافة أول درس" : "Add First Lesson"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenAddUnit(unit)}
+                                        className="px-3 py-1.5 rounded-xl bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-300 text-xs font-bold border border-indigo-500/30 flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <FiPlus size={14} /> {isRTL ? "إضافة وحدة فرعية" : "Add Sub-unit"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
 
-                  {/* Unassigned Lessons (if any) */}
-                  {(() => {
-                    const validUnitIds = new Set(orderedUnits.map(u => String(u._id || u.id)));
-                    const unassignedLessons = orderedLessons.filter(l => {
-                      const raw = typeof l.unit === 'object' ? (l.unit?._id || l.unit?.id) : (l.unit || l.unitId);
-                      return !raw || !validUnitIds.has(String(raw));
-                    });
-                    if (unassignedLessons.length === 0) return null;
-                    const isCollapsed = !!collapsedUnits['unassigned'];
-
-                    return (
-                      <div className={`rounded-3xl bg-[#0c0d19] border border-gray-800/90 shadow-lg transition-all ${
-                        isCollapsed ? 'overflow-hidden' : 'overflow-visible'
-                      }`}>
-                        <div
-                          onClick={() => toggleUnitCollapse('unassigned')}
-                          className="p-4 sm:p-5 bg-[#101322] border-b border-gray-800/80 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#14182c] transition-colors select-none rounded-t-3xl"
-                        >
-                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                            <div className="w-10 h-10 rounded-xl bg-gray-700/20 border border-gray-700/40 flex items-center justify-center text-gray-400 font-black text-xs shrink-0 shadow-sm">
-                              •
-                            </div>
-                            <div className="flex flex-col text-start min-w-0 flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[11px] font-black text-gray-400 uppercase tracking-wider">
-                                  {isRTL ? "دروس عامة (بدون وحدة)" : "General / Unassigned"}
-                                </span>
-                                <span className="px-2 py-0.5 rounded-full bg-gray-700/20 border border-gray-700/30 text-gray-300 text-[10px] font-bold">
-                                  {unassignedLessons.length} {isRTL ? "دروس" : "Lessons"}
-                                </span>
-                              </div>
-                              <h4 className="text-sm md:text-base font-extrabold text-white truncate mt-0.5">
-                                {isRTL ? "دروس غير مرتبطة بوحدة محددة" : "Lessons not linked to a specific unit"}
-                              </h4>
-                            </div>
-                          </div>
-
-                          <div className="w-8 h-8 rounded-xl bg-gray-800/80 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0">
-                            {isCollapsed ? <FiChevronDown size={18} /> : <FiChevronUp size={18} />}
-                          </div>
-                        </div>
-
-                        {!isCollapsed && (
-                          <div className="p-4 sm:p-5 flex flex-col gap-3 overflow-visible">
-                            {unassignedLessons.map((les, indexInUnassigned) => {
-                              const globalIndex = orderedLessons.findIndex(l => (l._id || l.id) === (les._id || les.id));
-                              const isBeingDragged = draggedLessonIndex === globalIndex;
-                              const isDropdownOpen = activeLessonDropdown === (les._id || les.id);
-                              const openUpwards = indexInUnassigned >= Math.max(1, unassignedLessons.length - 2);
-
-                              return (
-                                <div
-                                  key={les._id || les.id || indexInUnassigned}
-                                  draggable={!isReordering}
-                                  onDragStart={(e) => handleDragStart(e, globalIndex)}
-                                  onDragOver={(e) => handleDragOver(e, globalIndex)}
-                                  onDrop={(e) => handleDrop(e, globalIndex)}
-                                  onDragEnd={() => setDraggedLessonIndex(null)}
-                                  className={`p-4 rounded-2xl bg-[#0e101a] border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
-                                      ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
-                                      : 'border-gray-800/80 hover:border-gray-700'
-                                    } ${isDropdownOpen ? 'z-50' : 'z-10'}`}
-                                >
-                                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div
-                                      className="cursor-grab active:cursor-grabbing p-2 rounded-xl hover:bg-gray-800/80 text-gray-500 hover:text-white transition-colors shrink-0 flex items-center justify-center"
-                                      title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
-                                    >
-                                      <FiMenu size={18} />
-                                    </div>
-
-                                    <div className="w-9 h-9 rounded-xl bg-gray-800/60 border border-gray-700/60 flex items-center justify-center text-gray-300 font-black text-xs shrink-0 shadow-sm">
-                                      #{les.order || globalIndex + 1}
-                                    </div>
-
-                                    <div className="flex flex-col text-start min-w-0 flex-1">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider truncate">
-                                          {isRTL ? "الدرس" : "Lesson"} #{les.order || globalIndex + 1}
-                                        </span>
-                                        {les.animationUrl && (
-                                          <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 text-[10px] font-black flex items-center gap-1">
-                                            <FiLayers size={10} /> {isRTL ? "رسوم تفاعلية" : "Interactive HTML"}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <h4 className="text-sm md:text-base font-extrabold text-white mt-0.5 group-hover:text-blue-400 transition-colors truncate" title={les.title}>
-                                        {les.title}
-                                      </h4>
-                                      <div className="flex items-center gap-2.5 flex-wrap text-xs text-gray-500 font-semibold mt-1">
-                                        <span className="flex items-center gap-1">
-                                          <FiClock size={13} /> {les.duration || 0} {isRTL ? "دقيقة" : "mins"}
-                                        </span>
-                                        <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                                          {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
-                                        </span>
-                                        <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isFree ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-gray-800/80 text-gray-400 border border-gray-700/60'}`}>
-                                          {les.isFree ? (isRTL ? 'معاينة مجانية' : 'Free Preview') : (isRTL ? 'مدفوع' : 'Paid')}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-800/40">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleMoveLessonInUnit(les, -1, unassignedLessons)}
-                                      disabled={indexInUnassigned === 0 || isReordering}
-                                      className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
-                                      title={isRTL ? "تحريك لأعلى" : "Move Up"}
-                                    >
-                                      <FiArrowUp size={16} />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleMoveLessonInUnit(les, 1, unassignedLessons)}
-                                      disabled={indexInUnassigned === unassignedLessons.length - 1 || isReordering}
-                                      className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-900/90 text-slate-700 hover:text-slate-900 dark:text-gray-300 dark:hover:text-white transition-all cursor-pointer border border-slate-300 dark:border-gray-800 hover:border-blue-500/40 disabled:opacity-30 disabled:cursor-not-allowed"
-                                      title={isRTL ? "تحريك لأسفل" : "Move Down"}
-                                    >
-                                      <FiArrowDown size={16} />
-                                    </button>
-
-                                    <div className="relative">
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setActiveLessonDropdown(isDropdownOpen ? null : (les._id || les.id));
-                                        }}
-                                        className={`w-9 h-9 rounded-xl transition-all cursor-pointer border flex items-center justify-center ${
-                                          isDropdownOpen 
-                                            ? 'bg-blue-600 text-white border-blue-500 shadow-md' 
-                                            : 'bg-gray-800/60 hover:bg-gray-700/80 text-gray-300 hover:text-white border-gray-700/50'
-                                        }`}
-                                        title={isRTL ? "خيارات الدرس" : "Lesson Actions"}
-                                      >
-                                        <FiMoreVertical size={16} />
-                                      </button>
-
-                                      {isDropdownOpen && (
-                                        <>
-                                          <div
-                                            className="fixed inset-0 z-40"
-                                            onClick={() => setActiveLessonDropdown(null)}
-                                          />
-
-                                          <div className={`absolute right-0 ltr:right-0 rtl:left-0 ${
-                                            openUpwards ? 'bottom-full mb-1' : 'top-full mt-1'
-                                          } w-52 rounded-2xl bg-[#141829] border border-gray-700 shadow-[0_12px_40px_rgba(0,0,0,0.9)] z-50 p-1.5 flex flex-col gap-1 text-start`}>
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setActiveLessonDropdown(null);
-                                                navigate(`/teacher/subjects/${subjectId}/edit-lesson/${les._id || les.id}`);
-                                              }}
-                                              className="w-full px-3 py-2 rounded-xl hover:bg-blue-500/10 text-gray-300 hover:text-blue-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer"
-                                            >
-                                              <FiEdit3 size={15} className="text-blue-400" />
-                                              <span>{isRTL ? "تعديل الدرس" : "Edit Lesson"}</span>
-                                            </button>
-
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setActiveLessonDropdown(null);
-                                                handleToggleFreeLesson(les);
-                                              }}
-                                              className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${
-                                                les.isFree 
-                                                  ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' 
-                                                  : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'
-                                              }`}
-                                            >
-                                              {les.isFree ? (
-                                                <>
-                                                  <FiLock size={15} className="text-amber-400" />
-                                                  <span>{isRTL ? "تغيير إلى درس مدفوع" : "Make Paid Lesson"}</span>
-                                                </>
-                                              ) : (
-                                                <>
-                                                  <FiUnlock size={15} className="text-emerald-400" />
-                                                  <span>{isRTL ? "تفعيل كمعاينة مجانية" : "Set Free Preview"}</span>
-                                                </>
-                                              )}
-                                            </button>
-
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setActiveLessonDropdown(null);
-                                                handleTogglePublishLesson(les);
-                                              }}
-                                              className={`w-full px-3 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer ${les.isPublished ? 'hover:bg-amber-500/10 text-gray-300 hover:text-amber-400' : 'hover:bg-emerald-500/10 text-gray-300 hover:text-emerald-400'}`}
-                                            >
-                                              {les.isPublished ? (
-                                                <>
-                                                  <FiEyeOff size={15} className="text-amber-400" />
-                                                  <span>{isRTL ? "تحويل إلى مسودة" : "Unpublish (Draft)"}</span>
-                                                </>
-                                              ) : (
-                                                <>
-                                                  <FiEye size={15} className="text-emerald-400" />
-                                                  <span>{isRTL ? "نشر الدرس" : "Publish Lesson"}</span>
-                                                </>
-                                              )}
-                                            </button>
-
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setActiveLessonDropdown(null);
-                                                setDeleteTarget({ type: 'lesson', id: les._id || les.id, title: les.title, name: isRTL ? 'الدرس' : 'Lesson' });
-                                              }}
-                                              className="w-full px-3 py-2 rounded-xl hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 font-bold text-xs flex items-center gap-2 transition-all text-start cursor-pointer border-t border-gray-800/60 mt-0.5 pt-1.5"
-                                            >
-                                              <FiTrash2 size={15} className="text-rose-400" />
-                                              <span>{isRTL ? "حذف الدرس" : "Delete Lesson"}</span>
-                                            </button>
-                                          </div>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
+                      {/* Unassigned Lessons (if any) */}
+                      {unassignedLessons.length > 0 && (() => {
+                        const isCollapsed = !!collapsedUnits['unassigned'];
+                        return (
+                          <div className={`rounded-3xl border transition-all ${
+                            isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19] border-gray-800/90 shadow-lg'
+                          } ${isCollapsed ? 'overflow-hidden' : 'overflow-visible'}`}>
+                            <div
+                              onClick={() => toggleUnitCollapse('unassigned')}
+                              className={`p-4 sm:p-5 border-b flex items-center justify-between gap-3 cursor-pointer select-none rounded-t-3xl transition-colors ${
+                                isLight
+                                  ? 'bg-slate-50 hover:bg-slate-100 border-slate-200'
+                                  : 'bg-[#101322] hover:bg-[#14182c] border-gray-800/80'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-sm border ${
+                                  isLight ? 'bg-slate-200 border-slate-300 text-slate-700' : 'bg-gray-700/20 border-gray-700/40 text-gray-400'
+                                }`}>
+                                  •
                                 </div>
-                              );
-                            })}
+                                <div className="flex flex-col text-start min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`text-[11px] font-black uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-gray-400'}`}>
+                                      {isRTL ? "دروس عامة (بدون وحدة)" : "General / Unassigned"}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${
+                                      isLight ? 'bg-slate-200 border-slate-300 text-slate-700' : 'bg-gray-700/20 border-gray-700/30 text-gray-300'
+                                    }`}>
+                                      {unassignedLessons.length} {isRTL ? "دروس" : "Lessons"}
+                                    </span>
+                                  </div>
+                                  <h4 className={`text-sm md:text-base font-extrabold truncate mt-0.5 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                    {isRTL ? "دروس غير مرتبطة بوحدة محددة" : "Lessons not linked to a specific unit"}
+                                  </h4>
+                                </div>
+                              </div>
+
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors border shrink-0 ${
+                                isLight ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200' : 'bg-gray-800/80 border-transparent text-gray-400 hover:text-white'
+                              }`}>
+                                {isCollapsed ? <FiChevronDown size={18} /> : <FiChevronUp size={18} />}
+                              </div>
+                            </div>
+
+                            {!isCollapsed && (
+                              <div className={`p-4 sm:p-5 flex flex-col gap-3 overflow-visible ${isLight ? 'bg-white' : 'bg-[#0c0d19]'}`}>
+                                {unassignedLessons.map((les, indexInUnassigned) =>
+                                  renderTeacherLessonCard(les, indexInUnassigned, unassignedLessons)
+                                )}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                })()
               ) : orderedLessons.length > 0 ? (
                 /* Flat lessons list when no units exist */
                 <div className="flex flex-col gap-3 overflow-visible">
@@ -1402,15 +1593,19 @@ const SubjectDetails = () => {
                         onDragOver={(e) => handleDragOver(e, index)}
                         onDrop={(e) => handleDrop(e, index)}
                         onDragEnd={() => setDraggedLessonIndex(null)}
-                        className={`p-4 md:p-5 rounded-2xl bg-[#0e101a] border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
+                        className={`p-4 md:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 text-start group relative ${isBeingDragged
                             ? 'opacity-40 border-dashed border-blue-500 bg-blue-950/20'
+                            : isLight
+                            ? 'bg-white border-slate-200 hover:border-slate-300 shadow-xs'
                             : 'border-gray-800/80 hover:border-gray-700'
                           } ${isDropdownOpen ? 'z-50' : 'z-10'}`}
                       >
                         {/* Drag Handle & Order Badge */}
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div
-                            className="cursor-grab active:cursor-grabbing p-2 rounded-xl hover:bg-gray-800/80 text-gray-500 hover:text-white transition-colors shrink-0 flex items-center justify-center"
+                            className={`cursor-grab active:cursor-grabbing p-2 rounded-xl transition-colors shrink-0 flex items-center justify-center ${
+                              isLight ? 'hover:bg-slate-100 text-slate-400 hover:text-slate-700' : 'hover:bg-gray-800/80 text-gray-500 hover:text-white'
+                            }`}
                             title={isRTL ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
                           >
                             <FiMenu size={18} />
@@ -1432,7 +1627,9 @@ const SubjectDetails = () => {
                                 </span>
                               )}
                             </div>
-                            <h4 className="text-sm md:text-base font-extrabold text-white mt-0.5 group-hover:text-blue-400 transition-colors truncate" title={les.title}>
+                            <h4 className={`text-sm md:text-base font-extrabold mt-0.5 group-hover:text-blue-500 transition-colors truncate ${
+                              isLight ? 'text-slate-900' : 'text-white'
+                            }`} title={les.title}>
                               {les.title}
                             </h4>
                             <div className="flex items-center gap-2.5 flex-wrap text-xs text-gray-500 font-semibold mt-1">
@@ -1442,7 +1639,11 @@ const SubjectDetails = () => {
                               <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isPublished ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
                                 {les.isPublished ? (isRTL ? 'منشور' : 'Published') : (isRTL ? 'مسودة' : 'Draft')}
                               </span>
-                              <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${les.isFree ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-gray-800/80 text-gray-400 border border-gray-700/60'}`}>
+                              <span className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase ${
+                                les.isFree 
+                                  ? (isLight ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30')
+                                  : (isLight ? 'bg-slate-100 text-slate-600 border border-slate-200' : 'bg-gray-800/80 text-gray-400 border border-gray-700/60')
+                              }`}>
                                 {les.isFree ? (isRTL ? 'معاينة مجانية' : 'Free Preview') : (isRTL ? 'مدفوع' : 'Paid')}
                               </span>
                             </div>
@@ -1829,7 +2030,7 @@ const SubjectDetails = () => {
         </div>
       </div>
 
-      {/* UNIT CREATION / EDIT MODAL */}
+      {/* TOP-LEVEL UNIT MODAL */}
       <AnimatePresence>
         {isUnitModalOpen && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm p-4 sm:p-6 flex min-h-full items-center justify-center">
@@ -1837,15 +2038,30 @@ const SubjectDetails = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md my-auto bg-[#0e101a] border border-gray-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-start relative max-h-[calc(100vh-2rem)] overflow-y-auto"
+              className={`w-full max-w-md my-auto border rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-start relative max-h-[calc(100vh-2rem)] overflow-y-auto ${
+                isLight
+                  ? 'bg-white border-slate-200 text-slate-900 shadow-xl'
+                  : 'bg-[#0e101a] border-gray-800 text-white'
+              }`}
             >
-              <div className="flex items-center justify-between border-b border-gray-800 pb-3">
-                <h3 className="text-lg font-black text-white">
-                  {editingUnit ? (isRTL ? 'تعديل الوحدة' : 'Edit Unit') : (isRTL ? 'إنشاء وحدة جديدة' : 'Create New Unit')}
-                </h3>
+              <div className={`flex items-center justify-between border-b pb-3 ${isLight ? 'border-slate-200' : 'border-gray-800'}`}>
+                <div className="flex flex-col text-start">
+                  <h3 className={`text-lg font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    {editingUnit
+                      ? (isRTL ? 'تعديل الوحدة' : 'Edit Unit')
+                      : (isRTL ? 'إنشاء وحدة جديدة' : 'Create New Unit')}
+                  </h3>
+                </div>
                 <button
-                  onClick={() => setIsUnitModalOpen(false)}
-                  className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-white"
+                  onClick={() => {
+                    setIsUnitModalOpen(false);
+                    setEditingUnit(null);
+                  }}
+                  className={`p-2 rounded-full transition-colors ${
+                    isLight
+                      ? 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'
+                      : 'hover:bg-gray-800 text-gray-400 hover:text-white'
+                  }`}
                 >
                   <FiX size={18} />
                 </button>
@@ -1853,21 +2069,12 @@ const SubjectDetails = () => {
 
               <form onSubmit={handleSaveUnit} className="flex flex-col gap-4 text-start">
                 <Input
-                  label={isRTL ? "عنوان الوحدة (إنجليزي)" : "Unit Title (English)"}
+                  label={isRTL ? "عنوان الوحدة" : "Unit Title"}
                   type="text"
                   value={unitTitle}
                   onChange={(e) => setUnitTitle(e.target.value)}
-                  placeholder={isRTL ? "مثال: Unit 1: Foundations" : "e.g. Unit 1: Foundations"}
+                  placeholder={isRTL ? "مثال: الوحدة الأولى" : "e.g. Unit 1: Foundations"}
                   required
-                  roleColor="teacher"
-                />
-
-                <Input
-                  label={isRTL ? "عنوان الوحدة (عربي - اختياري)" : "Unit Title (Arabic - Optional)"}
-                  type="text"
-                  value={unitTitleAr}
-                  onChange={(e) => setUnitTitleAr(e.target.value)}
-                  placeholder="مثال: الوحدة الأولى"
                   roleColor="teacher"
                 />
 
@@ -1884,8 +2091,15 @@ const SubjectDetails = () => {
                 <div className="flex items-center justify-end gap-3 mt-3">
                   <button
                     type="button"
-                    onClick={() => setIsUnitModalOpen(false)}
-                    className="px-5 py-2.5 rounded-2xl bg-gray-900/80 hover:bg-gray-800 border border-gray-800 text-xs font-black text-gray-400 hover:text-white transition-all cursor-pointer"
+                    onClick={() => {
+                      setIsUnitModalOpen(false);
+                      setEditingUnit(null);
+                    }}
+                    className={`px-5 py-2.5 rounded-2xl border text-xs font-black transition-all cursor-pointer ${
+                      isLight
+                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 hover:text-slate-900'
+                        : 'bg-gray-900/80 hover:bg-gray-800 border-gray-800 text-gray-400 hover:text-white'
+                    }`}
                   >
                     {isRTL ? "إلغاء" : "Cancel"}
                   </button>
@@ -1894,7 +2108,109 @@ const SubjectDetails = () => {
                     disabled={isSubmittingUnit}
                     className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-black text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all cursor-pointer border border-blue-400/30 disabled:opacity-50"
                   >
-                    {isSubmittingUnit ? (isRTL ? 'جاري الحفظ...' : 'Saving...') : editingUnit ? (isRTL ? 'تحديث الوحدة' : 'Update Unit') : (isRTL ? 'إنشاء الوحدة' : 'Create Unit')}
+                    {isSubmittingUnit
+                      ? (isRTL ? 'جاري الحفظ...' : 'Saving...')
+                      : editingUnit
+                      ? (isRTL ? 'تحديث الوحدة' : 'Update Unit')
+                      : (isRTL ? 'إنشاء الوحدة' : 'Create Unit')}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* SUB-UNIT MODAL */}
+      <AnimatePresence>
+        {isSubUnitModalOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm p-4 sm:p-6 flex min-h-full items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className={`w-full max-w-md my-auto border rounded-3xl p-6 shadow-2xl flex flex-col gap-5 text-start relative max-h-[calc(100vh-2rem)] overflow-y-auto ${
+                isLight
+                  ? 'bg-white border-slate-200 text-slate-900 shadow-xl'
+                  : 'bg-[#0e101a] border-gray-800 text-white'
+              }`}
+            >
+              <div className={`flex items-center justify-between border-b pb-3 ${isLight ? 'border-slate-200' : 'border-gray-800'}`}>
+                <div className="flex flex-col text-start">
+                  <h3 className={`text-lg font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    {editingSubUnit
+                      ? (isRTL ? 'تعديل الوحدة الفرعية' : 'Edit Sub-unit')
+                      : (isRTL ? 'إنشاء وحدة فرعية جديدة' : 'Create New Sub-unit')}
+                  </h3>
+                  {parentUnitForSubUnit && (
+                    <span className="text-xs text-indigo-500 dark:text-indigo-400 font-bold mt-0.5 flex items-center gap-1">
+                      <span>↳</span> {isRTL ? 'تابعة للوحدة:' : 'Sub-unit of:'} {parentUnitForSubUnit.title || ''}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setIsSubUnitModalOpen(false);
+                    setEditingSubUnit(null);
+                    setParentUnitForSubUnit(null);
+                  }}
+                  className={`p-2 rounded-full transition-colors ${
+                    isLight
+                      ? 'hover:bg-slate-100 text-slate-400 hover:text-slate-700'
+                      : 'hover:bg-gray-800 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveSubUnit} className="flex flex-col gap-4 text-start">
+                <Input
+                  label={isRTL ? "عنوان الوحدة الفرعية" : "Sub-unit Title"}
+                  type="text"
+                  value={subUnitTitle}
+                  onChange={(e) => setSubUnitTitle(e.target.value)}
+                  placeholder={isRTL ? "مثال: 1.1 المعادلات الخطية" : "e.g. 1.1 Linear Equations"}
+                  required
+                  roleColor="teacher"
+                />
+
+                <Input
+                  label={isRTL ? "ترتيب العرض" : "Display Order"}
+                  type="number"
+                  value={subUnitOrder}
+                  onChange={(e) => setSubUnitOrder(e.target.value)}
+                  min={1}
+                  required
+                  roleColor="teacher"
+                />
+
+                <div className="flex items-center justify-end gap-3 mt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSubUnitModalOpen(false);
+                      setEditingSubUnit(null);
+                      setParentUnitForSubUnit(null);
+                    }}
+                    className={`px-5 py-2.5 rounded-2xl border text-xs font-black transition-all cursor-pointer ${
+                      isLight
+                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 hover:text-slate-900'
+                        : 'bg-gray-900/80 hover:bg-gray-800 border-gray-800 text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    {isRTL ? "إلغاء" : "Cancel"}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingSubUnit}
+                    className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-black text-white shadow-[0_4px_15px_rgba(37,99,235,0.3)] transition-all cursor-pointer border border-blue-400/30 disabled:opacity-50"
+                  >
+                    {isSubmittingSubUnit
+                      ? (isRTL ? 'جاري الحفظ...' : 'Saving...')
+                      : editingSubUnit
+                      ? (isRTL ? 'تحديث الوحدة الفرعية' : 'Update Sub-unit')
+                      : (isRTL ? 'إنشاء الوحدة الفرعية' : 'Create Sub-unit')}
                   </button>
                 </div>
               </form>

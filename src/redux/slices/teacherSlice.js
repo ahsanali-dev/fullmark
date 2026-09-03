@@ -631,6 +631,7 @@ const initialState = {
   stats: null,
   subjects: [],
   units: [],
+  allUnits: [],
   weaknessTopics: [],
   lessons: [],
   questions: [],
@@ -781,19 +782,65 @@ const teacherSlice = createSlice({
       // Units
       .addCase(fetchSubjectUnits.fulfilled, (state, action) => {
         state.units = action.payload?.units || (Array.isArray(action.payload) ? action.payload : []);
+        state.allUnits = action.payload?.allUnits || [];
       })
       .addCase(createUnit.fulfilled, (state, action) => {
         const newUnit = action.payload?.unit || action.payload;
-        if (newUnit) state.units = [...state.units, newUnit];
+        if (newUnit) {
+          state.allUnits = [...state.allUnits, newUnit];
+          if (newUnit.parent) {
+            const parentId = String(newUnit.parent);
+            state.units = state.units.map((u) => {
+              if (String(u._id || u.id) === parentId) {
+                return {
+                  ...u,
+                  subUnits: [...(u.subUnits || []), newUnit],
+                };
+              }
+              return u;
+            });
+          } else {
+            state.units = [...state.units, { ...newUnit, subUnits: newUnit.subUnits || [] }];
+          }
+        }
       })
       .addCase(updateUnit.fulfilled, (state, action) => {
         const updatedUnit = action.payload?.unit || action.payload;
         if (updatedUnit) {
-          state.units = state.units.map((u) => (u._id === updatedUnit._id ? updatedUnit : u));
+          state.allUnits = state.allUnits.map((u) =>
+            (u._id || u.id) === (updatedUnit._id || updatedUnit.id) ? updatedUnit : u
+          );
+          if (updatedUnit.parent) {
+            const parentId = String(updatedUnit.parent);
+            state.units = state.units.map((u) => {
+              if (String(u._id || u.id) === parentId) {
+                return {
+                  ...u,
+                  subUnits: (u.subUnits || []).map((su) =>
+                    (su._id || su.id) === (updatedUnit._id || updatedUnit.id) ? updatedUnit : su
+                  ),
+                };
+              }
+              return u;
+            });
+          } else {
+            state.units = state.units.map((u) =>
+              (u._id || u.id) === (updatedUnit._id || updatedUnit.id)
+                ? { ...updatedUnit, subUnits: u.subUnits || [] }
+                : u
+            );
+          }
         }
       })
       .addCase(deleteUnit.fulfilled, (state, action) => {
-        state.units = state.units.filter((u) => u._id !== action.payload);
+        const targetId = String(action.payload);
+        state.allUnits = state.allUnits.filter((u) => String(u._id || u.id) !== targetId);
+        state.units = state.units
+          .filter((u) => String(u._id || u.id) !== targetId)
+          .map((u) => ({
+            ...u,
+            subUnits: (u.subUnits || []).filter((su) => String(su._id || su.id) !== targetId),
+          }));
       })
       // Banner Upload
       .addCase(uploadSubjectBanner.fulfilled, (state, action) => {

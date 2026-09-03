@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   FiChevronLeft,
   FiType,
@@ -77,8 +77,30 @@ const parseDurationToMinutes = (durStr) => {
   return match ? parseInt(match[0], 10) : 0;
 };
 
+const resolveUnitPlacement = (rawUnitId, unitsList) => {
+  if (!rawUnitId || !Array.isArray(unitsList)) return { unitId: '', subUnitId: '' };
+  const rawStr = String(rawUnitId);
+  // 1. Direct top-level unit match
+  const directUnit = unitsList.find((u) => String(u._id || u.id) === rawStr);
+  if (directUnit) {
+    return { unitId: String(directUnit._id || directUnit.id), subUnitId: '' };
+  }
+  // 2. Sub-unit match inside any unit
+  for (const u of unitsList) {
+    const directSub = (u.subUnits || []).find((su) => String(su._id || su.id) === rawStr);
+    if (directSub) {
+      return {
+        unitId: String(u._id || u.id),
+        subUnitId: String(directSub._id || directSub.id)
+      };
+    }
+  }
+  return { unitId: '', subUnitId: '' };
+};
+
 const AddLesson = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { subjectId, lessonId } = useParams();
   const isEditing = Boolean(lessonId);
   const dispatch = useDispatch();
@@ -94,6 +116,7 @@ const AddLesson = () => {
   });
 
   const [selectedUnitId, setSelectedUnitId] = useState('');
+  const [selectedSubUnitId, setSelectedSubUnitId] = useState('');
   const [hasLoadedData, setHasLoadedData] = useState(false);
 
   // Accordion section states (all open by default in edit/add mode for fast access)
@@ -196,7 +219,12 @@ const AddLesson = () => {
           : ''
       );
       setLessonOrder(existingLesson.order || 1);
-      setSelectedUnitId(existingLesson.unit?._id || existingLesson.unit || existingLesson.unitId || '');
+      
+      const rawUnitVal = existingLesson.unit?._id || existingLesson.unit || existingLesson.unitId || '';
+      const { unitId: resolvedUnitId, subUnitId: resolvedSubUnitId } = resolveUnitPlacement(rawUnitVal, units);
+      setSelectedUnitId(resolvedUnitId || (typeof rawUnitVal === 'string' ? rawUnitVal : ''));
+      setSelectedSubUnitId(resolvedSubUnitId || '');
+
       setExplanationVideoUrl(existingLesson.videoUrl || existingLesson.videoPreviewUrl || '');
       
       const formattedLength = existingLesson.videoLength
@@ -214,7 +242,44 @@ const AddLesson = () => {
       setAllowRetakes(existingLesson.allowRetakes !== false);
       setIsFormInitialized(true);
     }
-  }, [existingLesson, isFormInitialized, selectedSubjectId]);
+  }, [existingLesson, isFormInitialized, selectedSubjectId, units]);
+
+  // Re-resolve unit and sub-unit once units are loaded for an existing lesson
+  useEffect(() => {
+    if (isEditing && existingLesson && units.length > 0) {
+      const rawUnitVal = existingLesson.unit?._id || existingLesson.unit || existingLesson.unitId || '';
+      if (rawUnitVal) {
+        const { unitId: resolvedUnitId, subUnitId: resolvedSubUnitId } = resolveUnitPlacement(rawUnitVal, units);
+        if (resolvedUnitId) {
+          setSelectedUnitId(resolvedUnitId);
+          setSelectedSubUnitId(resolvedSubUnitId);
+        }
+      }
+    }
+  }, [isEditing, existingLesson, units]);
+
+  // Preselect unit and sub-unit from query params for a newly created lesson
+  useEffect(() => {
+    if (!isEditing && units.length > 0) {
+      const qUnit = searchParams.get('unit') || searchParams.get('unitId');
+      const qSubUnit = searchParams.get('subUnit') || searchParams.get('subUnitId');
+      if (qUnit) {
+        const { unitId: rUnit, subUnitId: rSub } = resolveUnitPlacement(qUnit, units);
+        if (rUnit) {
+          setSelectedUnitId(rUnit);
+          if (qSubUnit) {
+            const foundParent = units.find((u) => String(u._id || u.id) === rUnit);
+            const foundSub = (foundParent?.subUnits || []).find((su) => String(su._id || su.id) === String(qSubUnit));
+            if (foundSub) {
+              setSelectedSubUnitId(String(foundSub._id || foundSub.id));
+            }
+          } else if (rSub) {
+            setSelectedSubUnitId(rSub);
+          }
+        }
+      }
+    }
+  }, [isEditing, units, searchParams]);
 
   // Set default order for newly created lesson
   useEffect(() => {
@@ -316,7 +381,7 @@ const AddLesson = () => {
       subject: selectedSubjectId,
       subjectId: selectedSubjectId,
       unitId: selectedUnitId || null,
-      unit: selectedUnitId || null,
+      subUnitId: (selectedUnitId && selectedSubUnitId) ? selectedSubUnitId : null,
       title: lessonTitle.trim(),
       titleAr: lessonTitleAr.trim() || null,
       description: lessonDescription.trim(),
@@ -503,27 +568,64 @@ const AddLesson = () => {
                   />
                 </div>
 
-                {/* Unit Selector */}
-                <div className="flex flex-col gap-1 text-start">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider px-1">
-                    {isRTL ? "تعيين إلى وحدة (اختياري)" : "Assign to Unit (Optional)"}
-                  </span>
-                  <div className="relative w-full">
-                    <select
-                      value={selectedUnitId}
-                      onChange={(e) => setSelectedUnitId(e.target.value)}
-                      className="w-full px-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 appearance-none cursor-pointer text-sm"
-                    >
-                      <option value="">{isRTL ? "بدون وحدة (درس عام)" : "No Unit (General Lesson)"}</option>
-                      {units.map((u) => (
-                        <option key={u._id || u.id} value={u._id || u.id}>
-                          {u.title} {u.titleAr ? `(${u.titleAr})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none`} />
-                  </div>
-                </div>
+                {/* Unit & Sub-unit Selectors */}
+                {(() => {
+                  const selectedUnit = units.find((u) => String(u._id || u.id) === String(selectedUnitId));
+                  const hasSubUnits = Boolean(selectedUnit?.subUnits && selectedUnit.subUnits.length > 0);
+
+                  return (
+                    <div className={`grid grid-cols-1 ${hasSubUnits ? 'md:grid-cols-2' : ''} gap-4`}>
+                      {/* Unit Selector */}
+                      <div className="flex flex-col gap-1 text-start">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider px-1">
+                          {isRTL ? "تعيين إلى وحدة (اختياري)" : "Assign to Unit (Optional)"}
+                        </span>
+                        <div className="relative w-full">
+                          <select
+                            value={selectedUnitId}
+                            onChange={(e) => {
+                              setSelectedUnitId(e.target.value);
+                              setSelectedSubUnitId('');
+                            }}
+                            className="w-full px-4 py-3.5 bg-[#0e101a] border border-gray-800 rounded-2xl text-white font-semibold outline-none focus:border-blue-500/50 appearance-none cursor-pointer text-sm"
+                          >
+                            <option value="">{isRTL ? "بدون وحدة (درس عام)" : "No Unit (General Lesson)"}</option>
+                            {units.map((u) => (
+                              <option key={u._id || u.id} value={u._id || u.id}>
+                                {u.title} {u.titleAr ? `(${u.titleAr})` : ''}
+                              </option>
+                            ))}
+                          </select>
+                          <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none`} />
+                        </div>
+                      </div>
+
+                      {/* Sub-unit Selector */}
+                      {hasSubUnits && (
+                        <div className="flex flex-col gap-1 text-start">
+                          <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider px-1 flex items-center gap-1">
+                            <span>↳</span> {isRTL ? "الوحدة الفرعية (اختياري)" : "Sub-unit (Optional)"}
+                          </span>
+                          <div className="relative w-full">
+                            <select
+                              value={selectedSubUnitId}
+                              onChange={(e) => setSelectedSubUnitId(e.target.value)}
+                              className="w-full px-4 py-3.5 bg-[#0e101a] border border-blue-500/30 rounded-2xl text-white font-semibold outline-none focus:border-blue-500 appearance-none cursor-pointer text-sm"
+                            >
+                              <option value="">{isRTL ? "بدون وحدة فرعية (مباشرة في الوحدة)" : "No sub-unit (directly in unit)"}</option>
+                              {(selectedUnit?.subUnits || []).map((su) => (
+                                <option key={su._id || su.id} value={su._id || su.id}>
+                                  {su.title} {su.titleAr ? `(${su.titleAr})` : ''}
+                                </option>
+                              ))}
+                            </select>
+                            <FiChevronDown className={`text-gray-400 absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 -translate-y-1/2 pointer-events-none`} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Description */}
                 <textarea

@@ -194,6 +194,9 @@ const CourseDetails = () => {
   const assignedLessonIds = new Set();
   rawUnits.forEach((u) => {
     (u.lessons || []).forEach((l) => assignedLessonIds.add(l._id || l.id));
+    (u.subUnits || []).forEach((su) => {
+      (su.lessons || []).forEach((l) => assignedLessonIds.add(l._id || l.id));
+    });
   });
   const unassignedLessons = allLessons.filter((l) => !assignedLessonIds.has(l._id || l.id));
 
@@ -372,265 +375,215 @@ const CourseDetails = () => {
               <p className="text-sm font-bold">{isRTL ? "لم يتم نشر دروس في هذا الكورس بعد." : "No published lessons in this course yet."}</p>
             </div>
           ) : rawUnits.length > 0 ? (
-            <div className="flex flex-col gap-4">
-              {rawUnits.map((unit) => {
-                const unitId = unit._id;
-                const isOpen = expandedUnits[unitId] !== false;
-                const unitLessons = unit.lessons || [];
+            (() => {
+              const renderStudentLessonItem = (lesson) => {
+                const isFree = Boolean(lesson.isFree);
+                const canPlay = isEnrolled || isFree;
 
                 return (
-                  <div 
-                    key={unitId} 
-                    className={`rounded-3xl border overflow-hidden transition-all ${
-                      isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80 shadow-md'
-                    }`}
-                  >
-                    {/* Unit Accordion Header */}
-                    <button
-                      onClick={() => toggleUnit(unitId)}
-                      className={`w-full p-4 sm:p-5 flex items-center justify-between text-start cursor-pointer transition-colors ${
-                        isLight ? 'hover:bg-slate-50' : 'hover:bg-white/[0.02]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-blue-500 shrink-0 ${
-                          isLight ? 'bg-blue-50' : 'bg-blue-500/10'
-                        }`}>
-                          {isOpen ? <FiChevronDown size={18} /> : <FiChevronRight size={18} className={isRTL ? 'rotate-180' : ''} />}
-                        </div>
-                        <div className="flex flex-col text-start">
-                          <span className={`text-base font-extrabold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                            {(isRTL && unit.titleAr) ? unit.titleAr : unit.title}
-                          </span>
-                          <span className="text-xs text-gray-500 font-bold mt-0.5">
-                            {unitLessons.length} {isRTL ? "دروس" : "Lessons"}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-
-                    {/* Unit Lessons */}
-                    {isOpen && (
-                      <div className={`p-3 sm:p-4 pt-0 flex flex-col gap-2.5 border-t ${
-                        isLight ? 'border-slate-100 bg-slate-50/50' : 'border-gray-800/40 bg-black/15'
-                      }`}>
-                        {unitLessons.map((lesson) => {
-                          const isFree = Boolean(lesson.isFree);
-                          const canPlay = isEnrolled || isFree;
-
-                          return (
-                            <div
-                              key={lesson._id || lesson.id}
-                              onClick={() => {
-                                if (canPlay) {
-                                  navigate(`/student/courses/${course._id}/lessons/${lesson._id || lesson.id}`);
-                                } else {
-                                  handleEnrollClick();
-                                }
-                              }}
-                              className={`p-3.5 sm:p-4 rounded-2xl border flex items-center justify-between gap-3 transition-all cursor-pointer ${
-                                canPlay
-                                  ? isFree && !isEnrolled
-                                    ? isLight 
-                                      ? 'bg-emerald-50/70 border-emerald-200 hover:border-emerald-400 shadow-xs' 
-                                      : 'bg-emerald-950/20 border-emerald-500/30 hover:border-emerald-500/50'
-                                    : isLight
-                                    ? 'bg-white border-slate-200 hover:border-blue-300 shadow-xs'
-                                    : 'bg-[#121424] border-gray-800 hover:border-blue-500/40'
-                                  : isLight
-                                  ? 'bg-slate-100/70 border-slate-200 opacity-80 hover:opacity-100'
-                                  : 'bg-gray-900/30 border-gray-800/60 opacity-70 hover:opacity-90'
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                                  canPlay
-                                    ? isFree && !isEnrolled
-                                      ? 'bg-emerald-500 text-gray-950 shadow-sm'
-                                      : 'bg-blue-600 text-white shadow-sm'
-                                    : 'bg-gray-800 text-gray-400'
-                                }`}>
-                                  {canPlay ? (
-                                    <FiPlay size={16} className={isRTL ? 'rotate-180' : ''} />
-                                  ) : (
-                                    <FiLock size={15} />
-                                  )}
-                                </div>
-                                <div className="flex flex-col text-start">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-[11px] font-bold text-gray-500 uppercase">
-                                      {t('student.courseLessons.lessonNum')} {lesson.order || 1}
-                                    </span>
-                                    {lesson.animationUrl && (
-                                      <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 text-[9px] font-black flex items-center gap-1">
-                                        <FiLayers size={9} /> {isRTL ? "تفاعلي" : "Interactive"}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <span className={`text-sm font-bold leading-tight mt-0.5 ${
-                                    isLight ? 'text-slate-900' : 'text-white'
-                                  }`}>
-                                    {(isRTL && lesson.titleAr) ? lesson.titleAr : lesson.title}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Action Badge */}
-                              <div className="shrink-0">
-                                {isEnrolled ? (
-                                  <span className="px-3 py-1 rounded-xl bg-blue-600/15 border border-blue-500/30 text-blue-500 dark:text-blue-400 text-xs font-black flex items-center gap-1">
-                                    <FiPlayCircle size={13} />
-                                    <span>{isRTL ? "مشاهدة" : "Play"}</span>
-                                  </span>
-                                ) : isFree ? (
-                                  <span className="px-3 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-xs font-black flex items-center gap-1 shadow-sm">
-                                    <FiUnlock size={12} />
-                                    <span>{isRTL ? "معاينة مجانية" : "Free Preview"}</span>
-                                  </span>
-                                ) : (
-                                  <span className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 ${
-                                    isLight ? 'bg-slate-200/80 border-slate-300 text-slate-600' : 'bg-gray-800/80 border-gray-700 text-gray-400'
-                                  }`}>
-                                    <FiLock size={12} />
-                                    <span>{isRTL ? "يتطلب اشتراك" : "Locked"}</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Unassigned / General Lessons (if any) */}
-              {unassignedLessons.length > 0 && (
-                <div 
-                  className={`rounded-3xl border overflow-hidden transition-all ${
-                    isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80 shadow-md'
-                  }`}
-                >
-                  {/* General Header */}
-                  <button
-                    onClick={() => toggleUnit('unassigned')}
-                    className={`w-full p-4 sm:p-5 flex items-center justify-between text-start cursor-pointer transition-colors ${
-                      isLight ? 'hover:bg-slate-50' : 'hover:bg-white/[0.02]'
+                  <div
+                    key={lesson._id || lesson.id}
+                    onClick={() => {
+                      if (canPlay) {
+                        navigate(`/student/courses/${course._id}/lessons/${lesson._id || lesson.id}`);
+                      } else {
+                        handleEnrollClick();
+                      }
+                    }}
+                    className={`p-3.5 sm:p-4 rounded-2xl border flex items-center justify-between gap-3 transition-all cursor-pointer ${
+                      canPlay
+                        ? isFree && !isEnrolled
+                          ? isLight 
+                            ? 'bg-emerald-50/70 border-emerald-200 hover:border-emerald-400 shadow-xs' 
+                            : 'bg-emerald-950/20 border-emerald-500/30 hover:border-emerald-500/50'
+                          : isLight
+                          ? 'bg-white border-slate-200 hover:border-blue-300 shadow-xs'
+                          : 'bg-[#121424] border-gray-800 hover:border-blue-500/40'
+                        : isLight
+                        ? 'bg-slate-100/70 border-slate-200 opacity-80 hover:opacity-100'
+                        : 'bg-gray-900/30 border-gray-800/60 opacity-70 hover:opacity-90'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-purple-500 shrink-0 ${
-                        isLight ? 'bg-purple-50' : 'bg-purple-500/10'
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        canPlay
+                          ? isFree && !isEnrolled
+                            ? 'bg-emerald-500 text-gray-950 shadow-sm'
+                            : 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-gray-800 text-gray-400'
                       }`}>
-                        {expandedUnits['unassigned'] !== false ? <FiChevronDown size={18} /> : <FiChevronRight size={18} className={isRTL ? 'rotate-180' : ''} />}
+                        {canPlay ? (
+                          <FiPlay size={16} className={isRTL ? 'rotate-180' : ''} />
+                        ) : (
+                          <FiLock size={15} />
+                        )}
                       </div>
                       <div className="flex flex-col text-start">
-                        <span className={`text-base font-extrabold ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                          {isRTL ? "دروس عامة (بدون وحدة)" : "General Lessons"}
-                        </span>
-                        <span className="text-xs text-gray-500 font-bold mt-0.5">
-                          {unassignedLessons.length} {isRTL ? "دروس" : "Lessons"}
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-gray-500 uppercase">
+                            {t('student.courseLessons.lessonNum')} {lesson.order || 1}
+                          </span>
+                          {lesson.animationUrl && (
+                            <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 text-[9px] font-black flex items-center gap-1">
+                              <FiLayers size={9} /> {isRTL ? "تفاعلي" : "Interactive"}
+                            </span>
+                          )}
+                        </div>
+                        <span className={`text-sm font-bold leading-tight mt-0.5 ${
+                          isLight ? 'text-slate-900' : 'text-white'
+                        }`}>
+                          {(isRTL && lesson.titleAr) ? lesson.titleAr : lesson.title}
                         </span>
                       </div>
                     </div>
-                  </button>
 
-                  {/* General Lessons List */}
-                  {expandedUnits['unassigned'] !== false && (
-                    <div className={`p-3 sm:p-4 pt-0 flex flex-col gap-2.5 border-t ${
-                      isLight ? 'border-slate-100 bg-slate-50/50' : 'border-gray-800/40 bg-black/15'
-                    }`}>
-                      {unassignedLessons.map((lesson) => {
-                        const isFree = Boolean(lesson.isFree);
-                        const canPlay = isEnrolled || isFree;
+                    {/* Action Badge */}
+                    <div className="shrink-0">
+                      {isEnrolled ? (
+                        <span className="px-3 py-1 rounded-xl bg-blue-600/15 border border-blue-500/30 text-blue-500 dark:text-blue-400 text-xs font-black flex items-center gap-1">
+                          <FiPlayCircle size={13} />
+                          <span>{isRTL ? "مشاهدة" : "Play"}</span>
+                        </span>
+                      ) : isFree ? (
+                        <span className="px-3 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-xs font-black flex items-center gap-1 shadow-sm">
+                          <FiUnlock size={12} />
+                          <span>{isRTL ? "معاينة مجانية" : "Free Preview"}</span>
+                        </span>
+                      ) : (
+                        <span className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 ${
+                          isLight ? 'bg-slate-200/80 border-slate-300 text-slate-600' : 'bg-gray-800/80 border-gray-700 text-gray-400'
+                        }`}>
+                          <FiLock size={12} />
+                          <span>{isRTL ? "يتطلب اشتراك" : "Locked"}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              };
 
-                        return (
-                          <div
-                            key={lesson._id || lesson.id}
-                            onClick={() => {
-                              if (canPlay) {
-                                navigate(`/student/courses/${course._id}/lessons/${lesson._id || lesson.id}`);
-                              } else {
-                                handleEnrollClick();
-                              }
-                            }}
-                            className={`p-3.5 sm:p-4 rounded-2xl border flex items-center justify-between gap-3 transition-all cursor-pointer ${
-                              canPlay
-                                ? isFree && !isEnrolled
-                                  ? isLight 
-                                    ? 'bg-emerald-50/70 border-emerald-200 hover:border-emerald-400 shadow-xs' 
-                                    : 'bg-emerald-950/20 border-emerald-500/30 hover:border-emerald-500/50'
-                                  : isLight
-                                  ? 'bg-white border-slate-200 hover:border-blue-300 shadow-xs'
-                                  : 'bg-[#121424] border-gray-800 hover:border-blue-500/40'
-                                : isLight
-                                ? 'bg-slate-100/70 border-slate-200 opacity-80 hover:opacity-100'
-                                : 'bg-gray-900/30 border-gray-800/60 opacity-70 hover:opacity-90'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                                canPlay
-                                  ? isFree && !isEnrolled
-                                    ? 'bg-emerald-500 text-gray-950 shadow-sm'
-                                    : 'bg-blue-600 text-white shadow-sm'
-                                  : 'bg-gray-800 text-gray-400'
-                              }`}>
-                                {canPlay ? (
-                                  <FiPlay size={16} className={isRTL ? 'rotate-180' : ''} />
-                                ) : (
-                                  <FiLock size={15} />
-                                )}
-                              </div>
-                              <div className="flex flex-col text-start">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[11px] font-bold text-gray-500 uppercase">
-                                    {t('student.courseLessons.lessonNum')} {lesson.order || 1}
-                                  </span>
-                                  {lesson.animationUrl && (
-                                    <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 text-[9px] font-black flex items-center gap-1">
-                                      <FiLayers size={9} /> {isRTL ? "تفاعلي" : "Interactive"}
-                                    </span>
-                                  )}
-                                </div>
-                                <span className={`text-sm font-bold leading-tight mt-0.5 ${
-                                  isLight ? 'text-slate-900' : 'text-white'
-                                }`}>
-                                  {(isRTL && lesson.titleAr) ? lesson.titleAr : lesson.title}
-                                </span>
-                              </div>
+              return (
+                <div className="flex flex-col gap-4">
+                  {rawUnits.map((unit) => {
+                    const unitId = unit._id;
+                    const isOpen = expandedUnits[unitId] !== false;
+                    const directLessons = unit.lessons || [];
+                    const subUnits = unit.subUnits || [];
+                    const totalUnitLessonsCount = directLessons.length + subUnits.reduce((acc, su) => acc + (su.lessons?.length || 0), 0);
+
+                    return (
+                      <div 
+                        key={unitId} 
+                        className={`rounded-3xl border overflow-hidden transition-all ${
+                          isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80 shadow-md'
+                        }`}
+                      >
+                        {/* Unit Accordion Header */}
+                        <button
+                          onClick={() => toggleUnit(unitId)}
+                          className={`w-full p-4 sm:p-5 flex items-center justify-between text-start cursor-pointer transition-colors ${
+                            isLight ? 'hover:bg-slate-50' : 'hover:bg-white/[0.02]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-blue-500 shrink-0 ${
+                              isLight ? 'bg-blue-50' : 'bg-blue-500/10'
+                            }`}>
+                              {isOpen ? <FiChevronDown size={18} /> : <FiChevronRight size={18} className={isRTL ? 'rotate-180' : ''} />}
                             </div>
-
-                            {/* Action Badge */}
-                            <div className="shrink-0">
-                              {isEnrolled ? (
-                                <span className="px-3 py-1 rounded-xl bg-blue-600/15 border border-blue-500/30 text-blue-500 dark:text-blue-400 text-xs font-black flex items-center gap-1">
-                                  <FiPlayCircle size={13} />
-                                  <span>{isRTL ? "مشاهدة" : "Play"}</span>
-                                </span>
-                              ) : isFree ? (
-                                <span className="px-3 py-1 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 text-xs font-black flex items-center gap-1 shadow-sm">
-                                  <FiUnlock size={12} />
-                                  <span>{isRTL ? "معاينة مجانية" : "Free Preview"}</span>
-                                </span>
-                              ) : (
-                                <span className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold flex items-center gap-1 ${
-                                  isLight ? 'bg-slate-200/80 border-slate-300 text-slate-600' : 'bg-gray-800/80 border-gray-700 text-gray-400'
-                                }`}>
-                                  <FiLock size={12} />
-                                  <span>{isRTL ? "يتطلب اشتراك" : "Locked"}</span>
-                                </span>
-                              )}
+                            <div className="flex flex-col text-start">
+                              <span className={`text-base font-extrabold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                {(isRTL && unit.titleAr) ? unit.titleAr : unit.title}
+                              </span>
+                              <span className="text-xs text-gray-500 font-bold mt-0.5">
+                                {totalUnitLessonsCount} {isRTL ? "دروس" : "Lessons"}
+                                {subUnits.length > 0 && ` • ${subUnits.length} ${isRTL ? "وحدات فرعية" : "sub-units"}`}
+                              </span>
                             </div>
                           </div>
-                        );
-                      })}
+                        </button>
+
+                        {/* Unit Lessons */}
+                        {isOpen && (
+                          <div className={`p-3 sm:p-4 pt-0 flex flex-col gap-2.5 border-t ${
+                            isLight ? 'border-slate-100 bg-slate-50/50' : 'border-gray-800/40 bg-black/15'
+                          }`}>
+                            {/* Direct unit lessons */}
+                            {directLessons.map((lesson) => renderStudentLessonItem(lesson))}
+
+                            {/* Sub-units and their lessons */}
+                            {subUnits.map((su) => {
+                              const suLessons = su.lessons || [];
+                              return (
+                                <div key={su._id || su.id} className="flex flex-col gap-2 mt-2">
+                                  <div className="flex items-center gap-2 px-1 pt-2">
+                                    <span className="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1">
+                                      <span>↳</span> {(isRTL && su.titleAr) ? su.titleAr : su.title}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold">
+                                      {suLessons.length} {isRTL ? "دروس" : "Lessons"}
+                                    </span>
+                                  </div>
+                                  {suLessons.map((lesson) => renderStudentLessonItem(lesson))}
+                                </div>
+                              );
+                            })}
+
+                            {totalUnitLessonsCount === 0 && (
+                              <div className="p-4 text-center text-xs text-gray-500 font-semibold">
+                                {isRTL ? "لا توجد دروس في هذه الوحدة حتى الآن." : "No lessons in this unit yet."}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Unassigned / General Lessons (if any) */}
+                  {unassignedLessons.length > 0 && (
+                    <div 
+                      className={`rounded-3xl border overflow-hidden transition-all ${
+                        isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80 shadow-md'
+                      }`}
+                    >
+                      {/* General Header */}
+                      <button
+                        onClick={() => toggleUnit('unassigned')}
+                        className={`w-full p-4 sm:p-5 flex items-center justify-between text-start cursor-pointer transition-colors ${
+                          isLight ? 'hover:bg-slate-50' : 'hover:bg-white/[0.02]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-purple-500 shrink-0 ${
+                            isLight ? 'bg-purple-50' : 'bg-purple-500/10'
+                          }`}>
+                            {expandedUnits['unassigned'] !== false ? <FiChevronDown size={18} /> : <FiChevronRight size={18} className={isRTL ? 'rotate-180' : ''} />}
+                          </div>
+                          <div className="flex flex-col text-start">
+                            <span className={`text-base font-extrabold ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                              {isRTL ? "دروس عامة (بدون وحدة)" : "General Lessons"}
+                            </span>
+                            <span className="text-xs text-gray-500 font-bold mt-0.5">
+                              {unassignedLessons.length} {isRTL ? "دروس" : "Lessons"}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* General Lessons List */}
+                      {expandedUnits['unassigned'] !== false && (
+                        <div className={`p-3 sm:p-4 pt-0 flex flex-col gap-2.5 border-t ${
+                          isLight ? 'border-slate-100 bg-slate-50/50' : 'border-gray-800/40 bg-black/15'
+                        }`}>
+                          {unassignedLessons.map((lesson) => renderStudentLessonItem(lesson))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+              );
+            })()
           ) : (
             /* Flat lessons list */
             <div className="flex flex-col gap-2.5">

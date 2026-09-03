@@ -61,6 +61,9 @@ const CourseLessons = () => {
   const assignedLessonIds = new Set();
   rawUnits.forEach((u) => {
     (u.lessons || []).forEach((l) => assignedLessonIds.add(l._id || l.id));
+    (u.subUnits || []).forEach((su) => {
+      (su.lessons || []).forEach((l) => assignedLessonIds.add(l._id || l.id));
+    });
   });
 
   const unassignedLessons = lessons.filter((l) => !assignedLessonIds.has(l._id || l.id));
@@ -295,8 +298,13 @@ const CourseLessons = () => {
               {rawUnits.map((unit) => {
                 const unitId = unit._id;
                 const isOpen = expandedUnits[unitId] !== false;
-                const unitLessons = unit.lessons || [];
-                const unitCompleted = unitLessons.filter(l => l.isCompleted).length;
+                const directLessons = unit.lessons || [];
+                const subUnits = unit.subUnits || [];
+                const allUnitLessons = [
+                  ...directLessons,
+                  ...subUnits.flatMap((su) => su.lessons || []),
+                ];
+                const unitCompleted = allUnitLessons.filter((l) => l.isCompleted).length;
 
                 return (
                   <div key={unitId} className={`rounded-3xl border overflow-hidden transition-all ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0c0d19]/40 border-gray-800/80 shadow-md'}`}>
@@ -327,7 +335,7 @@ const CourseLessons = () => {
 
                       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                         <span className={`px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-extrabold whitespace-nowrap shrink-0 ${isLight ? 'bg-slate-200/80 border-slate-300 text-slate-700' : 'bg-gray-800/80 border-gray-700 text-gray-300'}`}>
-                          {unitCompleted} / {unitLessons.length} {t('student.courseLessons.done')}
+                          {unitCompleted} / {allUnitLessons.length} {t('student.courseLessons.done')}
                         </span>
                         <div className={`shrink-0 ${isLight ? 'text-slate-500' : 'text-gray-400'}`}>
                           {isOpen ? <FiChevronDown size={20} /> : <FiChevronRight size={20} className={isRTL ? 'rotate-180' : ''} />}
@@ -338,9 +346,30 @@ const CourseLessons = () => {
                     {/* Unit Lessons Body */}
                     {isOpen && (
                       <div className={`p-4 flex flex-col gap-3 ${isLight ? 'bg-slate-50/70' : 'bg-[#0a0b14]/50'}`}>
-                        {unitLessons.length > 0 ? (
-                          unitLessons.map(lesson => renderLessonCard(lesson))
-                        ) : (
+                        {/* Direct Unit Lessons */}
+                        {directLessons.map((lesson) => renderLessonCard(lesson))}
+
+                        {/* Sub-units and their lessons */}
+                        {subUnits.map((su) => {
+                          const suLessons = su.lessons || [];
+                          const suCompleted = suLessons.filter((l) => l.isCompleted).length;
+
+                          return (
+                            <div key={su._id || su.id} className="flex flex-col gap-2.5 mt-2">
+                              <div className="flex items-center justify-between gap-2 px-1 pt-2">
+                                <span className="text-xs font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1">
+                                  <span>↳</span> {(isRTL && su.titleAr) ? su.titleAr : su.title}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold">
+                                  {suCompleted} / {suLessons.length} {t('student.courseLessons.done')}
+                                </span>
+                              </div>
+                              {suLessons.map((lesson) => renderLessonCard(lesson))}
+                            </div>
+                          );
+                        })}
+
+                        {allUnitLessons.length === 0 && (
                           <div className={`p-4 text-center text-xs font-bold ${isLight ? 'text-slate-500' : 'text-gray-500'}`}>
                             {t('student.courseLessons.noLessonsInUnit')}
                           </div>
